@@ -1,0 +1,194 @@
+{
+  "info": {
+    "name": "Mock e-Signet OIDC Flow",
+    "description": "Collection for testing the mock e-Signet OIDC authentication flow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3002/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3002",
+          "path": ["health"]
+        },
+        "description": "Check if the mock authentication server is running"
+      }
+    },
+    {
+      "name": "Get Current User Data",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3002/admin/user",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3002",
+          "path": ["admin", "user"]
+        },
+        "description": "Get the current mock user data that will be returned during authentication"
+      }
+    },
+    {
+      "name": "Update User Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Jane Smith\",\n  \"given_name\": \"Jane\",\n  \"family_name\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phone_number\": \"+9876543210\",\n  \"birthdate\": \"1985-05-15\",\n  \"gender\": \"female\",\n  \"picture\": \"https://api.dicebear.com/7.x/avataaars/svg?seed=Jane\",\n  \"address\": {\n    \"formatted\": \"456 Oak Avenue, New City, USA 54321\",\n    \"street_address\": \"456 Oak Avenue\",\n    \"locality\": \"New City\",\n    \"region\": \"State\",\n    \"postal_code\": \"54321\",\n    \"country\": \"USA\"\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3002/admin/user",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3002",
+          "path": ["admin", "user"]
+        },
+        "description": "Update the mock user data. This data will be returned when a user authenticates."
+      }
+    },
+    {
+      "name": "Reset to Default User",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3002/admin/reset",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3002",
+          "path": ["admin", "reset"]
+        },
+        "description": "Reset the server to default user data and clear all tokens"
+      }
+    },
+    {
+      "name": "Authorization Request (Browser Only)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3002/authorize?client_id=mock-client-id&redirect_uri=http://localhost:3001/callback&response_type=code&scope=openid profile email phone address&state=test123&nonce=nonce123",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3002",
+          "path": ["authorize"],
+          "query": [
+            {
+              "key": "client_id",
+              "value": "mock-client-id"
+            },
+            {
+              "key": "redirect_uri",
+              "value": "http://localhost:3001/callback"
+            },
+            {
+              "key": "response_type",
+              "value": "code"
+            },
+            {
+              "key": "scope",
+              "value": "openid profile email phone address"
+            },
+            {
+              "key": "state",
+              "value": "test123"
+            },
+            {
+              "key": "nonce",
+              "value": "nonce123"
+            }
+          ]
+        },
+        "description": "NOTE: This endpoint returns HTML and should be opened in a browser. It simulates the authorization consent page."
+      }
+    },
+    {
+      "name": "Exchange Code for Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "authorization_code"
+            },
+            {
+              "key": "code",
+              "value": "{{authorization_code}}",
+              "description": "Replace with actual authorization code from redirect"
+            },
+            {
+              "key": "client_id",
+              "value": "mock-client-id"
+            },
+            {
+              "key": "redirect_uri",
+              "value": "http://localhost:3001/callback"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:3002/token",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3002",
+          "path": ["token"]
+        },
+        "description": "Exchange the authorization code for access and ID tokens. You need to replace {{authorization_code}} with the actual code from the authorization redirect."
+      }
+    },
+    {
+      "name": "Get User Info",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "description": "Replace with actual access token"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3002/userinfo",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3002",
+          "path": ["userinfo"]
+        },
+        "description": "Get user information using the access token. Replace {{access_token}} with the actual token received from the token endpoint."
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "authorization_code",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

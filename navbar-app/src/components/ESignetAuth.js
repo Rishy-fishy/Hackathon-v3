@@ -47,15 +47,15 @@ const ESignetAuth = () => {
         esignetElement.setAttribute('id', 'sign-in-with-esignet-standard');
         esignetElement.setAttribute('oidc-config', JSON.stringify({
           acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometrics mosip:idp:acr:static-code',
-          authorizeUri: 'https://esignet.dev.mosip.net/authorize',
+          authorizeUri: 'http://localhost:3002/authorize',
           claims_locales: 'en',
-          client_id: '88Vjt34c5Twz1oJ',
+          client_id: 'mock-client-id',
           display: 'page',
           max_age: 21,
           nonce: 'ere973eieljznge2311',
           prompt: 'consent',
-          redirect_uri: 'https://healthservices.dev.mosip.net/userprofile',
-          scope: 'openid profile',
+          redirect_uri: 'http://localhost:3001/callback',
+          scope: 'openid profile email phone address',
           state: 'eree2311',
           ui_locales: 'en'
         }));
