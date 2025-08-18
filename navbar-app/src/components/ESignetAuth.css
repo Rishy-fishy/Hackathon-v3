@@ -79,6 +79,40 @@
   margin: 0;
 }
 
+/* Error handling styles */
+.error-container {
+  margin: 1rem 0;
+}
+
+.error-message {
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 1rem;
+  color: #dc2626;
+  text-align: center;
+}
+
+.error-message p {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+}
+
+.retry-button {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.retry-button:hover {
+  background: #b91c1c;
+}
+
 /* Fallback button styles */
 .fallback-button {
   display: flex;

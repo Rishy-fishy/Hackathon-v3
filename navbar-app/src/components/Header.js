@@ -42,9 +42,14 @@ const Header = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('id_token');
     localStorage.removeItem('is_authenticated');
+    localStorage.removeItem('auth_timestamp');
+    localStorage.removeItem('auth_method');
+    sessionStorage.removeItem('esignet_state');
+    sessionStorage.removeItem('esignet_nonce');
     setUserInfo(null);
     setIsAuthenticated(false);
     setIsModalOpen(false);
+    console.log('🚪 User logged out successfully');
     window.location.reload();
   };
 

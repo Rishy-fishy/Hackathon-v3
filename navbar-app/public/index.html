@@ -25,18 +25,32 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>React App</title>
-    <!-- e-Signet Sign-in Button Plugin -->
-    <script src="https://esignet.collab.mosip.net/plugins/sign-in-button-plugin.js" defer></script>
+    <!-- e-Signet Sign-in Button Plugin - Updated URL -->
+    <script src="https://esignet.dev.mosip.net/plugins/sign-in-button-plugin.js" defer></script>
     <script>
       // Ensure the script loads properly
       window.addEventListener('load', function() {
-        console.log('Page loaded, checking for eSignet...');
-        if (window.customElements && window.customElements.get('sign-in-with-esignet')) {
-          console.log('✅ eSignet custom element loaded successfully');
+        console.log('Page loaded, checking for eSignet plugin...');
+        if (window.SignInWithEsignetButton) {
+          console.log('✅ eSignet plugin loaded successfully');
         } else {
-          console.log('⚠️ eSignet custom element not found');
+          console.log('⚠️ eSignet plugin not found, will retry...');
         }
       });
+      
+      // Handle script load errors
+      window.addEventListener('error', function(e) {
+        if (e.target.src && e.target.src.includes('sign-in-button-plugin.js')) {
+          console.error('❌ Failed to load eSignet plugin from:', e.target.src);
+          console.log('🔄 Trying fallback URL...');
+          
+          // Try fallback URL
+          const fallbackScript = document.createElement('script');
+          fallbackScript.src = 'https://esignet.collab.mosip.net/plugins/sign-in-button-plugin.js';
+          fallbackScript.defer = true;
+          document.head.appendChild(fallbackScript);
+        }
+      }, true);
     </script>
   </head>
   <body>
