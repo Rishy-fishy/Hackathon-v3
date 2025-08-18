@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-const PORT = 3003; // Changed to 3003 since 3002 is taken by React app
+const PORT = 3002;
 
 // Secret key for JWT signing
 const JWT_SECRET = 'mock-esignet-secret-key-2024';
@@ -14,6 +14,15 @@ const JWT_SECRET = 'mock-esignet-secret-key-2024';
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Fix incorrectly formatted authorize URLs where '?' is missing and '&' is used directly
+app.use((req, res, next) => {
+  if (req.method === 'GET' && req.originalUrl.startsWith('/authorize&')) {
+    const fixed = '/authorize?' + req.originalUrl.split('/authorize&')[1];
+    return res.redirect(302, fixed);
+  }
+  next();
+});
 
 // In-memory storage for mock data
 let users = {};
@@ -70,21 +79,8 @@ app.get('/authorize', (req, res) => {
     });
   }
 
-  // Create session
-  const sessionId = uuidv4();
-  sessions[sessionId] = {
-    client_id,
-    redirect_uri,
-    scope,
-    state,
-    nonce,
-    step: 'login'
-  };
-
-  // Generate authorization code immediately for testing
-  const code = 'mock_auth_code_' + Math.random().toString(36).substring(2, 10);
-  
-  // Store the authorization code
+  // Pre-generate an authorization code and store it server-side for token exchange
+  const code = Math.random().toString(36).substring(2, 10);
   authorizationCodes[code] = {
     client_id,
     redirect_uri,
@@ -92,7 +88,8 @@ app.get('/authorize', (req, res) => {
     state,
     nonce,
     user: currentUser,
-    expires_at: Date.now() + (10 * 60 * 1000) // 10 minutes
+    created_at: Date.now(),
+    expires_at: Date.now() + 10 * 60 * 1000 // 10 minutes
   };
 
   // Send HTML consent page
@@ -294,11 +291,14 @@ app.get('/authorize', (req, res) => {
 
       <script>
         function authorize() {
-          const redirectUrl = '${redirect_uri}?code=${code}&state=${state || ''}';
+          // Use server-generated authorization code
+          const code = '${code}';
+          const redirectUrl = '${redirect_uri}?code=' + code + '&state=${state || ''}';
           window.location.href = redirectUrl;
         }
 
         function cancel() {
+          // Redirect back with error
           const redirectUrl = '${redirect_uri}?error=access_denied&state=${state || ''}';
           window.location.href = redirectUrl;
         }
@@ -333,6 +333,14 @@ app.post('/token', (req, res) => {
     return res.status(400).json({ 
       error: 'invalid_grant',
       error_description: 'Authorization code expired' 
+    });
+  }
+
+  // Validate client_id and redirect_uri
+  if (authCode.client_id !== client_id || authCode.redirect_uri !== redirect_uri) {
+    return res.status(400).json({ 
+      error: 'invalid_grant',
+      error_description: 'Invalid client or redirect URI' 
     });
   }
 
@@ -439,7 +447,6 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     server: 'Mock e-Signet Server',
-    port: PORT,
     endpoints: {
       authorize: `http://localhost:${PORT}/authorize`,
       token: `http://localhost:${PORT}/token`,
@@ -460,5 +467,3 @@ app.listen(PORT, () => {
   console.log(`  Admin:         http://localhost:${PORT}/admin/*`);
   console.log(`  Health:        http://localhost:${PORT}/health`);
 });
-
-module.exports = app;

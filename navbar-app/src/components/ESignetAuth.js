@@ -1,142 +1,189 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './ESignetAuth.css';
 
 const ESignetAuth = () => {
-  const esignetContainerRef = useRef(null);
-  const initializedRef = useRef(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isPluginReady, setIsPluginReady] = useState(false);
+  const buttonContainerRef = useRef(null);
+  const initializationRef = useRef(false);
 
-  useEffect(() => {
-    const initializeESignetButton = async () => {
-      // Prevent duplicate initialization
-      if (initializedRef.current) return;
+  // OIDC Configuration for MOCK server
+  const oidcConfig = {
+    acr_values: 'mosip:idp:acr:generated-code',
+    authorizeUri: 'http://localhost:8088/authorize',
+    claims_locales: 'en',
+    client_id: '3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M',
+    display: 'page',
+    max_age: 21,
+    prompt: 'consent',
+    redirect_uri: 'http://localhost:3001/callback',
+    scope: 'openid profile',
+    ui_locales: 'en'
+  };
+
+  const buttonConfig = {
+    labelText: 'Sign in with e-Signet',
+    shape: 'soft_edges',
+    theme: 'filled_orange',
+    type: 'standard'
+  };
+
+  // Wait for the eSignet plugin to load
+  const waitForESignetPlugin = () => {
+    return new Promise((resolve, reject) => {
+      let attempts = 0;
+      const maxAttempts = 40; // 20 seconds total
       
-      try {
-        // Wait for eSignet plugin to be available
-        let attempts = 0;
-        while (attempts < 50 && (!window.SignInWithEsignetButton?.init)) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          attempts++;
+      const checkPlugin = () => {
+        attempts++;
+        
+        if (window.SignInWithEsignetButton && window.SignInWithEsignetButton.init) {
+          console.log('✅ SignInWithEsignetButton found!');
+          resolve();
+        } else if (attempts >= maxAttempts) {
+          console.error('❌ SignInWithEsignetButton not found after 20 seconds');
+          reject(new Error('eSignet plugin failed to load'));
+        } else {
+          console.log(`⏳ Waiting for SignInWithEsignetButton... attempt ${attempts}/${maxAttempts}`);
+          setTimeout(checkPlugin, 500);
         }
+      };
+      
+      checkPlugin();
+    });
+  };
 
-        if (!window.SignInWithEsignetButton?.init) {
-          console.error('eSignet plugin not loaded');
-          return;
-        }
+  // Initialize the eSignet button
+  const initializeESignetButton = async () => {
+    // Prevent multiple initializations
+    if (initializationRef.current) {
+      return;
+    }
+    initializationRef.current = true;
 
-        // Mark as initialized early to prevent race conditions
-        initializedRef.current = true;
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        const container = esignetContainerRef.current;
-        if (!container) return;
-
-        // Generate state and nonce for OIDC security
-        const state = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-          .map(b => b.toString(16).padStart(2, '0')).join('');
-        const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-          .map(b => b.toString(16).padStart(2, '0')).join('');
-
-        // Store for validation
-        sessionStorage.setItem('esignet_state', state);
-        sessionStorage.setItem('esignet_nonce', nonce);
-
-        // eSignet OIDC configuration for your Docker services
-        const oidcConfig = {
-          authorizeUri: 'http://localhost:3000/authorize',
-          client_id: 'IBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArla+u7',
-          redirect_uri: 'http://localhost:5000/callback',
-          scope: 'openid profile',
-          acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometrics mosip:idp:acr:static-code',
-          claims_locales: 'en',
-          ui_locales: 'en',
-          display: 'page',
-          prompt: 'consent',
-          max_age: 21,
-          state: state,
-          nonce: nonce,
-          claims: {
-            userinfo: {
-              given_name: { essential: true },
-              phone_number: { essential: false },
-              email: { essential: true },
-              picture: { essential: false },
-              gender: { essential: false },
-              birthdate: { essential: false },
-              address: { essential: false }
-            },
-            id_token: {}
-          }
-        };
-
-        // Button configuration
-        const buttonConfig = {
-          type: 'standard',
-          theme: 'filled_orange',
-          labelText: 'Sign in with e-Signet',
-          shape: 'soft_edges',
-          width: '400px'
-        };
-
-        // Initialize the eSignet button with your Docker services
-        await window.SignInWithEsignetButton.init({
-          oidcConfig,
-          buttonConfig,
-          signInElement: container
-        });
-
-        console.log('✅ eSignet plugin initialized successfully with Docker services');
-
-      } catch (error) {
-        console.error('❌ eSignet initialization failed:', error);
-        initializedRef.current = false; // Reset on error to allow retry
+      // Wait for the plugin to be available
+      await waitForESignetPlugin();
+      
+      if (!buttonContainerRef.current) {
+        throw new Error('Button container not found');
       }
-    };
 
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(initializeESignetButton, 200);
+      console.log('🚀 Initializing eSignet button with config:', {
+        oidcConfig,
+        buttonConfig
+      });
+
+      // Create a container for the plugin
+      const container = buttonContainerRef.current;
+
+      // Initialize the eSignet button using the plugin
+      await window.SignInWithEsignetButton.init({
+        oidcConfig: oidcConfig,
+        buttonConfig: buttonConfig,
+        signInElement: container
+      });
+
+      setIsPluginReady(true);
+      setIsLoading(false);
+      console.log('✅ eSignet button initialized successfully');
+
+      // Adjust malformed authorize URL if plugin renders '/authorize&...'
+      try {
+        const anchor = container.querySelector('a[href]');
+        if (anchor) {
+          const href = anchor.getAttribute('href') || '';
+          if (href.includes('/authorize&')) {
+            const fixed = href.replace('/authorize&', '/authorize?');
+            anchor.setAttribute('href', fixed);
+          }
+          anchor.addEventListener('click', (e) => {
+            const h = anchor.getAttribute('href') || '';
+            if (h.includes('/authorize&')) {
+              e.preventDefault();
+              const fixed = h.replace('/authorize&', '/authorize?');
+              window.location.href = fixed;
+            }
+          });
+        }
+      } catch (adjErr) {
+        console.warn('URL adjustment skipped:', adjErr);
+      }
+
+    } catch (err) {
+      console.error('❌ Failed to initialize eSignet button:', err);
+      setError(err.message);
+      setIsLoading(false);
+    }
+  };
+
+  // Generate random string for state/nonce
+  const generateRandomString = (length = 32) => {
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array);
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  };
+
+  // Initialize on component mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      initializeESignetButton();
+    }, 100);
 
     return () => {
       clearTimeout(timer);
-      // Don't reset initializedRef here to prevent re-initialization
+      initializationRef.current = false;
     };
-  }, []); // Empty dependency array - initialize only once
+  }, []);
+
+  // Retry initialization if it failed
+  const handleRetry = () => {
+    initializationRef.current = false;
+    setError(null);
+    initializeESignetButton();
+  };
 
   return (
     <div className="esignet-auth-container">
       <div className="auth-header">
         <h2>Sign in to MyApp</h2>
-        <p>Use your official eSignet digital identity to securely sign in</p>
+        <p>Use your e-Signet digital identity to securely sign in</p>
       </div>
 
       <div className="auth-content">
         <div className="esignet-button-wrapper">
-          {/* Container for eSignet plugin button - let plugin handle everything */}
-          <div 
-            ref={esignetContainerRef}
-            className="esignet-plugin-container"
-            style={{ 
-              minHeight: '60px',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
-          >
-            <div className="loading-placeholder">
-              <div className="loading-spinner"></div>
-              <p>Loading e-Signet authentication...</p>
+          <div className="esignet-button-container" ref={buttonContainerRef}></div>
+        </div>
+
+        {isLoading && (
+          <div className="loading-placeholder">
+            <div className="loading-spinner"></div>
+            <p>Loading e-Signet authentication...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="error-container">
+            <div className="error-message">
+              <p><strong>Authentication Error:</strong> {error}</p>
+              <button onClick={handleRetry} className="retry-button">
+                Try Again
+              </button>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Fallback removed per request; using official eSignet plugin only */}
 
         <div className="auth-info">
           <p className="info-text">
-            <strong>About Official eSignet:</strong> This uses the official MOSIP eSignet 
-            authentication system running in your Docker containers. eSignet provides secure 
-            digital identity verification using various authentication methods including UIN 
-            verification, biometrics, and generated codes.
-          </p>
-          <p className="info-text">
-            <strong>Docker Setup:</strong> Using mosipid/esignet-with-plugins:1.6.1 
-            running on localhost:8088 with UI on localhost:3000.
+            <strong>About e-Signet:</strong> e-Signet is a secure digital identity platform 
+            that allows you to authenticate using various methods including biometrics, 
+            generated codes, and static codes. Your privacy and security are our top priorities.
           </p>
         </div>
       </div>

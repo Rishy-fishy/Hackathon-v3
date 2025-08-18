@@ -34,101 +34,63 @@ const AuthCallback = () => {
       try {
         console.log('Authorization code received:', code);
         console.log('State received:', state);
-        
+
         // Validate state parameter
         const storedState = sessionStorage.getItem('esignet_state');
         if (storedState && state !== storedState) {
           throw new Error('Invalid state parameter - possible CSRF attack');
         }
-        
-        // Clean up stored state and transaction data
+
+        // Exchange authorization code for tokens with original mock eSignet
+        const tokenEndpoint = 'http://localhost:8088/v1/esignet/oauth/v2/token';
+        const clientAssertion = window.__ESIGNET_CLIENT_ASSERTION__;
+        const form = new URLSearchParams({
+          grant_type: 'authorization_code',
+          code: code,
+          client_id: '3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M',
+          redirect_uri: 'http://localhost:3001/callback'
+        });
+        if (clientAssertion) {
+          form.set('client_assertion_type', 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer');
+          form.set('client_assertion', clientAssertion);
+        }
+        const tokenResponse = await fetch(tokenEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: form
+        });
+
+        if (!tokenResponse.ok) {
+          const errText = await tokenResponse.text();
+          throw new Error('Failed to exchange authorization code: ' + errText);
+        }
+
+        const tokens = await tokenResponse.json();
+
+        // Fetch user info from original mock eSignet
+        const userInfoResponse = await fetch('http://localhost:8088/v1/esignet/oidc/userinfo', {
+          headers: {
+            Authorization: `Bearer ${tokens.access_token}`
+          }
+        });
+
+        if (!userInfoResponse.ok) {
+          const errText = await userInfoResponse.text();
+          throw new Error('Failed to fetch user info: ' + errText);
+        }
+
+        const userInfo = await userInfoResponse.json();
+
+        // Clean up stored state
         sessionStorage.removeItem('esignet_state');
         sessionStorage.removeItem('esignet_nonce');
-        sessionStorage.removeItem('esignet_transaction_id');
-        
-        // Exchange authorization code for tokens using eSignet plugin flow
-        console.log('🔄 Processing eSignet callback...');
-        
-        // eSignet configuration (should match the one used in ESignetAuth)
-        const esignetConfig = {
-          baseUrl: 'http://localhost:8088', // Official eSignet Docker
-          client_id: 'IBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq8W2KQ'
-        };
-        
-        let userInfo;
-        
-        try {
-          // Try to exchange the authorization code for tokens using official eSignet API
-          console.log('🔄 Attempting token exchange with official eSignet...');
-          
-          const tokenResponse = await fetch(`${esignetConfig.baseUrl}/v1/esignet/oauth/v2/token`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-              'Authorization': 'Basic ' + btoa(esignetConfig.client_id + ':')
-            },
-            body: new URLSearchParams({
-              grant_type: 'authorization_code',
-              code: code,
-              redirect_uri: 'http://localhost:5000/callback'
-            })
-          });
 
-          if (tokenResponse.ok) {
-            const tokens = await tokenResponse.json();
-            console.log('✅ Tokens received from official eSignet:', tokens);
-
-            // Try to get user info
-            if (tokens.access_token) {
-              const userResponse = await fetch(`${esignetConfig.baseUrl}/v1/esignet/oidc/userinfo`, {
-                headers: {
-                  'Authorization': `Bearer ${tokens.access_token}`
-                }
-              });
-
-              if (userResponse.ok) {
-                userInfo = await userResponse.json();
-                console.log('✅ User info from official eSignet:', userInfo);
-                
-                // Store actual tokens
-                localStorage.setItem('access_token', tokens.access_token);
-                if (tokens.id_token) {
-                  localStorage.setItem('id_token', tokens.id_token);
-                }
-              } else {
-                throw new Error('Failed to fetch user info from eSignet');
-              }
-            } else {
-              throw new Error('No access token received from eSignet');
-            }
-          } else {
-            throw new Error('Token exchange failed with eSignet');
-          }
-          
-        } catch (esignetError) {
-          console.error('❌ eSignet authentication failed:', esignetError.message);
-          
-          // No fallback - show proper error
-          setStatus('error');
-          setError('Login failed. Please try again.');
-          
-          // Clean up any stored session data
-          sessionStorage.removeItem('esignet_state');
-          sessionStorage.removeItem('esignet_nonce');
-          sessionStorage.removeItem('esignet_transaction_id');
-          localStorage.removeItem('user_info');
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('id_token');
-          localStorage.removeItem('is_authenticated');
-          
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 3000);
-          return;
-        }
-        
-        // Store user info and session data
+        // Store user info and tokens in localStorage
         localStorage.setItem('user_info', JSON.stringify(userInfo));
+        localStorage.setItem('access_token', tokens.access_token);
+        localStorage.setItem('id_token', tokens.id_token || '');
         localStorage.setItem('is_authenticated', 'true');
         localStorage.setItem('auth_timestamp', Date.now().toString());
         localStorage.setItem('auth_method', 'esignet');
@@ -140,7 +102,7 @@ const AuthCallback = () => {
         // Redirect to home page after a short delay
         setTimeout(() => {
           window.location.href = '/?authenticated=true';
-        }, 2000);
+        }, 800);
 
       } catch (err) {
         console.error('Authentication error:', err);
@@ -150,7 +112,6 @@ const AuthCallback = () => {
         // Clean up any stored session data
         sessionStorage.removeItem('esignet_state');
         sessionStorage.removeItem('esignet_nonce');
-        sessionStorage.removeItem('esignet_transaction_id');
         
         setTimeout(() => {
           window.location.href = '/';
