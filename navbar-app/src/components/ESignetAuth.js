@@ -8,19 +8,17 @@ const ESignetAuth = () => {
   const buttonContainerRef = useRef(null);
   const initializationRef = useRef(false);
 
-  // OIDC Configuration
+  // OIDC Configuration for MOCK server
   const oidcConfig = {
-    acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometrics mosip:idp:acr:static-code',
-    authorizeUri: 'https://esignet.dev.mosip.net/authorize',
+    acr_values: 'mosip:idp:acr:generated-code',
+    authorizeUri: 'http://localhost:8088/authorize',
     claims_locales: 'en',
-    client_id: '88Vjt34c5Twz1oJ',
+    client_id: '3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M',
     display: 'page',
     max_age: 21,
-    nonce: 'ere973eieljznge2311',
     prompt: 'consent',
     redirect_uri: 'http://localhost:3001/callback',
     scope: 'openid profile',
-    state: 'eree2311',
     ui_locales: 'en'
   };
 
@@ -80,13 +78,8 @@ const ESignetAuth = () => {
         buttonConfig
       });
 
-      // Create a clean container for the plugin
+      // Create a container for the plugin
       const container = buttonContainerRef.current;
-      
-      // Clear any existing content safely
-      while (container.firstChild) {
-        container.removeChild(container.firstChild);
-      }
 
       // Initialize the eSignet button using the plugin
       await window.SignInWithEsignetButton.init({
@@ -99,74 +92,33 @@ const ESignetAuth = () => {
       setIsLoading(false);
       console.log('✅ eSignet button initialized successfully');
 
+      // Adjust malformed authorize URL if plugin renders '/authorize&...'
+      try {
+        const anchor = container.querySelector('a[href]');
+        if (anchor) {
+          const href = anchor.getAttribute('href') || '';
+          if (href.includes('/authorize&')) {
+            const fixed = href.replace('/authorize&', '/authorize?');
+            anchor.setAttribute('href', fixed);
+          }
+          anchor.addEventListener('click', (e) => {
+            const h = anchor.getAttribute('href') || '';
+            if (h.includes('/authorize&')) {
+              e.preventDefault();
+              const fixed = h.replace('/authorize&', '/authorize?');
+              window.location.href = fixed;
+            }
+          });
+        }
+      } catch (adjErr) {
+        console.warn('URL adjustment skipped:', adjErr);
+      }
+
     } catch (err) {
       console.error('❌ Failed to initialize eSignet button:', err);
       setError(err.message);
       setIsLoading(false);
-      
-      // Show fallback button
-      showFallbackButton();
     }
-  };
-
-  // Show fallback button if plugin fails
-  const showFallbackButton = () => {
-    if (!buttonContainerRef.current) return;
-
-    // Create fallback button element
-    const fallbackButton = document.createElement('button');
-    fallbackButton.className = 'esignet-fallback-btn';
-    fallbackButton.innerHTML = `
-      <div class="esignet-btn-content">
-        <div class="esignet-logo">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-          </svg>
-        </div>
-        <span>Sign in with e-Signet</span>
-      </div>
-    `;
-
-    fallbackButton.addEventListener('click', handleFallbackAuth);
-
-    // Clear container and add fallback button
-    const container = buttonContainerRef.current;
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
-    }
-    container.appendChild(fallbackButton);
-  };
-
-  // Handle fallback authentication
-  const handleFallbackAuth = () => {
-    // Generate secure random values
-    const state = generateRandomString(32);
-    const nonce = generateRandomString(32);
-
-    // Store for validation
-    sessionStorage.setItem('esignet_state', state);
-    sessionStorage.setItem('esignet_nonce', nonce);
-
-    // Build authorization URL
-    const authParams = new URLSearchParams({
-      response_type: 'code',
-      client_id: oidcConfig.client_id,
-      redirect_uri: oidcConfig.redirect_uri,
-      scope: oidcConfig.scope,
-      state: state,
-      nonce: nonce,
-      acr_values: oidcConfig.acr_values,
-      claims_locales: oidcConfig.claims_locales,
-      ui_locales: oidcConfig.ui_locales,
-      display: oidcConfig.display,
-      prompt: oidcConfig.prompt,
-      max_age: oidcConfig.max_age.toString()
-    });
-
-    const authUrl = `${oidcConfig.authorizeUri}?${authParams.toString()}`;
-    console.log('🚀 Redirecting to eSignet:', authUrl);
-    
-    window.location.href = authUrl;
   };
 
   // Generate random string for state/nonce
@@ -191,6 +143,7 @@ const ESignetAuth = () => {
   // Retry initialization if it failed
   const handleRetry = () => {
     initializationRef.current = false;
+    setError(null);
     initializeESignetButton();
   };
 
@@ -203,15 +156,15 @@ const ESignetAuth = () => {
 
       <div className="auth-content">
         <div className="esignet-button-wrapper">
-          <div className="esignet-button-container" ref={buttonContainerRef}>
-            {isLoading && (
-              <div className="loading-placeholder">
-                <div className="loading-spinner"></div>
-                <p>Loading e-Signet authentication...</p>
-              </div>
-            )}
-          </div>
+          <div className="esignet-button-container" ref={buttonContainerRef}></div>
         </div>
+
+        {isLoading && (
+          <div className="loading-placeholder">
+            <div className="loading-spinner"></div>
+            <p>Loading e-Signet authentication...</p>
+          </div>
+        )}
 
         {error && (
           <div className="error-container">
@@ -223,6 +176,8 @@ const ESignetAuth = () => {
             </div>
           </div>
         )}
+
+        {/* Fallback removed per request; using official eSignet plugin only */}
 
         <div className="auth-info">
           <p className="info-text">

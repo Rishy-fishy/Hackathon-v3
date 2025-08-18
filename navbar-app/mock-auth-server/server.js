@@ -15,6 +15,15 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Fix incorrectly formatted authorize URLs where '?' is missing and '&' is used directly
+app.use((req, res, next) => {
+  if (req.method === 'GET' && req.originalUrl.startsWith('/authorize&')) {
+    const fixed = '/authorize?' + req.originalUrl.split('/authorize&')[1];
+    return res.redirect(302, fixed);
+  }
+  next();
+});
+
 // In-memory storage for mock data
 let users = {};
 let authorizationCodes = {};
@@ -70,15 +79,17 @@ app.get('/authorize', (req, res) => {
     });
   }
 
-  // Create session
-  const sessionId = uuidv4();
-  sessions[sessionId] = {
+  // Pre-generate an authorization code and store it server-side for token exchange
+  const code = Math.random().toString(36).substring(2, 10);
+  authorizationCodes[code] = {
     client_id,
     redirect_uri,
     scope,
     state,
     nonce,
-    step: 'login'
+    user: currentUser,
+    created_at: Date.now(),
+    expires_at: Date.now() + 10 * 60 * 1000 // 10 minutes
   };
 
   // Send HTML consent page
@@ -279,12 +290,12 @@ app.get('/authorize', (req, res) => {
       </div>
 
       <script>
-          function authorize() {
-            // Generate a mock authorization code
-            const code = Math.random().toString(36).substring(2, 10);
-            const redirectUrl = '${redirect_uri}?code=' + code + '&state=${state || ''}';
-            window.location.href = redirectUrl;
-          }
+        function authorize() {
+          // Use server-generated authorization code
+          const code = '${code}';
+          const redirectUrl = '${redirect_uri}?code=' + code + '&state=${state || ''}';
+          window.location.href = redirectUrl;
+        }
 
         function cancel() {
           // Redirect back with error

@@ -34,60 +34,63 @@ const AuthCallback = () => {
       try {
         console.log('Authorization code received:', code);
         console.log('State received:', state);
-        
+
         // Validate state parameter
         const storedState = sessionStorage.getItem('esignet_state');
         if (storedState && state !== storedState) {
           throw new Error('Invalid state parameter - possible CSRF attack');
         }
-        
+
+        // Exchange authorization code for tokens with original mock eSignet
+        const tokenEndpoint = 'http://localhost:8088/v1/esignet/oauth/v2/token';
+        const clientAssertion = window.__ESIGNET_CLIENT_ASSERTION__;
+        const form = new URLSearchParams({
+          grant_type: 'authorization_code',
+          code: code,
+          client_id: '3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M',
+          redirect_uri: 'http://localhost:3001/callback'
+        });
+        if (clientAssertion) {
+          form.set('client_assertion_type', 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer');
+          form.set('client_assertion', clientAssertion);
+        }
+        const tokenResponse = await fetch(tokenEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: form
+        });
+
+        if (!tokenResponse.ok) {
+          const errText = await tokenResponse.text();
+          throw new Error('Failed to exchange authorization code: ' + errText);
+        }
+
+        const tokens = await tokenResponse.json();
+
+        // Fetch user info from original mock eSignet
+        const userInfoResponse = await fetch('http://localhost:8088/v1/esignet/oidc/userinfo', {
+          headers: {
+            Authorization: `Bearer ${tokens.access_token}`
+          }
+        });
+
+        if (!userInfoResponse.ok) {
+          const errText = await userInfoResponse.text();
+          throw new Error('Failed to fetch user info: ' + errText);
+        }
+
+        const userInfo = await userInfoResponse.json();
+
         // Clean up stored state
         sessionStorage.removeItem('esignet_state');
         sessionStorage.removeItem('esignet_nonce');
-        
-        // In a real implementation, you would exchange the code for tokens
-        // For now, we'll create a user profile based on successful eSignet authentication
-        const userInfo = {
-          sub: "esignet_" + code.substring(0, 8),
-          name: "eSignet Authenticated User",
-          given_name: "eSignet",
-          family_name: "User",
-          email: "user@esignet.mosip.net",
-          email_verified: true,
-          phone_number: "+91XXXXXXXXXX",
-          phone_number_verified: true,
-          birthdate: "1990-01-01",
-          gender: "male",
-          picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=eSignetUser",
-          address: {
-            formatted: "India",
-            street_address: "123 Digital Street",
-            locality: "Bangalore",
-            region: "Karnataka",
-            postal_code: "560001",
-            country: "IN"
-          },
-          locale: "en-IN",
-          updated_at: Date.now(),
-          auth_method: "eSignet",
-          iss: "https://esignet.dev.mosip.net",
-          aud: "88Vjt34c5Twz1oJ"
-        };
-        
-        // Store authentication data
-        const tokens = {
-          access_token: 'esignet_at_' + Date.now(),
-          id_token: 'esignet_it_' + Date.now(),
-          token_type: 'Bearer',
-          expires_in: 3600,
-          scope: 'openid profile',
-          auth_time: Math.floor(Date.now() / 1000)
-        };
 
         // Store user info and tokens in localStorage
         localStorage.setItem('user_info', JSON.stringify(userInfo));
         localStorage.setItem('access_token', tokens.access_token);
-        localStorage.setItem('id_token', tokens.id_token);
+        localStorage.setItem('id_token', tokens.id_token || '');
         localStorage.setItem('is_authenticated', 'true');
         localStorage.setItem('auth_timestamp', Date.now().toString());
         localStorage.setItem('auth_method', 'esignet');
@@ -99,7 +102,7 @@ const AuthCallback = () => {
         // Redirect to home page after a short delay
         setTimeout(() => {
           window.location.href = '/?authenticated=true';
-        }, 2000);
+        }, 800);
 
       } catch (err) {
         console.error('Authentication error:', err);
