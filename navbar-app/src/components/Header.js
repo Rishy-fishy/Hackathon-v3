@@ -7,13 +7,20 @@ const Header = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleProfileClick = () => {
+    setIsLoading(true);
     setIsModalOpen(true);
+    // Small delay to ensure modal is rendered before checking auth state
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 100);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -99,7 +106,12 @@ const Header = () => {
       
       {/* Authentication Modal */}
       <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
-        {isAuthenticated && userInfo ? (
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <div className="loading-spinner" style={{ margin: '0 auto 1rem' }}></div>
+            <p>Loading...</p>
+          </div>
+        ) : isAuthenticated && userInfo ? (
           <div className="user-profile">
             <div className="profile-header">
               <div className="profile-avatar">

@@ -6,8 +6,9 @@ const ESignetAuth = () => {
   const [error, setError] = useState(null);
   const [isPluginReady, setIsPluginReady] = useState(false);
   const buttonContainerRef = useRef(null);
+  const initializationRef = useRef(false);
 
-  // OIDC Configuration matching your requirements
+  // OIDC Configuration
   const oidcConfig = {
     acr_values: 'mosip:idp:acr:generated-code mosip:idp:acr:biometrics mosip:idp:acr:static-code',
     authorizeUri: 'https://esignet.dev.mosip.net/authorize',
@@ -17,7 +18,7 @@ const ESignetAuth = () => {
     max_age: 21,
     nonce: 'ere973eieljznge2311',
     prompt: 'consent',
-    redirect_uri: 'http://localhost:3001/callback', // Updated for local development
+    redirect_uri: 'http://localhost:3001/callback',
     scope: 'openid profile',
     state: 'eree2311',
     ui_locales: 'en'
@@ -34,19 +35,19 @@ const ESignetAuth = () => {
   const waitForESignetPlugin = () => {
     return new Promise((resolve, reject) => {
       let attempts = 0;
-      const maxAttempts = 60; // 30 seconds total
+      const maxAttempts = 40; // 20 seconds total
       
       const checkPlugin = () => {
         attempts++;
         
         if (window.SignInWithEsignetButton && window.SignInWithEsignetButton.init) {
-          console.log('✅ SignInWithEsignetButton plugin loaded successfully');
+          console.log('✅ SignInWithEsignetButton found!');
           resolve();
         } else if (attempts >= maxAttempts) {
-          console.error('❌ SignInWithEsignetButton plugin failed to load after 30 seconds');
+          console.error('❌ SignInWithEsignetButton not found after 20 seconds');
           reject(new Error('eSignet plugin failed to load'));
         } else {
-          console.log(`⏳ Waiting for eSignet plugin... attempt ${attempts}/${maxAttempts}`);
+          console.log(`⏳ Waiting for SignInWithEsignetButton... attempt ${attempts}/${maxAttempts}`);
           setTimeout(checkPlugin, 500);
         }
       };
@@ -57,6 +58,12 @@ const ESignetAuth = () => {
 
   // Initialize the eSignet button
   const initializeESignetButton = async () => {
+    // Prevent multiple initializations
+    if (initializationRef.current) {
+      return;
+    }
+    initializationRef.current = true;
+
     try {
       setIsLoading(true);
       setError(null);
@@ -68,19 +75,24 @@ const ESignetAuth = () => {
         throw new Error('Button container not found');
       }
 
-      // Clear any existing content
-      buttonContainerRef.current.innerHTML = '';
-
       console.log('🚀 Initializing eSignet button with config:', {
         oidcConfig,
         buttonConfig
       });
 
+      // Create a clean container for the plugin
+      const container = buttonContainerRef.current;
+      
+      // Clear any existing content safely
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+
       // Initialize the eSignet button using the plugin
       await window.SignInWithEsignetButton.init({
         oidcConfig: oidcConfig,
         buttonConfig: buttonConfig,
-        signInElement: buttonContainerRef.current
+        signInElement: container
       });
 
       setIsPluginReady(true);
@@ -101,72 +113,60 @@ const ESignetAuth = () => {
   const showFallbackButton = () => {
     if (!buttonContainerRef.current) return;
 
+    // Create fallback button element
     const fallbackButton = document.createElement('button');
+    fallbackButton.className = 'esignet-fallback-btn';
     fallbackButton.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-        </svg>
-        Sign in with e-Signet
+      <div class="esignet-btn-content">
+        <div class="esignet-logo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+        </div>
+        <span>Sign in with e-Signet</span>
       </div>
     `;
+
+    fallbackButton.addEventListener('click', handleFallbackAuth);
+
+    // Clear container and add fallback button
+    const container = buttonContainerRef.current;
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+    container.appendChild(fallbackButton);
+  };
+
+  // Handle fallback authentication
+  const handleFallbackAuth = () => {
+    // Generate secure random values
+    const state = generateRandomString(32);
+    const nonce = generateRandomString(32);
+
+    // Store for validation
+    sessionStorage.setItem('esignet_state', state);
+    sessionStorage.setItem('esignet_nonce', nonce);
+
+    // Build authorization URL
+    const authParams = new URLSearchParams({
+      response_type: 'code',
+      client_id: oidcConfig.client_id,
+      redirect_uri: oidcConfig.redirect_uri,
+      scope: oidcConfig.scope,
+      state: state,
+      nonce: nonce,
+      acr_values: oidcConfig.acr_values,
+      claims_locales: oidcConfig.claims_locales,
+      ui_locales: oidcConfig.ui_locales,
+      display: oidcConfig.display,
+      prompt: oidcConfig.prompt,
+      max_age: oidcConfig.max_age.toString()
+    });
+
+    const authUrl = `${oidcConfig.authorizeUri}?${authParams.toString()}`;
+    console.log('🚀 Redirecting to eSignet:', authUrl);
     
-    fallbackButton.style.cssText = `
-      background: linear-gradient(135deg, #FF6B35, #f7931e);
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      font-size: 16px;
-      font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
-      font-family: system-ui, -apple-system, sans-serif;
-    `;
-
-    fallbackButton.addEventListener('mouseenter', () => {
-      fallbackButton.style.transform = 'translateY(-2px)';
-      fallbackButton.style.boxShadow = '0 6px 16px rgba(255, 107, 53, 0.4)';
-    });
-
-    fallbackButton.addEventListener('mouseleave', () => {
-      fallbackButton.style.transform = 'translateY(0)';
-      fallbackButton.style.boxShadow = '0 4px 12px rgba(255, 107, 53, 0.3)';
-    });
-
-    fallbackButton.addEventListener('click', () => {
-      // Generate secure random values
-      const state = generateRandomString(32);
-      const nonce = generateRandomString(32);
-
-      // Store for validation
-      sessionStorage.setItem('esignet_state', state);
-      sessionStorage.setItem('esignet_nonce', nonce);
-
-      // Build authorization URL
-      const authParams = new URLSearchParams({
-        response_type: 'code',
-        client_id: oidcConfig.client_id,
-        redirect_uri: oidcConfig.redirect_uri,
-        scope: oidcConfig.scope,
-        state: state,
-        nonce: nonce,
-        acr_values: oidcConfig.acr_values,
-        claims_locales: oidcConfig.claims_locales,
-        ui_locales: oidcConfig.ui_locales,
-        display: oidcConfig.display,
-        prompt: oidcConfig.prompt,
-        max_age: oidcConfig.max_age.toString()
-      });
-
-      const authUrl = `${oidcConfig.authorizeUri}?${authParams.toString()}`;
-      console.log('🚀 Redirecting to eSignet:', authUrl);
-      
-      window.location.href = authUrl;
-    });
-
-    buttonContainerRef.current.appendChild(fallbackButton);
+    window.location.href = authUrl;
   };
 
   // Generate random string for state/nonce
@@ -178,16 +178,19 @@ const ESignetAuth = () => {
 
   // Initialize on component mount
   useEffect(() => {
-    // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
       initializeESignetButton();
     }, 100);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      initializationRef.current = false;
+    };
   }, []);
 
   // Retry initialization if it failed
   const handleRetry = () => {
+    initializationRef.current = false;
     initializeESignetButton();
   };
 
@@ -199,13 +202,15 @@ const ESignetAuth = () => {
       </div>
 
       <div className="auth-content">
-        <div className="esignet-button-container" ref={buttonContainerRef}>
-          {isLoading && (
-            <div className="loading-placeholder">
-              <div className="loading-spinner"></div>
-              <p>Loading e-Signet authentication...</p>
-            </div>
-          )}
+        <div className="esignet-button-wrapper">
+          <div className="esignet-button-container" ref={buttonContainerRef}>
+            {isLoading && (
+              <div className="loading-placeholder">
+                <div className="loading-spinner"></div>
+                <p>Loading e-Signet authentication...</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {error && (

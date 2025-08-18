@@ -35,6 +35,47 @@
   align-items: center;
 }
 
+.esignet-button-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60px;
+}
+
+/* Fallback button styles */
+.esignet-fallback-btn {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  font-family: system-ui, -apple-system, sans-serif;
+  min-width: 200px;
+}
+
+.esignet-fallback-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4);
+}
+
+.esignet-btn-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.esignet-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Loading placeholder styles */
 .loading-placeholder {
   display: flex;
@@ -146,8 +187,14 @@
 }
 
 /* e-Signet button customizations (when loaded) */
-sign-in-with-esignet {
+.esignet-button-container > * {
   margin: 0 auto;
+}
+
+/* Override any conflicting styles from the plugin */
+.esignet-button-container button,
+.esignet-button-container a {
+  font-family: system-ui, -apple-system, sans-serif !important;
 }
 
 /* Responsive design */
@@ -181,5 +228,11 @@ sign-in-with-esignet {
   
   .auth-info {
     padding: 0.75rem;
+  }
+  
+  .esignet-fallback-btn {
+    min-width: 180px;
+    padding: 10px 20px;
+    font-size: 14px;
   }
 }

@@ -25,32 +25,35 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>React App</title>
-    <!-- e-Signet Sign-in Button Plugin - Updated URL -->
-    <script src="https://esignet.dev.mosip.net/plugins/sign-in-button-plugin.js" defer></script>
+    <!-- e-Signet Sign-in Button Plugin -->
+    <script src="https://esignet.dev.mosip.net/plugins/sign-in-button-plugin.js" defer onerror="handleEsignetScriptError(this)"></script>
     <script>
+      // Handle script load errors
+      function handleEsignetScriptError(script) {
+        console.error('❌ Failed to load eSignet plugin from:', script.src);
+        console.log('🔄 Trying fallback URL...');
+        
+        // Try fallback URL
+        const fallbackScript = document.createElement('script');
+        fallbackScript.src = 'https://esignet.collab.mosip.net/plugins/sign-in-button-plugin.js';
+        fallbackScript.defer = true;
+        fallbackScript.onerror = function() {
+          console.error('❌ Fallback eSignet plugin also failed to load');
+          window.esignetPluginFailed = true;
+        };
+        document.head.appendChild(fallbackScript);
+      }
+      
       // Ensure the script loads properly
       window.addEventListener('load', function() {
         console.log('Page loaded, checking for eSignet plugin...');
         if (window.SignInWithEsignetButton) {
           console.log('✅ eSignet plugin loaded successfully');
+          window.esignetPluginReady = true;
         } else {
           console.log('⚠️ eSignet plugin not found, will retry...');
         }
       });
-      
-      // Handle script load errors
-      window.addEventListener('error', function(e) {
-        if (e.target.src && e.target.src.includes('sign-in-button-plugin.js')) {
-          console.error('❌ Failed to load eSignet plugin from:', e.target.src);
-          console.log('🔄 Trying fallback URL...');
-          
-          // Try fallback URL
-          const fallbackScript = document.createElement('script');
-          fallbackScript.src = 'https://esignet.collab.mosip.net/plugins/sign-in-button-plugin.js';
-          fallbackScript.defer = true;
-          document.head.appendChild(fallbackScript);
-        }
-      }, true);
     </script>
   </head>
   <body>
