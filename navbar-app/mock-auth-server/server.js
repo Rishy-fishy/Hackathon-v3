@@ -279,11 +279,12 @@ app.get('/authorize', (req, res) => {
       </div>
 
       <script>
-        function authorize() {
-          // Redirect back with authorization code
-          const redirectUrl = '${redirect_uri}?code=${code}&state=${state || ''}';
-          window.location.href = redirectUrl;
-        }
+          function authorize() {
+            // Generate a mock authorization code
+            const code = Math.random().toString(36).substring(2, 10);
+            const redirectUrl = '${redirect_uri}?code=' + code + '&state=${state || ''}';
+            window.location.href = redirectUrl;
+          }
 
         function cancel() {
           // Redirect back with error
