@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-const PORT = 3002;
+const PORT = 3003; // Changed to 3003 since 3002 is taken by React app
 
 // Secret key for JWT signing
 const JWT_SECRET = 'mock-esignet-secret-key-2024';
@@ -79,6 +79,20 @@ app.get('/authorize', (req, res) => {
     state,
     nonce,
     step: 'login'
+  };
+
+  // Generate authorization code immediately for testing
+  const code = 'mock_auth_code_' + Math.random().toString(36).substring(2, 10);
+  
+  // Store the authorization code
+  authorizationCodes[code] = {
+    client_id,
+    redirect_uri,
+    scope,
+    state,
+    nonce,
+    user: currentUser,
+    expires_at: Date.now() + (10 * 60 * 1000) // 10 minutes
   };
 
   // Send HTML consent page
@@ -279,15 +293,12 @@ app.get('/authorize', (req, res) => {
       </div>
 
       <script>
-          function authorize() {
-            // Generate a mock authorization code
-            const code = Math.random().toString(36).substring(2, 10);
-            const redirectUrl = '${redirect_uri}?code=' + code + '&state=${state || ''}';
-            window.location.href = redirectUrl;
-          }
+        function authorize() {
+          const redirectUrl = '${redirect_uri}?code=${code}&state=${state || ''}';
+          window.location.href = redirectUrl;
+        }
 
         function cancel() {
-          // Redirect back with error
           const redirectUrl = '${redirect_uri}?error=access_denied&state=${state || ''}';
           window.location.href = redirectUrl;
         }
@@ -322,14 +333,6 @@ app.post('/token', (req, res) => {
     return res.status(400).json({ 
       error: 'invalid_grant',
       error_description: 'Authorization code expired' 
-    });
-  }
-
-  // Validate client_id and redirect_uri
-  if (authCode.client_id !== client_id || authCode.redirect_uri !== redirect_uri) {
-    return res.status(400).json({ 
-      error: 'invalid_grant',
-      error_description: 'Invalid client or redirect URI' 
     });
   }
 
@@ -436,6 +439,7 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     server: 'Mock e-Signet Server',
+    port: PORT,
     endpoints: {
       authorize: `http://localhost:${PORT}/authorize`,
       token: `http://localhost:${PORT}/token`,
@@ -456,3 +460,5 @@ app.listen(PORT, () => {
   console.log(`  Admin:         http://localhost:${PORT}/admin/*`);
   console.log(`  Health:        http://localhost:${PORT}/health`);
 });
+
+module.exports = app;

@@ -154,8 +154,10 @@
 
 .profile-details {
   text-align: left;
-  max-width: 400px;
+  max-width: 500px;
   margin: 0 auto 30px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .profile-details h3 {
@@ -166,22 +168,54 @@
   border-bottom: 2px solid #ff6b35;
 }
 
+.detail-group {
+  margin-bottom: 25px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+}
+
+.detail-group h4 {
+  color: #007bff;
+  font-size: 16px;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
 .detail-row {
   display: flex;
   justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
 }
 
 .detail-label {
   font-weight: 600;
-  color: #555;
-  font-size: 14px;
+  color: #495057;
+  font-size: 13px;
+  min-width: 120px;
+  flex-shrink: 0;
 }
 
 .detail-value {
-  color: #333;
-  font-size: 14px;
+  color: #212529;
+  font-size: 13px;
+  text-align: right;
+  flex-grow: 1;
+  word-break: break-word;
+}
+
+.verified-badge {
+  color: #28a745;
+  font-size: 12px;
+  margin-left: 8px;
+  font-weight: bold;
 }
 
 .logout-btn {

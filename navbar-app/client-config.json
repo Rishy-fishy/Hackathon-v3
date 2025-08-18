@@ -1,0 +1,70 @@
+{
+  "clientId": "IBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArla+u7",
+  "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCuVr67uW+02YoV\nhILFM9yJ711NRCjJNtcv6j+9r2o1jcnfMq7h/EvihmBCOZQhB03B9Fw0E2UyE7aA\n3bi79EwiNcnQLZX5HwacKBLNGdBOUojihexKoHeXegMGAKQsMfu2hQ0MjBGhohk9\n7sPxr5vsH7RQ37+jdOlBYHAtJnL1/2cl6WjeMA8dfASDtcxopk3NUjDjQqoWL4IN\nsTIg2rLfuU8QT6/GEDhwTyid6FF5I/Mmrv0W4j0mR7qYoZ3TwNEhaGboB9jOcxem\nn1TfOSMofDpR7vTOH1FFT5sHBnV8sLbxsuFqbVwLjgVZHCxltsCcDHwFlajycz73\nCZK0uhB/AgMBAAECggEAA6twxVvQZaKknPJWnFcMn9ypfpxeLWoZmnkYUWJVXn43\nDxsugjRA1qpUcWBr5UwVj20Y2cHEwgqXL1w7bL1mMtwl/NtQylckWPog9y9Baryj\nA/2krSd2jPo1ARXXXtTIgx2G2kpCfr/+Pwb9GePD6PL75S3oh0TJOiaRBepGxjXK\npvr1ojgoQstSGdNVxjHrIpHtxSUWxX4eA+u6YCJvoNmMW7kDYArq0DHHbArBBuMT\nQtmezYxLECFk1X/sh1MUmVTrrY+w2ogVC3lVwdvOlO+dD8YOUKL2NnnWLOOCQFd+\nBITP62Sv17eBl/GXd+I9z627nvJrhCeMtTzVRpr3OQKBgQDkJq1cSsuRp1POi2oT\nkL0KDVhVz/L8fBdkU6+CQp+kfYIcJxSDuDqrVicJhaPiBh56k6egHiV9ZEDnyClW\nvyxarXU1BuH3pcydVgLYoz7/cvaxohD4HS+OEEIZqJfG0gpfZzpclNwo2zyJ/85k\nDRsz+c7Eh1nzEWwB8yNSfD39VwKBgQDDnoeOiZiMIYUcPZ6nw9VY0JK0vZob6Stq\nFVtbdQuAFnfs/fJQ4VW3k/gg+9d9htvf9ANwDfe9uxNbOzhXjOedQRlUHw+4GwXB\nkKgiMdn0EGq4B4d+L7myDZvn22Hxx43fSV2fPY/bbgzC/Wj8T8D/zCw3mVHM+B69\nMaLKw29lGQKBgAqMVzuLIbpMOC22eGMLMBJE566f/KX7vsEetWCaX/Mk8l0G2YX1\ngJDnXMqt6RPMIKCeLwPSIP2ZIv8UXATstcpDdsXK2auveLRVg7Asa/83e3xe99Xg\n05AH5GZ3Sv0gPOaISUR6hWtGJ5hhwVMS4A0ZIZwofdolFg9JBHsNz3flAoGAdl7y\ndi0K0xjhfEJJRAk7i1/Ctn3YyDTjIXFE8+WyjNKLxSuxuoFwJgLy7bqXHg1B9ZWp\nkt/Q3s1aHCWMpWXNLZob4oxdLbGkXQnUw8RYt9hLS4q60X+9pWGYysc00GJJlijF\n7zsIVuaT8FX5dlwoVGFPDGHJXvdxWlizwnBactkCgYAMyeuuYMrGJQbIezH/InLU\nuObDupEHA738ePMkismCqCELPkX2guBxMg6+SIzL6E1HEquIAcXW8HxB8m4jtMuh\nV2lNZbt/WV79fkhl5j6sooaymIWh8FJMt/dqsZQfJxmupEDbnh15cijYob3IKTat\nx3881mXLhtqY+MsGDCsGSQ==\n-----END PRIVATE KEY-----\n",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArla+u7lvtNmKFYSCxTPc\nie9dTUQoyTbXL+o/va9qNY3J3zKu4fxL4oZgQjmUIQdNwfRcNBNlMhO2gN24u/RM\nIjXJ0C2V+R8GnCgSzRnQTlKI4oXsSqB3l3oDBgCkLDH7toUNDIwRoaIZPe7D8a+b\n7B+0UN+/o3TpQWBwLSZy9f9nJelo3jAPHXwEg7XMaKZNzVIw40KqFi+CDbEyINqy\n37lPEE+vxhA4cE8onehReSPzJq79FuI9Jke6mKGd08DRIWhm6AfYznMXpp9U3zkj\nKHw6Ue70zh9RRU+bBwZ1fLC28bLham1cC44FWRwsZbbAnAx8BZWo8nM+9wmStLoQ\nfwIDAQAB\n-----END PUBLIC KEY-----\n",
+  "publicKeyJWK": {
+    "kty": "RSA",
+    "use": "sig",
+    "alg": "RS256",
+    "n": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArla+u7lvtNmKFYSCxTPcie9dTUQoyTbXL+o_va9qNY3J3zKu4fxL4oZgQjmUIQdNwfRcNBNlMhO2gN24u_RMIjXJ0C2V+R8GnCgSzRnQTlKI4oXsSqB3l3oDBgCkLDH7toUNDIwRoaIZPe7D8a+b7B+0UN+_",
+    "e": "AQAB"
+  },
+  "registrationRequest": {
+    "requestTime": "2025-08-18T23:21:11.563Z",
+    "request": {
+      "clientId": "IBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArla+u7",
+      "clientName": "React eSignet Demo App",
+      "publicKey": {
+        "kty": "RSA",
+        "use": "sig",
+        "alg": "RS256",
+        "n": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArla+u7lvtNmKFYSCxTPcie9dTUQoyTbXL+o_va9qNY3J3zKu4fxL4oZgQjmUIQdNwfRcNBNlMhO2gN24u_RMIjXJ0C2V+R8GnCgSzRnQTlKI4oXsSqB3l3oDBgCkLDH7toUNDIwRoaIZPe7D8a+b7B+0UN+_",
+        "e": "AQAB"
+      },
+      "relyingPartyId": "mock-relying-party-id",
+      "userClaims": [
+        "name",
+        "email",
+        "gender",
+        "phone_number",
+        "picture",
+        "birthdate"
+      ],
+      "authContextRefs": [
+        "mosip:idp:acr:generated-code",
+        "mosip:idp:acr:password",
+        "mosip:idp:acr:linked-wallet"
+      ],
+      "logoUri": "https://via.placeholder.com/150",
+      "redirectUris": [
+        "http://localhost:5000/callback",
+        "http://localhost:3001/callback"
+      ],
+      "grantTypes": [
+        "authorization_code"
+      ],
+      "clientAuthMethods": [
+        "private_key_jwt"
+      ],
+      "additionalConfig": {
+        "userinfo_response_type": "JWS",
+        "purpose": {
+          "type": "verify"
+        },
+        "signup_banner_required": true,
+        "forgot_pwd_link_required": true,
+        "consent_expire_in_mins": 20
+      }
+    }
+  },
+  "registrationResponse": {
+    "responseTime": "2025-08-18T23:32:21.623Z",
+    "response": null,
+    "errors": [
+      {
+        "errorCode": "invalid_request",
+        "errorMessage": "requestTime: invalid_request"
+      }
+    ]
+  }
+}

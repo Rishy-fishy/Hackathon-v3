@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Header.css';
 import Modal from './Modal';
 import ESignetAuth from './ESignetAuth';
+import ErrorBoundary from './ErrorBoundary';
 
 const Header = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -10,6 +11,7 @@ const Header = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleProfileClick = () => {
+    console.log('Profile button clicked');
     setIsLoading(true);
     setIsModalOpen(true);
     // Small delay to ensure modal is rendered before checking auth state
@@ -19,28 +21,37 @@ const Header = () => {
   };
 
   const handleCloseModal = () => {
+    console.log('Closing modal');
     setIsModalOpen(false);
     setIsLoading(false);
   };
 
   useEffect(() => {
     // Check if user is authenticated
-    const authenticated = localStorage.getItem('is_authenticated') === 'true';
-    if (authenticated) {
-      const storedUserInfo = localStorage.getItem('user_info');
-      if (storedUserInfo) {
-        setUserInfo(JSON.parse(storedUserInfo));
-        setIsAuthenticated(true);
+    try {
+      const authenticated = localStorage.getItem('is_authenticated') === 'true';
+      if (authenticated) {
+        const storedUserInfo = localStorage.getItem('user_info');
+        if (storedUserInfo) {
+          const userInfo = JSON.parse(storedUserInfo);
+          setUserInfo(userInfo);
+          setIsAuthenticated(true);
+        }
       }
-    }
 
-    // Check if we just authenticated
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('authenticated') === 'true') {
-      // Open modal to show profile
-      setIsModalOpen(true);
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
+      // Check if we just authenticated
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('authenticated') === 'true') {
+        // Open modal to show profile
+        setIsModalOpen(true);
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch (error) {
+      console.error('Error checking authentication status:', error);
+      // Clear potentially corrupted data
+      localStorage.removeItem('user_info');
+      localStorage.removeItem('is_authenticated');
     }
   }, []);
 
@@ -129,36 +140,114 @@ const Header = () => {
             
             <div className="profile-details">
               <h3>Profile Information</h3>
-              <div className="detail-row">
-                <span className="detail-label">First Name:</span>
-                <span className="detail-value">{userInfo.given_name}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Last Name:</span>
-                <span className="detail-value">{userInfo.family_name}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Email:</span>
-                <span className="detail-value">{userInfo.email}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Phone:</span>
-                <span className="detail-value">{userInfo.phone_number}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Birthdate:</span>
-                <span className="detail-value">{userInfo.birthdate}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Gender:</span>
-                <span className="detail-value">{userInfo.gender}</span>
-              </div>
-              {userInfo.address && (
+              
+              {/* Basic Information */}
+              <div className="detail-group">
+                <h4>Personal Details</h4>
                 <div className="detail-row">
-                  <span className="detail-label">Address:</span>
-                  <span className="detail-value">{userInfo.address.formatted}</span>
+                  <span className="detail-label">Full Name:</span>
+                  <span className="detail-value">{userInfo.name}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">First Name:</span>
+                  <span className="detail-value">{userInfo.given_name}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Last Name:</span>
+                  <span className="detail-value">{userInfo.family_name}</span>
+                </div>
+                {userInfo.birthdate && (
+                  <div className="detail-row">
+                    <span className="detail-label">Date of Birth:</span>
+                    <span className="detail-value">{userInfo.birthdate}</span>
+                  </div>
+                )}
+                {userInfo.gender && (
+                  <div className="detail-row">
+                    <span className="detail-label">Gender:</span>
+                    <span className="detail-value">{userInfo.gender}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Contact Information */}
+              <div className="detail-group">
+                <h4>Contact Information</h4>
+                <div className="detail-row">
+                  <span className="detail-label">Email:</span>
+                  <span className="detail-value">
+                    {userInfo.email}
+                    {userInfo.email_verified && <span className="verified-badge">✅ Verified</span>}
+                  </span>
+                </div>
+                {userInfo.phone_number && (
+                  <div className="detail-row">
+                    <span className="detail-label">Phone:</span>
+                    <span className="detail-value">
+                      {userInfo.phone_number}
+                      {userInfo.phone_number_verified && <span className="verified-badge">✅ Verified</span>}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Address Information */}
+              {userInfo.address && (
+                <div className="detail-group">
+                  <h4>Address</h4>
+                  <div className="detail-row">
+                    <span className="detail-label">Address:</span>
+                    <span className="detail-value">{userInfo.address.formatted}</span>
+                  </div>
+                  {userInfo.address.locality && (
+                    <div className="detail-row">
+                      <span className="detail-label">City:</span>
+                      <span className="detail-value">{userInfo.address.locality}</span>
+                    </div>
+                  )}
+                  {userInfo.address.region && (
+                    <div className="detail-row">
+                      <span className="detail-label">State:</span>
+                      <span className="detail-value">{userInfo.address.region}</span>
+                    </div>
+                  )}
+                  {userInfo.address.postal_code && (
+                    <div className="detail-row">
+                      <span className="detail-label">Postal Code:</span>
+                      <span className="detail-value">{userInfo.address.postal_code}</span>
+                    </div>
+                  )}
+                  {userInfo.address.country && (
+                    <div className="detail-row">
+                      <span className="detail-label">Country:</span>
+                      <span className="detail-value">{userInfo.address.country}</span>
+                    </div>
+                  )}
                 </div>
               )}
+
+              {/* Authentication Information */}
+              <div className="detail-group">
+                <h4>Authentication Details</h4>
+                <div className="detail-row">
+                  <span className="detail-label">User ID:</span>
+                  <span className="detail-value">{userInfo.sub}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Authentication Method:</span>
+                  <span className="detail-value">eSignet OIDC</span>
+                </div>
+                {userInfo.iss && (
+                  <div className="detail-row">
+                    <span className="detail-label">Issuer:</span>
+                    <span className="detail-value">{userInfo.iss}</span>
+                  </div>
+                )}
+                <div className="detail-row">
+                  <span className="detail-label">Session:</span>
+                  <span className="detail-value">Active</span>
+                </div>
+              </div>
             </div>
             
             <button className="logout-btn" onClick={handleLogout}>
@@ -166,7 +255,9 @@ const Header = () => {
             </button>
           </div>
         ) : (
-          <ESignetAuth />
+          <ErrorBoundary>
+            <ESignetAuth />
+          </ErrorBoundary>
         )}
       </Modal>
     </header>

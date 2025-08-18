@@ -41,53 +41,94 @@ const AuthCallback = () => {
           throw new Error('Invalid state parameter - possible CSRF attack');
         }
         
-        // Clean up stored state
+        // Clean up stored state and transaction data
         sessionStorage.removeItem('esignet_state');
         sessionStorage.removeItem('esignet_nonce');
+        sessionStorage.removeItem('esignet_transaction_id');
         
-        // In a real implementation, you would exchange the code for tokens
-        // For now, we'll create a user profile based on successful eSignet authentication
-        const userInfo = {
-          sub: "esignet_" + code.substring(0, 8),
-          name: "eSignet Authenticated User",
-          given_name: "eSignet",
-          family_name: "User",
-          email: "user@esignet.mosip.net",
-          email_verified: true,
-          phone_number: "+91XXXXXXXXXX",
-          phone_number_verified: true,
-          birthdate: "1990-01-01",
-          gender: "male",
-          picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=eSignetUser",
-          address: {
-            formatted: "India",
-            street_address: "123 Digital Street",
-            locality: "Bangalore",
-            region: "Karnataka",
-            postal_code: "560001",
-            country: "IN"
-          },
-          locale: "en-IN",
-          updated_at: Date.now(),
-          auth_method: "eSignet",
-          iss: "https://esignet.dev.mosip.net",
-          aud: "88Vjt34c5Twz1oJ"
+        // Exchange authorization code for tokens using eSignet plugin flow
+        console.log('🔄 Processing eSignet callback...');
+        
+        // eSignet configuration (should match the one used in ESignetAuth)
+        const esignetConfig = {
+          baseUrl: 'http://localhost:8088', // Official eSignet Docker
+          client_id: 'IBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq8W2KQ'
         };
         
-        // Store authentication data
-        const tokens = {
-          access_token: 'esignet_at_' + Date.now(),
-          id_token: 'esignet_it_' + Date.now(),
-          token_type: 'Bearer',
-          expires_in: 3600,
-          scope: 'openid profile',
-          auth_time: Math.floor(Date.now() / 1000)
-        };
+        let userInfo;
+        
+        try {
+          // Try to exchange the authorization code for tokens using official eSignet API
+          console.log('🔄 Attempting token exchange with official eSignet...');
+          
+          const tokenResponse = await fetch(`${esignetConfig.baseUrl}/v1/esignet/oauth/v2/token`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Authorization': 'Basic ' + btoa(esignetConfig.client_id + ':')
+            },
+            body: new URLSearchParams({
+              grant_type: 'authorization_code',
+              code: code,
+              redirect_uri: 'http://localhost:5000/callback'
+            })
+          });
 
-        // Store user info and tokens in localStorage
+          if (tokenResponse.ok) {
+            const tokens = await tokenResponse.json();
+            console.log('✅ Tokens received from official eSignet:', tokens);
+
+            // Try to get user info
+            if (tokens.access_token) {
+              const userResponse = await fetch(`${esignetConfig.baseUrl}/v1/esignet/oidc/userinfo`, {
+                headers: {
+                  'Authorization': `Bearer ${tokens.access_token}`
+                }
+              });
+
+              if (userResponse.ok) {
+                userInfo = await userResponse.json();
+                console.log('✅ User info from official eSignet:', userInfo);
+                
+                // Store actual tokens
+                localStorage.setItem('access_token', tokens.access_token);
+                if (tokens.id_token) {
+                  localStorage.setItem('id_token', tokens.id_token);
+                }
+              } else {
+                throw new Error('Failed to fetch user info from eSignet');
+              }
+            } else {
+              throw new Error('No access token received from eSignet');
+            }
+          } else {
+            throw new Error('Token exchange failed with eSignet');
+          }
+          
+        } catch (esignetError) {
+          console.error('❌ eSignet authentication failed:', esignetError.message);
+          
+          // No fallback - show proper error
+          setStatus('error');
+          setError('Login failed. Please try again.');
+          
+          // Clean up any stored session data
+          sessionStorage.removeItem('esignet_state');
+          sessionStorage.removeItem('esignet_nonce');
+          sessionStorage.removeItem('esignet_transaction_id');
+          localStorage.removeItem('user_info');
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('id_token');
+          localStorage.removeItem('is_authenticated');
+          
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 3000);
+          return;
+        }
+        
+        // Store user info and session data
         localStorage.setItem('user_info', JSON.stringify(userInfo));
-        localStorage.setItem('access_token', tokens.access_token);
-        localStorage.setItem('id_token', tokens.id_token);
         localStorage.setItem('is_authenticated', 'true');
         localStorage.setItem('auth_timestamp', Date.now().toString());
         localStorage.setItem('auth_method', 'esignet');
@@ -109,6 +150,7 @@ const AuthCallback = () => {
         // Clean up any stored session data
         sessionStorage.removeItem('esignet_state');
         sessionStorage.removeItem('esignet_nonce');
+        sessionStorage.removeItem('esignet_transaction_id');
         
         setTimeout(() => {
           window.location.href = '/';
