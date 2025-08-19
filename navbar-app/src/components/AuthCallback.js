@@ -104,31 +104,29 @@ const AuthCallback = () => {
         console.log('🔄 Processing authorization with config:', config);
         
         try {
-          // Use the callback server with JWT support
-          console.log('🔄 Exchanging code via callback server...');
+          // Use direct API call to delegate service (like your Python approach)
+          console.log('🔄 Fetching user info via delegate service...');
           
-          const callbackResponse = await fetch(`http://localhost:5000/exchange-token`, {
-            method: 'POST',
+          const endpoint = `http://localhost:8888/delegate/fetchUserInfo?code=${code}`;
+          console.log('📡 Calling endpoint:', endpoint);
+          
+          const response = await fetch(endpoint, {
+            method: 'GET',
             headers: {
               'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              code: code,
-              state: state
-            })
+            }
           });
 
-          if (!callbackResponse.ok) {
-            const errorData = await callbackResponse.json().catch(() => null);
-            const errorText = errorData ? JSON.stringify(errorData) : await callbackResponse.text();
-            throw new Error(`Callback server failed: ${callbackResponse.status} - ${errorText}`);
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Delegate service failed: ${response.status} - ${errorText}`);
           }
 
-          const result = await callbackResponse.json();
-          console.log('✅ Token exchange successful:', result);
+          const userInfo = await response.json();
+          console.log('✅ User info received:', userInfo);
 
-          if (result.userInfo) {
-            const userData = processUserInfo(result.userInfo, result.access_token);
+          if (userInfo) {
+            const userData = processUserInfo(userInfo, code);
             setUserInfo(userData);
             setStatus('success');
             
@@ -136,7 +134,7 @@ const AuthCallback = () => {
             sessionStorage.setItem('esignet_user', JSON.stringify(userData));
             sessionStorage.setItem('esignet_authenticated', 'true');
             sessionStorage.setItem('auth_timestamp', Date.now().toString());
-            sessionStorage.setItem('access_token', result.access_token);
+            sessionStorage.setItem('access_token', code);
             
             // Clean up state
             sessionStorage.removeItem('esignet_state');
@@ -150,7 +148,7 @@ const AuthCallback = () => {
               window.location.href = '/?authenticated=true';
             }, 2000);
           } else {
-            throw new Error('No user info received from callback server');
+            throw new Error('No user info received from delegate service');
           }
 
         } catch (userInfoError) {

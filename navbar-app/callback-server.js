@@ -1,5 +1,19 @@
-const express = require('express');
-const cors = require('cors');
+const express = require('express'// Load client configuration
+let clientConfig;
+try {
+  clientConfig = JSON.parse(fs.readFileSync('client-config.json', 'utf8'));
+  
+  // Add missing configuration properties
+  clientConfig.baseURL = 'http://localhost:8088';
+  clientConfig.redirectUri = 'http://localhost:3001/callback';
+  
+  console.log('✅ Client configuration loaded');
+  console.log('📋 Client ID:', clientConfig.clientId);
+} catch (error) {
+  console.error('❌ Failed to load client configuration:', error.message);
+  console.log('💡 Run "node create-client.js" to generate a new client configuration');
+  process.exit(1);
+}ors = require('cors');
 const fetch = require('node-fetch');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -7,6 +21,25 @@ const fs = require('fs');
 
 const app = express();
 const port = 5000;
+
+// Convert JWK to PEM format
+function jwkToPem(jwk) {
+  try {
+    // Use Node.js crypto to create PEM from JWK
+    const keyObject = crypto.createPrivateKey({
+      key: jwk,
+      format: 'jwk'
+    });
+    
+    return keyObject.export({
+      format: 'pem',
+      type: 'pkcs8'
+    });
+  } catch (error) {
+    console.error('❌ Failed to convert JWK to PEM:', error.message);
+    return null;
+  }
+}
 
 // Enable CORS for all routes
 app.use(cors());
@@ -30,9 +63,9 @@ function generateClientAssertion(clientId, audience) {
   const jti = crypto.randomBytes(16).toString('hex');
   
   const payload = {
-    iss: clientId,
-    sub: clientId,
-    aud: audience,
+    iss: clientId || clientConfig.clientId,
+    sub: clientId || clientConfig.clientId,
+    aud: audience || `${clientConfig.baseURL}/v1/esignet/oauth/v2/token`,
     jti: jti,
     exp: now + 300, // 5 minutes from now
     iat: now
@@ -42,7 +75,13 @@ function generateClientAssertion(clientId, audience) {
     console.log('🔐 Creating JWT client assertion...');
     console.log('📋 Payload:', JSON.stringify(payload, null, 2));
     
-    const token = jwt.sign(payload, clientConfig.privateKey, { 
+    // Convert JWK to PEM format
+    const privateKeyPem = jwkToPem(clientConfig.privateKey);
+    if (!privateKeyPem) {
+      throw new Error('Failed to convert private key to PEM format');
+    }
+    
+    const token = jwt.sign(payload, privateKeyPem, { 
       algorithm: 'RS256',
       header: { 
         alg: 'RS256', 
@@ -273,19 +312,23 @@ app.post('/exchange-token', async (req, res) => {
     console.log('🔄 Processing token exchange for code:', code);
 
     // Generate JWT client assertion
-    const clientAssertion = generateClientAssertion();
+    const clientAssertion = generateClientAssertion(clientConfig.clientId, `${clientConfig.baseURL}/v1/esignet/oauth/v2/token`);
+    
+    if (!clientAssertion) {
+      return res.status(500).json({ error: 'Failed to generate client assertion' });
+    }
     
     // Exchange code for tokens with proper client_id
-    const tokenResponse = await fetch(`${config.baseURL}/v1/esignet/oauth/v2/token`, {
+    const tokenResponse = await fetch(`${clientConfig.baseURL}/v1/esignet/oauth/v2/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
-        client_id: config.clientId,
+        client_id: clientConfig.clientId,
         code: code,
-        redirect_uri: config.redirectUri,
+        redirect_uri: clientConfig.redirectUri,
         client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
         client_assertion: clientAssertion
       })
@@ -307,7 +350,7 @@ app.post('/exchange-token', async (req, res) => {
     // Get user info using the access token
     console.log('🔄 Fetching user information...');
     
-    const userInfoResponse = await fetch(`${config.baseURL}/v1/esignet/oidc/userinfo`, {
+    const userInfoResponse = await fetch(`${clientConfig.baseURL}/v1/esignet/oidc/userinfo`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${tokenData.access_token}`,

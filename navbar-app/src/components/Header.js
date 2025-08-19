@@ -166,16 +166,26 @@ const Header = () => {
                 <h4>Personal Details</h4>
                 <div className="detail-row">
                   <span className="detail-label">Full Name:</span>
-                  <span className="detail-value">{userInfo.name}</span>
+                  <span className="detail-value">{userInfo.name || 'Not provided'}</span>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">First Name:</span>
-                  <span className="detail-value">{userInfo.given_name}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Last Name:</span>
-                  <span className="detail-value">{userInfo.family_name}</span>
-                </div>
+                {userInfo.given_name && (
+                  <div className="detail-row">
+                    <span className="detail-label">First Name:</span>
+                    <span className="detail-value">{userInfo.given_name}</span>
+                  </div>
+                )}
+                {userInfo.family_name && (
+                  <div className="detail-row">
+                    <span className="detail-label">Last Name:</span>
+                    <span className="detail-value">{userInfo.family_name}</span>
+                  </div>
+                )}
+                {userInfo.uin && (
+                  <div className="detail-row">
+                    <span className="detail-label">UIN:</span>
+                    <span className="detail-value">{userInfo.uin}</span>
+                  </div>
+                )}
                 {userInfo.birthdate && (
                   <div className="detail-row">
                     <span className="detail-label">Date of Birth:</span>
@@ -196,7 +206,7 @@ const Header = () => {
                 <div className="detail-row">
                   <span className="detail-label">Email:</span>
                   <span className="detail-value">
-                    {userInfo.email}
+                    {userInfo.email || 'Not provided'}
                     {userInfo.email_verified && <span className="verified-badge">✅ Verified</span>}
                   </span>
                 </div>
@@ -215,33 +225,44 @@ const Header = () => {
               {userInfo.address && (
                 <div className="detail-group">
                   <h4>Address</h4>
-                  <div className="detail-row">
-                    <span className="detail-label">Address:</span>
-                    <span className="detail-value">{userInfo.address.formatted}</span>
-                  </div>
-                  {userInfo.address.locality && (
+                  {typeof userInfo.address === 'string' ? (
                     <div className="detail-row">
-                      <span className="detail-label">City:</span>
-                      <span className="detail-value">{userInfo.address.locality}</span>
+                      <span className="detail-label">Address:</span>
+                      <span className="detail-value">{userInfo.address}</span>
                     </div>
-                  )}
-                  {userInfo.address.region && (
-                    <div className="detail-row">
-                      <span className="detail-label">State:</span>
-                      <span className="detail-value">{userInfo.address.region}</span>
-                    </div>
-                  )}
-                  {userInfo.address.postal_code && (
-                    <div className="detail-row">
-                      <span className="detail-label">Postal Code:</span>
-                      <span className="detail-value">{userInfo.address.postal_code}</span>
-                    </div>
-                  )}
-                  {userInfo.address.country && (
-                    <div className="detail-row">
-                      <span className="detail-label">Country:</span>
-                      <span className="detail-value">{userInfo.address.country}</span>
-                    </div>
+                  ) : (
+                    <>
+                      {userInfo.address.formatted && (
+                        <div className="detail-row">
+                          <span className="detail-label">Address:</span>
+                          <span className="detail-value">{userInfo.address.formatted}</span>
+                        </div>
+                      )}
+                      {userInfo.address.locality && (
+                        <div className="detail-row">
+                          <span className="detail-label">City:</span>
+                          <span className="detail-value">{userInfo.address.locality}</span>
+                        </div>
+                      )}
+                      {userInfo.address.region && (
+                        <div className="detail-row">
+                          <span className="detail-label">State:</span>
+                          <span className="detail-value">{userInfo.address.region}</span>
+                        </div>
+                      )}
+                      {userInfo.address.postal_code && (
+                        <div className="detail-row">
+                          <span className="detail-label">Postal Code:</span>
+                          <span className="detail-value">{userInfo.address.postal_code}</span>
+                        </div>
+                      )}
+                      {userInfo.address.country && (
+                        <div className="detail-row">
+                          <span className="detail-label">Country:</span>
+                          <span className="detail-value">{userInfo.address.country}</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -251,7 +272,7 @@ const Header = () => {
                 <h4>Authentication Details</h4>
                 <div className="detail-row">
                   <span className="detail-label">User ID:</span>
-                  <span className="detail-value">{userInfo.sub}</span>
+                  <span className="detail-value">{userInfo.sub || 'Not available'}</span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Authentication Method:</span>
@@ -263,11 +284,50 @@ const Header = () => {
                     <span className="detail-value">{userInfo.iss}</span>
                   </div>
                 )}
+                {userInfo.auth_method && (
+                  <div className="detail-row">
+                    <span className="detail-label">Auth Provider:</span>
+                    <span className="detail-value">{userInfo.auth_method}</span>
+                  </div>
+                )}
                 <div className="detail-row">
                   <span className="detail-label">Session:</span>
                   <span className="detail-value">Active</span>
                 </div>
+                {userInfo.login_timestamp && (
+                  <div className="detail-row">
+                    <span className="detail-label">Login Time:</span>
+                    <span className="detail-value">
+                      {new Date(userInfo.login_timestamp).toLocaleString()}
+                    </span>
+                  </div>
+                )}
               </div>
+
+              {/* Debug Information - Show raw data for development */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="detail-group">
+                  <h4>Debug Information</h4>
+                  <div className="detail-row">
+                    <span className="detail-label">Available Fields:</span>
+                    <span className="detail-value" style={{fontSize: '12px', fontFamily: 'monospace'}}>
+                      {Object.keys(userInfo).join(', ')}
+                    </span>
+                  </div>
+                  <details style={{marginTop: '10px'}}>
+                    <summary style={{cursor: 'pointer', fontWeight: 'bold'}}>Raw User Data</summary>
+                    <pre style={{
+                      backgroundColor: '#f5f5f5', 
+                      padding: '10px', 
+                      fontSize: '12px', 
+                      overflow: 'auto', 
+                      maxHeight: '200px'
+                    }}>
+                      {JSON.stringify(userInfo, null, 2)}
+                    </pre>
+                  </details>
+                </div>
+              )}
             </div>
             
             <button className="logout-btn" onClick={handleLogout}>
