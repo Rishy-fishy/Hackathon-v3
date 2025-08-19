@@ -8,6 +8,7 @@ const AuthCallback = () => {
 
   // Load client configuration
   const getClientConfig = () => {
+    // Using the new client configuration
     return {
       clientId: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwAObq',
       redirectUri: 'http://localhost:3001/callback',
@@ -48,37 +49,34 @@ const AuthCallback = () => {
       address: userInfo.address,
       email_verified: userInfo.email_verified,
       phone_number_verified: userInfo.phone_number_verified,
-      uin: userInfo.uin,
+      preferred_username: userInfo.preferred_username || userInfo.username,
+      locale: userInfo.locale,
+      zoneinfo: userInfo.zoneinfo,
       authenticated: true,
       auth_method: 'esignet',
       login_timestamp: Date.now(),
-      access_token: accessToken
+      iss: userInfo.iss,
+      access_token: accessToken // Store token separately, don't use as user ID
     };
   };
 
   useEffect(() => {
     const handleCallback = async () => {
-      console.log('🔄 Processing OAuth callback...');
-      
       // Get URL parameters
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
       const state = urlParams.get('state');
-      const error = urlParams.get('error');
-      const errorDescription = urlParams.get('error_description');
+      const errorParam = urlParams.get('error');
 
-      // Check for OAuth errors
-      if (error) {
-        console.error('❌ OAuth error:', error, errorDescription);
+      if (errorParam) {
         setStatus('error');
-        setError(`Authentication failed: ${error} - ${errorDescription}`);
+        setError(errorParam === 'access_denied' ? 'Authorization was denied' : errorParam);
         setTimeout(() => {
           window.location.href = '/';
         }, 3000);
         return;
       }
 
-      // Check for authorization code
       if (!code) {
         setStatus('error');
         setError('No authorization code received');
@@ -100,11 +98,11 @@ const AuthCallback = () => {
 
         const config = getClientConfig();
         
-        // Exchange authorization code for tokens using callback server
+        // Exchange authorization code for tokens and get user info
         console.log('🔄 Processing authorization with config:', config);
         
         try {
-          // Use the callback server with JWT support
+          // Instead of direct token exchange, use the callback server with JWT support
           console.log('🔄 Exchanging code via callback server...');
           
           const callbackResponse = await fetch(`http://localhost:5000/exchange-token`, {
@@ -131,27 +129,47 @@ const AuthCallback = () => {
             const userData = processUserInfo(result.userInfo, result.access_token);
             setUserInfo(userData);
             setStatus('success');
-            
-            // Store authentication state
-            sessionStorage.setItem('esignet_user', JSON.stringify(userData));
-            sessionStorage.setItem('esignet_authenticated', 'true');
-            sessionStorage.setItem('auth_timestamp', Date.now().toString());
-            sessionStorage.setItem('access_token', result.access_token);
-            
-            // Clean up state
-            sessionStorage.removeItem('esignet_state');
-            sessionStorage.removeItem('esignet_nonce');
-            
-            console.log('✅ eSignet authentication successful');
-            console.log('👤 User authenticated:', userData.name);
-            
-            // Redirect to main app after 2 seconds
-            setTimeout(() => {
-              window.location.href = '/?authenticated=true';
-            }, 2000);
           } else {
             throw new Error('No user info received from callback server');
           }
+
+
+          console.log('📡 UserInfo response status:', userInfoResponse.status);
+          console.log('📡 UserInfo response headers:', Object.fromEntries(userInfoResponse.headers.entries()));
+
+          if (!userInfoResponse.ok) {
+            const errorText = await userInfoResponse.text();
+            console.error('❌ UserInfo fetch failed:', userInfoResponse.status, errorText);
+            throw new Error(`Failed to fetch user info: ${userInfoResponse.status} - ${errorText}`);
+          }
+
+          const userInfo = await userInfoResponse.json();
+          console.log('✅ User info received:', userInfo);
+          console.log('� Available keys:', Object.keys(userInfo));
+          console.log('🔍 Processing userInfo:', userInfo);
+          
+          // Process user data (don't use access token as user ID)
+          const userData = processUserInfo(userInfo, tokenData.access_token);
+          setUserInfo(userData);
+          setStatus('success');
+          
+          // Store authentication state
+          sessionStorage.setItem('esignet_user', JSON.stringify(userData));
+          sessionStorage.setItem('esignet_authenticated', 'true');
+          sessionStorage.setItem('auth_timestamp', Date.now().toString());
+          sessionStorage.setItem('access_token', tokenData.access_token);
+          
+          // Clean up state
+          sessionStorage.removeItem('esignet_state');
+          sessionStorage.removeItem('esignet_nonce');
+          
+          console.log('✅ eSignet authentication successful');
+          console.log('👤 User authenticated:', userData.name);
+          
+          // Redirect to main app after 2 seconds
+          setTimeout(() => {
+            window.location.href = '/?authenticated=true';
+          }, 2000);
 
         } catch (userInfoError) {
           console.error('❌ Failed to fetch user info:', userInfoError);
@@ -195,41 +213,41 @@ const AuthCallback = () => {
         sessionStorage.removeItem('esignet_state');
         sessionStorage.removeItem('esignet_nonce');
         
-        // Redirect back to main app after 3 seconds
         setTimeout(() => {
           window.location.href = '/';
         }, 3000);
       }
     };
 
-    // Process the callback
     handleCallback();
   }, []);
 
   return (
-    <div className="auth-callback">
-      <div className="callback-container">
+    <div className="auth-callback-container">
+      <div className="callback-content">
         {status === 'processing' && (
           <div className="processing">
             <div className="spinner"></div>
-            <h2>🔐 Processing Authentication...</h2>
-            <p>Please wait while we verify your credentials...</p>
+            <h2>Processing Authentication...</h2>
+            <p>Please wait while we complete your sign-in with e-Signet</p>
           </div>
         )}
 
-        {status === 'success' && userInfo && (
+        {status === 'success' && (
           <div className="success">
             <div className="success-icon">✅</div>
-            <h2>Welcome, {userInfo.name}!</h2>
-            <div className="user-details">
-              <p><strong>Email:</strong> {userInfo.email}</p>
-              <p><strong>User ID:</strong> {userInfo.sub}</p>
-              <p><strong>Authentication Method:</strong> eSignet</p>
+            <h2>Authentication Successful!</h2>
+            <p>Welcome back, {userInfo?.name || 'User'}!</p>
+            <div className="user-preview">
+              {userInfo?.picture && (
+                <img src={userInfo.picture} alt="Profile" className="profile-picture" />
+              )}
+              <div className="user-details">
+                <p><strong>Name:</strong> {userInfo?.name}</p>
+                <p><strong>Email:</strong> {userInfo?.email}</p>
+              </div>
             </div>
-            <div className="redirect-message">
-              <div className="spinner"></div>
-              <p>Redirecting to application...</p>
-            </div>
+            <p className="redirect-message">Redirecting you to the main application...</p>
           </div>
         )}
 
@@ -238,12 +256,13 @@ const AuthCallback = () => {
             <div className="error-icon">❌</div>
             <h2>Authentication Failed</h2>
             <p className="error-message">{error}</p>
-            <div className="redirect-message">
-              <div className="spinner"></div>
-              <p>Redirecting back to home...</p>
-            </div>
+            <p className="redirect-message">Redirecting you back to the login page...</p>
           </div>
         )}
+      </div>
+
+      <div className="callback-footer">
+        <p>Powered by <strong>e-Signet</strong> - Secure Digital Identity</p>
       </div>
     </div>
   );
