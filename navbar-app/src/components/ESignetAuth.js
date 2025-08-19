@@ -8,12 +8,12 @@ const ESignetAuth = () => {
   const buttonContainerRef = useRef(null);
   const initializationRef = useRef(false);
 
-  // OIDC Configuration for MOCK server
+  // OIDC Configuration using the newly created client
   const oidcConfig = {
     acr_values: 'mosip:idp:acr:generated-code',
-    authorizeUri: 'http://localhost:8088/authorize',
+    authorizeUri: 'http://localhost:3000/authorize', // Fixed: Using UI port 3000
     claims_locales: 'en',
-    client_id: '3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M',
+    client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1l35c', // Using the generated client ID
     display: 'page',
     max_age: 21,
     prompt: 'consent',

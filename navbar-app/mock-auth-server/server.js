@@ -79,17 +79,15 @@ app.get('/authorize', (req, res) => {
     });
   }
 
-  // Pre-generate an authorization code and store it server-side for token exchange
-  const code = Math.random().toString(36).substring(2, 10);
-  authorizationCodes[code] = {
+  // Create session
+  const sessionId = uuidv4();
+  sessions[sessionId] = {
     client_id,
     redirect_uri,
     scope,
     state,
     nonce,
-    user: currentUser,
-    created_at: Date.now(),
-    expires_at: Date.now() + 10 * 60 * 1000 // 10 minutes
+    step: 'login'
   };
 
   // Send HTML consent page
@@ -291,9 +289,8 @@ app.get('/authorize', (req, res) => {
 
       <script>
         function authorize() {
-          // Use server-generated authorization code
-          const code = '${code}';
-          const redirectUrl = '${redirect_uri}?code=' + code + '&state=${state || ''}';
+          // Redirect back with authorization code
+          const redirectUrl = '${redirect_uri}?code=${code}&state=${state || ''}';
           window.location.href = redirectUrl;
         }
 
