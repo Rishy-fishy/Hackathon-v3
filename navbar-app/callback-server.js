@@ -261,6 +261,92 @@ app.get('/callback', async (req, res) => {
   }
 });
 
+// Exchange authorization code for tokens using proper JWT client assertion
+app.post('/exchange-token', async (req, res) => {
+  try {
+    const { code, state } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ error: 'Authorization code is required' });
+    }
+
+    console.log('🔄 Processing token exchange for code:', code);
+
+    // Generate JWT client assertion
+    const clientAssertion = generateClientAssertion();
+    
+    // Exchange code for tokens with proper client_id
+    const tokenResponse = await fetch(`${config.baseURL}/v1/esignet/oauth/v2/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: config.clientId,
+        code: code,
+        redirect_uri: config.redirectUri,
+        client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+        client_assertion: clientAssertion
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('❌ Token exchange failed:', tokenResponse.status, errorText);
+      return res.status(400).json({ 
+        error: 'Token exchange failed', 
+        details: errorText,
+        status: tokenResponse.status 
+      });
+    }
+
+    const tokenData = await tokenResponse.json();
+    console.log('✅ Tokens received:', tokenData);
+
+    // Get user info using the access token
+    console.log('🔄 Fetching user information...');
+    
+    const userInfoResponse = await fetch(`${config.baseURL}/v1/esignet/oidc/userinfo`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${tokenData.access_token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!userInfoResponse.ok) {
+      const errorText = await userInfoResponse.text();
+      console.error('❌ UserInfo fetch failed:', userInfoResponse.status, errorText);
+      return res.status(400).json({ 
+        error: 'Failed to fetch user info', 
+        details: errorText,
+        status: userInfoResponse.status,
+        access_token: tokenData.access_token 
+      });
+    }
+
+    const userInfo = await userInfoResponse.json();
+    console.log('✅ User info received:', userInfo);
+
+    // Return both tokens and user info
+    res.json({
+      access_token: tokenData.access_token,
+      id_token: tokenData.id_token,
+      refresh_token: tokenData.refresh_token,
+      userInfo: userInfo,
+      success: true
+    });
+
+  } catch (error) {
+    console.error('❌ Token exchange error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      details: error.message 
+    });
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', port: port });

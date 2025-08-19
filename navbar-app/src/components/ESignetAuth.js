@@ -17,7 +17,7 @@ const ESignetAuth = () => {
     display: 'page',
     max_age: 21,
     prompt: 'consent',
-    redirect_uri: 'http://localhost:3001/callback',
+    redirect_uri: 'http://localhost:3001/callback', // Back to React app
     scope: 'openid profile',
     ui_locales: 'en'
   };

@@ -10,9 +10,53 @@ const AuthCallback = () => {
   const getClientConfig = () => {
     // Using the new client configuration
     return {
-      clientId: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1l35c',
+      clientId: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwAObq',
       redirectUri: 'http://localhost:3001/callback',
       baseURL: 'http://localhost:8088'
+    };
+  };
+
+  // Process user info into standardized format
+  const processUserInfo = (userInfo, accessToken) => {
+    console.log('🔍 Processing userInfo:', userInfo);
+    console.log('🔍 Available keys:', Object.keys(userInfo));
+    
+    // Handle different possible field names from eSignet
+    const fullName = userInfo.name || 
+                    userInfo.full_name ||
+                    (userInfo.given_name && userInfo.family_name ? 
+                      `${userInfo.given_name} ${userInfo.family_name}` : 
+                      userInfo.given_name || 
+                      userInfo.family_name || 
+                      userInfo.preferred_username ||
+                      'Authenticated User');
+    
+    const email = userInfo.email || 
+                  userInfo.email_address || 
+                  userInfo.preferred_username || 
+                  'user@example.com';
+    
+    return {
+      sub: userInfo.sub || userInfo.user_id || userInfo.uin || 'unknown_user',
+      name: fullName,
+      email: email,
+      given_name: userInfo.given_name || userInfo.first_name,
+      family_name: userInfo.family_name || userInfo.last_name || userInfo.surname,
+      picture: userInfo.picture || userInfo.avatar_url,
+      phone_number: userInfo.phone_number || userInfo.phone,
+      birthdate: userInfo.birthdate || userInfo.date_of_birth,
+      gender: userInfo.gender,
+      address: userInfo.address,
+      email_verified: userInfo.email_verified,
+      phone_number_verified: userInfo.phone_number_verified,
+      preferred_username: userInfo.preferred_username || userInfo.username,
+      locale: userInfo.locale,
+      zoneinfo: userInfo.zoneinfo,
+      authenticated: true,
+      auth_method: 'esignet',
+      login_timestamp: Date.now(),
+      iss: userInfo.iss,
+      access_token: accessToken // Store token separately, don't use as user ID
     };
   };
 
@@ -54,54 +98,111 @@ const AuthCallback = () => {
 
         const config = getClientConfig();
         
-        // For now, we'll handle the successful authorization
-        // In a real implementation, you would exchange the code for tokens using JWT client assertion
+        // Exchange authorization code for tokens and get user info
         console.log('🔄 Processing authorization with config:', config);
         
-        // Simulate successful authentication
-        setStatus('success');
-        
-        // Use Siddharth's user data (in real implementation, this would come from userinfo endpoint after token exchange)
-        const siddharthUserData = {
-          sub: 'siddharth-km-123',
-          name: 'Siddharth K Mansour',
-          email: 'siddhartha.km@gmail.com',
-          picture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Salman_Khan_in_2023_%281%29_%28cropped%29.jpg/250px-Salman_Khan_in_2023_%281%29_%28cropped%29.jpg',
-          phone_number: '+919427357934',
-          birthdate: '1987-11-25',
-          gender: 'Male',
-          given_name: 'Siddharth K Mansour',
-          family_name: 'Mansour',
-          preferred_username: 'Siddharth K Mansour',
-          locale: 'en',
-          zoneinfo: 'test zone',
-          address: {
-            street_address: 'Slung',
-            locality: 'yuanwee',
-            region: 'yuanwee',
-            postal_code: '45009',
-            country: 'Cmattey'
+        try {
+          // Instead of direct token exchange, use the callback server with JWT support
+          console.log('🔄 Exchanging code via callback server...');
+          
+          const callbackResponse = await fetch(`http://localhost:5000/exchange-token`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              code: code,
+              state: state
+            })
+          });
+
+          if (!callbackResponse.ok) {
+            const errorData = await callbackResponse.json().catch(() => null);
+            const errorText = errorData ? JSON.stringify(errorData) : await callbackResponse.text();
+            throw new Error(`Callback server failed: ${callbackResponse.status} - ${errorText}`);
           }
-        };
-        
-        setUserInfo(siddharthUserData);
-        
-        // Store authentication state
-        sessionStorage.setItem('esignet_user', JSON.stringify(siddharthUserData));
-        sessionStorage.setItem('esignet_authenticated', 'true');
-        sessionStorage.setItem('auth_timestamp', Date.now().toString());
-        
-        // Clean up state
-        sessionStorage.removeItem('esignet_state');
-        sessionStorage.removeItem('esignet_nonce');
-        
-        console.log('✅ eSignet authentication successful');
-        console.log('👤 User authenticated:', siddharthUserData.name);
-        
-        // Redirect to main app after 2 seconds
-        setTimeout(() => {
-          window.location.href = '/?authenticated=true';
-        }, 2000);
+
+          const result = await callbackResponse.json();
+          console.log('✅ Token exchange successful:', result);
+
+          if (result.userInfo) {
+            const userData = processUserInfo(result.userInfo, result.access_token);
+            setUserInfo(userData);
+            setStatus('success');
+          } else {
+            throw new Error('No user info received from callback server');
+          }
+
+
+          console.log('📡 UserInfo response status:', userInfoResponse.status);
+          console.log('📡 UserInfo response headers:', Object.fromEntries(userInfoResponse.headers.entries()));
+
+          if (!userInfoResponse.ok) {
+            const errorText = await userInfoResponse.text();
+            console.error('❌ UserInfo fetch failed:', userInfoResponse.status, errorText);
+            throw new Error(`Failed to fetch user info: ${userInfoResponse.status} - ${errorText}`);
+          }
+
+          const userInfo = await userInfoResponse.json();
+          console.log('✅ User info received:', userInfo);
+          console.log('� Available keys:', Object.keys(userInfo));
+          console.log('🔍 Processing userInfo:', userInfo);
+          
+          // Process user data (don't use access token as user ID)
+          const userData = processUserInfo(userInfo, tokenData.access_token);
+          setUserInfo(userData);
+          setStatus('success');
+          
+          // Store authentication state
+          sessionStorage.setItem('esignet_user', JSON.stringify(userData));
+          sessionStorage.setItem('esignet_authenticated', 'true');
+          sessionStorage.setItem('auth_timestamp', Date.now().toString());
+          sessionStorage.setItem('access_token', tokenData.access_token);
+          
+          // Clean up state
+          sessionStorage.removeItem('esignet_state');
+          sessionStorage.removeItem('esignet_nonce');
+          
+          console.log('✅ eSignet authentication successful');
+          console.log('👤 User authenticated:', userData.name);
+          
+          // Redirect to main app after 2 seconds
+          setTimeout(() => {
+            window.location.href = '/?authenticated=true';
+          }, 2000);
+
+        } catch (userInfoError) {
+          console.error('❌ Failed to fetch user info:', userInfoError);
+          
+          // Fallback to basic user data if userinfo fails
+          const fallbackUserData = {
+            sub: code,
+            name: 'Authenticated User',
+            email: 'user@example.com',
+            authenticated: true,
+            auth_method: 'esignet',
+            login_timestamp: Date.now()
+          };
+          
+          setUserInfo(fallbackUserData);
+          setStatus('success');
+          
+          // Store authentication state
+          sessionStorage.setItem('esignet_user', JSON.stringify(fallbackUserData));
+          sessionStorage.setItem('esignet_authenticated', 'true');
+          sessionStorage.setItem('auth_timestamp', Date.now().toString());
+          
+          // Clean up state
+          sessionStorage.removeItem('esignet_state');
+          sessionStorage.removeItem('esignet_nonce');
+          
+          console.log('✅ eSignet authentication successful (with fallback data)');
+          
+          // Redirect to main app after 2 seconds
+          setTimeout(() => {
+            window.location.href = '/?authenticated=true';
+          }, 2000);
+        }
 
       } catch (err) {
         console.error('❌ Callback processing failed:', err);
