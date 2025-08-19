@@ -27,15 +27,28 @@ const Header = () => {
   };
 
   useEffect(() => {
-    // Check if user is authenticated
+    // Check if user is authenticated via eSignet (new flow)
     try {
-      const authenticated = localStorage.getItem('is_authenticated') === 'true';
-      if (authenticated) {
-        const storedUserInfo = localStorage.getItem('user_info');
+      const esignetAuthenticated = sessionStorage.getItem('esignet_authenticated') === 'true';
+      if (esignetAuthenticated) {
+        const storedUserInfo = sessionStorage.getItem('esignet_user');
         if (storedUserInfo) {
           const userInfo = JSON.parse(storedUserInfo);
           setUserInfo(userInfo);
           setIsAuthenticated(true);
+          console.log('✅ eSignet user loaded:', userInfo.name);
+        }
+      } else {
+        // Check legacy authentication (old flow)
+        const authenticated = localStorage.getItem('is_authenticated') === 'true';
+        if (authenticated) {
+          const storedUserInfo = localStorage.getItem('user_info');
+          if (storedUserInfo) {
+            const userInfo = JSON.parse(storedUserInfo);
+            setUserInfo(userInfo);
+            setIsAuthenticated(true);
+            console.log('✅ Legacy user loaded:', userInfo.name);
+          }
         }
       }
 
@@ -56,18 +69,25 @@ const Header = () => {
   }, []);
 
   const handleLogout = () => {
+    // Clear legacy authentication data
     localStorage.removeItem('user_info');
     localStorage.removeItem('access_token');
     localStorage.removeItem('id_token');
     localStorage.removeItem('is_authenticated');
     localStorage.removeItem('auth_timestamp');
     localStorage.removeItem('auth_method');
+    
+    // Clear eSignet authentication data
+    sessionStorage.removeItem('esignet_user');
+    sessionStorage.removeItem('esignet_authenticated');
+    sessionStorage.removeItem('auth_timestamp');
     sessionStorage.removeItem('esignet_state');
     sessionStorage.removeItem('esignet_nonce');
+    
     setUserInfo(null);
     setIsAuthenticated(false);
     setIsModalOpen(false);
-    console.log('🚪 User logged out successfully');
+    console.log('🚪 User logged out successfully (eSignet + legacy)');
     window.location.reload();
   };
 

@@ -1,35 +1,35 @@
 {
-  "clientId": "IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1l35c",
+  "clientId": "IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwAObq",
   "privateKey": {
     "kty": "RSA",
-    "kid": "E7UsCgvqv0uzpHg0XwE0v4WZeaMVVAl8D-5TvEAsQvU",
+    "kid": "z5Em8Uhle_XmCcMgzx00RuZSoIMU5qJJ9UouYBHyKAU",
     "use": "sig",
     "alg": "RS256",
     "e": "AQAB",
-    "n": "1l35cmu7EbpG4LB7pbb_sJLlITJF12LcLcNAW8Z-liuNB1o8PXHbeSt5pkawRI1BT_QptpPQUcEpqhKTN-xmdHONpWjRX0ZKZDfF3IUiwo0vBw_ulgqlbJwaJersAYn_V3weQbYPVGuepv144zwloYrvtasJHAzWBaRWR_vq02LMzd2nR1RFq9lyNNOGxA1x0L3yVfAKMAocTrDnb32RtlNT84f7cguwe72g8Uf1udpq1MV-ppoxMFVlFX0W-oGC6kVUI3GM4E7fUix2SE-9vxfs-LQR4oHuhqx3SgBZwziUg5XD6Zfxn31kkjTHnou-F3Pw34wNpfAkveK0ccjWTw",
-    "d": "CxH05pwtn7xXTXv2E365zl9a02k9nHvceiu4UFHJCiEObWMswGrEaYnkBFqa-IKBU758kPmQXnumyfbSzdm4ol1KFh3gzuMmxroim6eJPgBjsO4S5U8Z1kJrD0SfrD_fuDlB24uqJJmFXel-q3o_SNjCvEaS3kH2o3mMtlCKHFRiAsTwLf3SztMGFq0Vs536PjsFUSi2cwJX7PTmZVLjkvdJS0Jm-bFrZRnP9pMu-1dka2l--JjHnzrlY805qCD0K-f02-Ms8ySMUbzQfw9l0RMlzZgoF_eec2kVP2uYJSsX5EsLImjULnzHwd5jP6MmsVvk9uPiVqF-JaT7KeYowQ",
-    "p": "9n76StJRnKWqjvlAVA_CBsI0aV4CX4PAHjmys17zfvfx6cgznc_9Lxwm8angZej24mrCDhiR5BZxv2tvC_J9xrFF7Ewef_gmkwdCdBh9bExGj9veE2ilgwjzDjbTufzuxHR3oh55FljK6mr27woX-vxEmPWoHAxA9mbZ1F7vqp8",
-    "q": "3qHez7lzRl6LdsF2Poq_GWi6GcMoqorya4rXCju1e92Zw0s2bKIOmsecHGJ89NU3qffctnCz1rywvTYoA4vbOrhtofICDRB3fVjWSzxD1anuxGHiXL7tku2eITz8TqEpJXV-0IFjZzvaZa5bI_ok60dI4rtC8miXP_Q488O35lE",
-    "dp": "deEBdzifOMdtClSec9TZV_wVrnH7tou-G3ZCRE9bKNQQB1nrfUPS822GHjm8C2BeeKbPSIhtdGNbYExTXaZIifWK19cLGu2kHNny6KwxhtHvSKq_yA5aYJCuE5Uaqa4QzThZYdkq1Qn_eB1RG716_FcZwwBvtYISqwNClrIT8Uc",
-    "dq": "IVoqoP_tTwt25TGSX0g13L6dsqJUA0iRjJ7eHEBZrdbC5EjuPFQC0Bk7P91ZTuxqTGI_hG1Z47-c0pu8Xtui2icq9Wnl-MMQw4x9fgPnPakZhf4MBUztFmfWmrAiND1chqoVd3MKyzpiO31lVfxxb3Xca2sWWm5kykXyCkK12CE",
-    "qi": "zlaPxCoXLzDKu1a06XRPZdUO1v7OU7VsUow34R_r7n255zdLCInwN7h_EN_XwjiVRGoTferA_QzoV7rUKRNPBEmmiIg5El5n0WbeDbWv8TrUJqWrCqXbhrqUqNNXsB4FSakIOIDapmiZ500y58FNV020pAk5WN2h-AlG-NTajJQ"
+    "n": "wAObqt3DknLdIXcNvEMnFJ1DhKhbhFRhJkqRAKN1O43uS-aaP1DWuAM-seFlW2S0k9Rruq8pg-cC5YvBBHWzG8dF1PTNvQxE9Q1fXnz8ccFPbQA5Eu1QIzmBmdrct2YQP90_1k1jhjxM0i01Nc0URoAthKG_1lEppU2oTG_K9hWuzG2ZHfL4kZzH8rtSlRb9EQ0IW2VWESZdX5DjyAhPSO0T5gLmoxbG4-WqR5xZvgc0__yTlfWNS-O0agASe2k5uWECLgWVh1JmqzK77bYQLP1KOedRwmMHS3KjBgAymualKVumUtwsiW3pyQN7cLZ36ygP18aSWryHSmZa5qihLQ",
+    "d": "KVNdeIvcILPaBe7SpPcq_RPPyUhW0gc7FXus8586hwPICsvp3MCwRdBk-PHS17W3660nNnmmjL32cKMAes4-KzdbPzck5JA0cy1ankJ2LqF1T7dhkUJEIiCpVQy2vj4YNzaOG7hyOBzYR8_1CMxHldjWcxpA6IZ1WR96nmDdJNMr4DALt1L5AI8RkdJMIw8EEnMtiXok6lKWCL4VE2HDV7ITCuWEMmx2HOHKgy03OIw6oBsvdx537crD2YevsElE3gxGpvCGNUNa8qBG_FJSOhge2F4j83P7gfxinCtxZ1hVQ2IhTDjwjqKGwLhsQLjGg1hLRJiWqS7Mb7AJemsv4Q",
+    "p": "9nsvqNjfxSBqS1QB_-XHxVxHShYHPn86prbdIv6fHbpoNxyQeFjqZt6_RKD19NBSXVcQIrw65VxdW8hdaM7Gyn1IPZJkACqokDWQ5_JejU1xQ1Lx1mCDSscBiPLNjCqH4H70qYP70kNvRuXRn9nF1KXPWCpsd6_2H_O_oB1Mppk",
+    "q": "x23wGME99JlAiEGCkQEIxtNLprNutcDdWcgUqDQrdCOliVXqKXey3zlw0kbhJ8lvdBEkWW6X4Wkh8v0CRVgKP1UMwidhPY7fhTjmRvd9Eige8vJpXH_EfpwTE36pHsrxAbCQ5pYsONAzyhYL9j-tHfW-9g8uTfZE29mcMyoe77U",
+    "dp": "nYE0gGot_FLtebtyF6snEFgaeh4_fNFiklwyTYV1-lI-_FC1hSIUj63xfZJ5-XoR1_Glrvynih-OzPLpterEn2qVejsMygp4csa4FXAMubDuGr5rKbm8zFEFCxVVAie_clbOU3Cyv7c16ZE8djB8OZnHOKjLbWQ1HE_veQqgC6k",
+    "dq": "SFHv3apGI2tn4YGQLbFoU2HQb1VmcnbMToCmLREuKOG8Z_9F-V-0-ApGhZq6j8kWp8qHmf7nCREtBIcHycnRfYIELGxHcSFcoV0u9NFPA8SU5JlP6AFVamyC5nDqN4Z0u54iDdyrkLa_8Srpj5Ur3E9_vo9mxVLnSaqyYEOIEHk",
+    "qi": "RXAt9vymlSKIsC1bdUTJVDPGelwQjSYumhJlcrCkcU8yrtXkJu9r9QX_COGBOTF_FNLgWa3nOG2U29hk3EpTEZdCZt8lx6f2YEOcKQ5lLOWsCGlWXLzwHduPk2flqUWZss1uGauYdaQozuuiCmQ8wANLTQ_S3dG0X3lVyHI_090"
   },
   "publicKey": {
     "kty": "RSA",
-    "kid": "E7UsCgvqv0uzpHg0XwE0v4WZeaMVVAl8D-5TvEAsQvU",
+    "kid": "z5Em8Uhle_XmCcMgzx00RuZSoIMU5qJJ9UouYBHyKAU",
     "use": "sig",
     "alg": "RS256",
     "e": "AQAB",
-    "n": "1l35cmu7EbpG4LB7pbb_sJLlITJF12LcLcNAW8Z-liuNB1o8PXHbeSt5pkawRI1BT_QptpPQUcEpqhKTN-xmdHONpWjRX0ZKZDfF3IUiwo0vBw_ulgqlbJwaJersAYn_V3weQbYPVGuepv144zwloYrvtasJHAzWBaRWR_vq02LMzd2nR1RFq9lyNNOGxA1x0L3yVfAKMAocTrDnb32RtlNT84f7cguwe72g8Uf1udpq1MV-ppoxMFVlFX0W-oGC6kVUI3GM4E7fUix2SE-9vxfs-LQR4oHuhqx3SgBZwziUg5XD6Zfxn31kkjTHnou-F3Pw34wNpfAkveK0ccjWTw"
+    "n": "wAObqt3DknLdIXcNvEMnFJ1DhKhbhFRhJkqRAKN1O43uS-aaP1DWuAM-seFlW2S0k9Rruq8pg-cC5YvBBHWzG8dF1PTNvQxE9Q1fXnz8ccFPbQA5Eu1QIzmBmdrct2YQP90_1k1jhjxM0i01Nc0URoAthKG_1lEppU2oTG_K9hWuzG2ZHfL4kZzH8rtSlRb9EQ0IW2VWESZdX5DjyAhPSO0T5gLmoxbG4-WqR5xZvgc0__yTlfWNS-O0agASe2k5uWECLgWVh1JmqzK77bYQLP1KOedRwmMHS3KjBgAymualKVumUtwsiW3pyQN7cLZ36ygP18aSWryHSmZa5qihLQ"
   },
   "redirectUri": "http://localhost:3001/callback",
   "baseURL": "http://localhost:8088",
   "authorizeUrl": "http://localhost:3000/authorize",
-  "createdAt": "2025-08-19T13:51:04.905Z",
+  "createdAt": "2025-08-19T14:24:50.900Z",
   "clientResponse": {
-    "responseTime": "2025-08-19T13:51:04.896Z",
+    "responseTime": "2025-08-19T14:24:50.876Z",
     "response": {
-      "clientId": "IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1l35c",
+      "clientId": "IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwAObq",
       "status": "ACTIVE"
     },
     "errors": []

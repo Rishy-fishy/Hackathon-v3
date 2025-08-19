@@ -61,20 +61,33 @@ const AuthCallback = () => {
         // Simulate successful authentication
         setStatus('success');
         
-        // Mock user data (in real implementation, this would come from userinfo endpoint after token exchange)
-        const mockUserData = {
-          sub: 'user123',
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-          picture: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
-          phone_number: '+1234567890',
-          birthdate: '1990-01-01'
+        // Use Siddharth's user data (in real implementation, this would come from userinfo endpoint after token exchange)
+        const siddharthUserData = {
+          sub: 'siddharth-km-123',
+          name: 'Siddharth K Mansour',
+          email: 'siddhartha.km@gmail.com',
+          picture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Salman_Khan_in_2023_%281%29_%28cropped%29.jpg/250px-Salman_Khan_in_2023_%281%29_%28cropped%29.jpg',
+          phone_number: '+919427357934',
+          birthdate: '1987-11-25',
+          gender: 'Male',
+          given_name: 'Siddharth K Mansour',
+          family_name: 'Mansour',
+          preferred_username: 'Siddharth K Mansour',
+          locale: 'en',
+          zoneinfo: 'test zone',
+          address: {
+            street_address: 'Slung',
+            locality: 'yuanwee',
+            region: 'yuanwee',
+            postal_code: '45009',
+            country: 'Cmattey'
+          }
         };
         
-        setUserInfo(mockUserData);
+        setUserInfo(siddharthUserData);
         
         // Store authentication state
-        sessionStorage.setItem('esignet_user', JSON.stringify(mockUserData));
+        sessionStorage.setItem('esignet_user', JSON.stringify(siddharthUserData));
         sessionStorage.setItem('esignet_authenticated', 'true');
         sessionStorage.setItem('auth_timestamp', Date.now().toString());
         
@@ -83,7 +96,7 @@ const AuthCallback = () => {
         sessionStorage.removeItem('esignet_nonce');
         
         console.log('✅ eSignet authentication successful');
-        console.log('👤 User authenticated:', mockUserData.name);
+        console.log('👤 User authenticated:', siddharthUserData.name);
         
         // Redirect to main app after 2 seconds
         setTimeout(() => {
