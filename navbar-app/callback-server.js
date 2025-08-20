@@ -5,9 +5,35 @@ const fetch = require('node-fetch');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const fs = require('fs');
+const { MongoClient } = require('mongodb');
 
 const app = express();
 const port = 5000;
+
+// ---- MongoDB Setup (simple singleton connection) ----
+// Environment variables or fallbacks
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
+const MONGO_DB = process.env.MONGO_DB || 'nutrition_app';
+let mongoClient; // will hold connected client
+let mongoDb; // db instance
+
+async function initMongo() {
+  if (mongoDb) return mongoDb;
+  try {
+    mongoClient = new MongoClient(MONGO_URI, { useUnifiedTopology: true });
+    await mongoClient.connect();
+    mongoDb = mongoClient.db(MONGO_DB);
+    console.log(`✅ Connected to MongoDB at ${MONGO_URI} db=${MONGO_DB}`);
+    // Create indexes (idempotent)
+    const col = mongoDb.collection('child_records');
+    await col.createIndex({ healthId: 1 }, { unique: true });
+    await col.createIndex({ uploaderSub: 1 });
+    await col.createIndex({ createdAt: -1 });
+  } catch (err) {
+    console.error('❌ MongoDB connection failed:', err.message);
+  }
+  return mongoDb;
+}
 
 // Convert JWK to PEM format
 function jwkToPem(jwk) {
@@ -31,6 +57,8 @@ function jwkToPem(jwk) {
 // Enable CORS for all routes
 app.use(cors());
 app.use(express.json());
+// Increase payload limit for potential base64 photos
+app.use(express.json({ limit: '5mb' }));
 
 // Load client configuration ONCE
 let clientConfig;
@@ -417,7 +445,7 @@ app.post('/exchange-token', async (req, res) => {
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', port: port });
+  res.json({ status: 'OK', port: port, mongo: !!mongoDb });
 });
 
 // Public client metadata (safe subset) for front-end to discover current clientId
@@ -427,6 +455,103 @@ app.get('/client-meta', (req, res) => {
     authorizeUri: 'http://localhost:3000/authorize',
     redirect_uri: clientConfig.redirectUri
   });
+});
+
+// ---- Helper: Verify access token (naive decode or remote introspection) ----
+// For now we accept a bearer token and trust userInfo passed from client (MUST harden in production)
+// Optionally decode JWT if it is a JWT-like token for basic field extraction.
+function extractUploaderInfo(req) {
+  const auth = req.headers.authorization || '';
+  if (!auth.startsWith('Bearer ')) return null;
+  const token = auth.slice(7);
+  // Try decode without verification (we may not have public keys) just to extract claims.
+  let claims = null;
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payload = parts[1].replace(/-/g,'+').replace(/_/g,'/');
+      const pad = payload.length % 4 === 0 ? '' : '='.repeat(4 - (payload.length % 4));
+      const json = Buffer.from(payload + pad, 'base64').toString('utf8');
+      claims = JSON.parse(json);
+    }
+  } catch {/* ignore */}
+  return { token, claims };
+}
+
+// ---- Batch upload endpoint ----
+// Receives: { records: [...] } where each record matches IndexedDB schema subset
+// Adds uploader attribution (name, sub) and writes to MongoDB.
+app.post('/api/child/batch', async (req, res) => {
+  try {
+    const { records, uploaderName } = req.body;
+    if (!Array.isArray(records) || !records.length) {
+      return res.status(400).json({ error: 'No records provided' });
+    }
+    const uploader = extractUploaderInfo(req);
+    if (!uploader) {
+      return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+    }
+    await initMongo();
+    if (!mongoDb) return res.status(500).json({ error: 'MongoDB not available' });
+
+    const col = mongoDb.collection('child_records');
+    const now = Date.now();
+    const toInsert = [];
+    const results = [];
+
+    for (const r of records) {
+      if (!r.healthId) {
+        results.push({ healthId: r.healthId || null, status: 'skipped', reason: 'missing_healthId' });
+        continue;
+      }
+      // Prepare document; prevent huge photos > ~1MB (basic guard)
+      let facePhoto = r.facePhoto;
+      if (facePhoto && facePhoto.length > 1_000_000) {
+        facePhoto = null; // drop large image to protect DB
+      }
+      toInsert.push({
+        healthId: r.healthId,
+        name: r.name || null,
+        ageMonths: r.ageMonths ?? null,
+        weightKg: r.weightKg ?? null,
+        heightCm: r.heightCm ?? null,
+        guardianName: r.guardianName || null,
+        malnutritionSigns: r.malnutritionSigns || null,
+        recentIllnesses: r.recentIllnesses || null,
+        parentalConsent: !!r.parentalConsent,
+        idReference: r.idReference || null,
+        facePhoto,
+        createdAt: r.createdAt || now,
+        uploadedAt: now,
+        uploaderName: uploaderName || (uploader.claims && (uploader.claims.name || uploader.claims.preferred_username)) || null,
+        uploaderSub: uploader.claims && uploader.claims.sub || null,
+        source: 'offline_sync',
+        version: r.version || 1
+      });
+    }
+
+    // Insert documents; handle duplicates gracefully
+    for (const doc of toInsert) {
+      try {
+        await col.updateOne({ healthId: doc.healthId }, { $setOnInsert: doc }, { upsert: true });
+        results.push({ healthId: doc.healthId, status: 'uploaded' });
+      } catch (e) {
+        results.push({ healthId: doc.healthId, status: 'failed', reason: e.code === 11000 ? 'duplicate' : e.message });
+      }
+    }
+
+    const summary = {
+      total: records.length,
+      attempted: toInsert.length,
+      uploaded: results.filter(r=>r.status==='uploaded').length,
+      failed: results.filter(r=>r.status==='failed').length,
+      skipped: results.filter(r=>r.status==='skipped').length
+    };
+    res.json({ summary, results });
+  } catch (err) {
+    console.error('❌ Batch upload error:', err);
+    res.status(500).json({ error: 'batch_upload_failed', details: err.message });
+  }
 });
 
 // Simple delegate style endpoint (GET) to mimic workshop example
@@ -466,4 +591,5 @@ app.get('/delegate/fetchUserInfo', async (req, res) => {
 app.listen(port, () => {
   console.log(`✅ Callback server running on http://localhost:${port}`);
   console.log(`📝 Callback URL: http://localhost:${port}/callback`);
+  initMongo();
 });
