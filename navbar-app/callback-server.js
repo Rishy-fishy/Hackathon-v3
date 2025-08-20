@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const fs = require('fs');
 const { MongoClient } = require('mongodb');
+const PDFDocument = require('pdfkit');
 
 const app = express();
 const port = 5000;
@@ -551,6 +552,77 @@ app.post('/api/child/batch', async (req, res) => {
   } catch (err) {
     console.error('❌ Batch upload error:', err);
     res.status(500).json({ error: 'batch_upload_failed', details: err.message });
+  }
+});
+
+// List/search child records with pagination
+// /api/child?search=abc&status=pending&limit=20&offset=0
+app.get('/api/child', async (req, res) => {
+  try {
+    await initMongo();
+    if (!mongoDb) return res.status(500).json({ error: 'mongo_unavailable' });
+    const { search='', status, limit=20, offset=0 } = req.query;
+    const q = {};
+    if (status) q.status = status; // status not currently stored server side, ignore for now
+    if (search) {
+      q.$or = [
+        { healthId: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } }
+      ];
+    }
+    const col = mongoDb.collection('child_records');
+    const docs = await col.find(q).sort({ createdAt: -1 }).skip(parseInt(offset,10)).limit(Math.min(100, parseInt(limit,10))).toArray();
+    const total = await col.countDocuments(q);
+    res.json({ total, records: docs });
+  } catch (e) {
+    res.status(500).json({ error: 'list_failed', message: e.message });
+  }
+});
+
+// PDF "health booklet" generation for a child record
+app.get('/api/child/:healthId/pdf', async (req, res) => {
+  try {
+    await initMongo();
+    if (!mongoDb) return res.status(500).json({ error: 'mongo_unavailable' });
+    const { healthId } = req.params;
+    const col = mongoDb.collection('child_records');
+    const doc = await col.findOne({ healthId });
+    if (!doc) return res.status(404).json({ error: 'not_found' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${healthId}.pdf"`);
+    const pdf = new PDFDocument({ margin: 50 });
+    pdf.pipe(res);
+    pdf.fontSize(18).text('Child Health Booklet', { align:'center' });
+    pdf.moveDown();
+    pdf.fontSize(12);
+    const fields = [
+      ['Health ID', doc.healthId],
+      ['Name', doc.name||''],
+      ['Age (months)', doc.ageMonths??''],
+      ['Weight (kg)', doc.weightKg??''],
+      ['Height (cm)', doc.heightCm??''],
+      ['Guardian', doc.guardianName||''],
+      ['Recent Illnesses', doc.recentIllnesses||''],
+      ['Malnutrition Signs', doc.malnutritionSigns||''],
+      ['Consent', doc.parentalConsent? 'Yes':'No'],
+      ['Uploader', doc.uploaderName||''],
+      ['Uploaded At', doc.uploadedAt? new Date(doc.uploadedAt).toLocaleString():'' ]
+    ];
+    fields.forEach(([k,v])=> { pdf.text(`${k}: ${v}`); });
+    if (doc.facePhoto) {
+      try {
+        // Assume base64 image data URL
+        const base64 = doc.facePhoto.split(',')[1] || doc.facePhoto;
+        const buf = Buffer.from(base64, 'base64');
+        pdf.addPage();
+        pdf.fontSize(16).text('Photo', { align:'center' });
+        pdf.moveDown();
+        pdf.image(buf, { fit:[400,400], align:'center', valign:'center' });
+      } catch {}
+    }
+    pdf.end();
+  } catch (e) {
+    res.status(500).json({ error: 'pdf_failed', message: e.message });
   }
 });
 

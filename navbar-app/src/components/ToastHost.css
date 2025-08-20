@@ -1,0 +1,9 @@
+.toast-host { position:fixed; top:70px; right:16px; display:flex; flex-direction:column; gap:8px; z-index:2000; }
+.toast-item { background:#333; color:#fff; padding:10px 14px; border-radius:6px; font-size:.75rem; min-width:180px; box-shadow:0 4px 12px rgba(0,0,0,.25); animation:slideIn .35s ease; }
+.toast-item.success { background:#2d6a4f; }
+.toast-item.error { background:#b02a37; }
+.toast-item.info { background:#0d47a1; }
+@keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+:root.dark .toast-item { background:#2a2c2f; color:#fff; }
+:root.dark .toast-item.success { background:#1b4332; }
+:root.dark .toast-item.error { background:#641e22; }

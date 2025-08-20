@@ -62,6 +62,36 @@
   background-color: #f8f9fa;
 }
 
+/* Dark mode root toggles */
+:root.dark body, :root.dark .header { background:#1e1f21; color:#e4e6eb; }
+:root.dark .nav-link { color:#ccc; }
+:root.dark .nav-link:hover { background:#2a2c2f; color:#6aa8ff; }
+:root.dark .profile-icon { background:#2563eb; }
+:root.dark .nav-profile:hover { background:#2a2c2f; color:#6aa8ff; }
+:root.dark .session-countdown { background:#2a2c2f; color:#e4e6eb; }
+
+.dark-toggle, .install-btn {
+  background:#f1f3f5;
+  border:1px solid #ced4da;
+  padding:4px 10px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:.8rem;
+  line-height:1.2;
+}
+.dark-toggle:hover, .install-btn:hover { background:#e9ecef; }
+:root.dark .dark-toggle { background:#2a2c2f; border-color:#3a3d40; color:#eee; }
+:root.dark .dark-toggle:hover { background:#34373a; }
+
+/* Sync indicator */
+.sync-indicator { display:flex; gap:4px; margin-right:6px; }
+.sync-indicator .dot { width:10px; height:10px; border-radius:50%; background:#ced4da; opacity:.5; transition:.3s; }
+.sync-indicator .dot.pending.active { background:#ffc107; opacity:1; }
+.sync-indicator .dot.failed.active { background:#dc3545; opacity:1; }
+
+.offline-banner { position:fixed; top:0; left:0; right:0; background:#ffc107; color:#212529; text-align:center; padding:4px 8px; font-size:.75rem; font-weight:600; letter-spacing:.5px; z-index:1500; }
+:root.dark .offline-banner { background:#b8860b; color:#fff; }
+
 /* Profile Section Styles */
 .nav-profile {
   display: flex;

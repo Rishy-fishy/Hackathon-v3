@@ -15,8 +15,29 @@ export default function ChildForm({ onSaved }) {
     else if (type === 'file') {
       const file = files[0];
       if (!file) return;
+      // Resize/compress image to max 512px dimension
+      const img = new Image();
       const reader = new FileReader();
-      reader.onload = () => setForm(f => ({...f, photo: reader.result }));
+      reader.onload = () => {
+        img.onload = () => {
+          const maxDim = 512;
+          let { width, height } = img;
+          if (width > height && width > maxDim) {
+            height = Math.round(height * (maxDim/width));
+            width = maxDim;
+          } else if (height > maxDim) {
+            width = Math.round(width * (maxDim/height));
+            height = maxDim;
+          }
+            const canvas = document.createElement('canvas');
+            canvas.width = width; canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img,0,0,width,height);
+            const dataUrl = canvas.toDataURL('image/jpeg',0.7);
+            setForm(f => ({...f, photo: dataUrl }));
+        };
+        img.src = reader.result;
+      };
       reader.readAsDataURL(file);
     } else setForm(f => ({...f, [name]: value}));
   };
@@ -28,6 +49,15 @@ export default function ChildForm({ onSaved }) {
     if (!form.consent) return alert('Parental consent required');
     setSaving(true);
     const hId = generateHealthId();
+    // Compute simple hash of photo (if exists)
+    let photoHash = null;
+    if (form.photo) {
+      try {
+        const bytes = new TextEncoder().encode(form.photo);
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        photoHash = Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,40);
+      } catch {/* ignore */}
+    }
     const record = {
       healthId: hId,
       localId: nanoid(),
@@ -44,7 +74,8 @@ export default function ChildForm({ onSaved }) {
       facePhoto: form.photo,
       idReference: form.idRef || '',
       status: 'pending',
-      version: 1
+      version: 2,
+      photoHash
     };
     await addChildRecord(record);
     setHealthId(hId);

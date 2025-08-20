@@ -21,6 +21,16 @@ self.addEventListener('fetch', event => {
     })());
   }
 });
+// Background sync placeholder (manual queue is in-page now).
+self.addEventListener('sync', event => {
+  if (event.tag === 'child-record-sync') {
+    event.waitUntil((async ()=> {
+      // Notify clients to trigger in-page sync logic
+      const clientsArr = await self.clients.matchAll({ includeUncontrolled:true });
+      clientsArr.forEach(c => c.postMessage({ type:'TRIGGER_SYNC' }));
+    })());
+  }
+});
 /* Basic PWA service worker for offline shell + dynamic caching.
   Generated for child nutrition app. */
 /* eslint-disable no-restricted-globals */

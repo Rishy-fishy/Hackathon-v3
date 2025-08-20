@@ -12,6 +12,10 @@ const Header = () => {
   const [sessionExpiresAt, setSessionExpiresAt] = useState(null); // epoch ms
   const [remainingSeconds, setRemainingSeconds] = useState(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('dark_mode') === 'true');
+  const [installPromptEvent, setInstallPromptEvent] = useState(null);
+  const [syncCounts, setSyncCounts] = useState({ pending: 0, failed: 0 });
+  const [online, setOnline] = useState(navigator.onLine);
 
   const handleProfileClick = () => {
     console.log('Profile button clicked');
@@ -107,6 +111,49 @@ const Header = () => {
     }
   }, []);
 
+  // Listen for online/offline
+  useEffect(()=>{
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
+  },[]);
+
+  // Install prompt capture
+  useEffect(()=>{
+    const handler = (e) => {
+      e.preventDefault();
+      setInstallPromptEvent(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return ()=> window.removeEventListener('beforeinstallprompt', handler);
+  },[]);
+
+  // Dark mode effect
+  useEffect(()=>{
+    const root = document.documentElement;
+    if (darkMode) root.classList.add('dark'); else root.classList.remove('dark');
+    localStorage.setItem('dark_mode', darkMode ? 'true':'false');
+  },[darkMode]);
+
+  // Sync indicator listener (custom events dispatched by sync.js)
+  useEffect(()=>{
+    const handler = (e) => {
+      const detail = e.detail || {};
+      if (detail.counts) setSyncCounts(detail.counts);
+    };
+    window.addEventListener('sync-update', handler);
+    return ()=> window.removeEventListener('sync-update', handler);
+  },[]);
+
+  const triggerInstall = async () => {
+    if (!installPromptEvent) return;
+    installPromptEvent.prompt();
+    try { await installPromptEvent.userChoice; } catch {}
+    setInstallPromptEvent(null);
+  };
+
   // Session countdown effect
   useEffect(() => {
     if (!sessionExpiresAt) return;
@@ -183,7 +230,7 @@ const Header = () => {
               <a href="#home" className="nav-link">Home</a>
             </li>
             <li className="nav-item">
-              <a href="#about" className="nav-link">About</a>
+              <a href="#view-data" className="nav-link">View Data</a>
             </li>
             <li className="nav-item">
               <a href="#services" className="nav-link">Services</a>
@@ -191,11 +238,24 @@ const Header = () => {
             <li className="nav-item">
               <a href="#contact" className="nav-link">Contact</a>
             </li>
+            <li className="nav-item compact-hide">
+              <button className="dark-toggle" onClick={()=> setDarkMode(d => !d)} aria-label="Toggle dark mode">{darkMode ? '🌙' : '☀️'}</button>
+            </li>
+            {installPromptEvent && (
+              <li className="nav-item compact-hide">
+                <button className="install-btn" onClick={triggerInstall}>Install App</button>
+              </li>
+            )}
           </ul>
         </nav>
         
         {/* Profile icon on the right */}
         <div className="nav-profile" onClick={handleProfileClick}>
+          {/* Sync status indicator (small bullets) */}
+          <div className="sync-indicator" title={`Pending: ${syncCounts.pending} Failed: ${syncCounts.failed}`} aria-label="Sync status">
+            <span className={`dot pending ${syncCounts.pending? 'active':''}`}></span>
+            <span className={`dot failed ${syncCounts.failed? 'active':''}`}></span>
+          </div>
           {isAuthenticated && remainingSeconds !== null && (
             <div className="session-countdown-wrapper" title="Session time remaining">
               <span className="session-countdown-label">Session</span>
@@ -425,6 +485,9 @@ const Header = () => {
           </ErrorBoundary>
         )}
       </Modal>
+      {!online && (
+        <div className="offline-banner" role="status" aria-live="polite">Offline mode – changes will sync when back online.</div>
+      )}
     </header>
   );
 };

@@ -211,6 +211,33 @@
 .record-list tbody tr.status-failed td { background:#fff5f5; }
 .record-list tbody tr:hover td { background:#f1f3f5; }
 
+.record-filters { display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:.75rem; align-items:center; }
+.record-filters input { flex:1 1 200px; border:1px solid #ced4da; padding:.45rem .6rem; border-radius:6px; font-size:.75rem; }
+.record-filters select { border:1px solid #ced4da; padding:.45rem .6rem; border-radius:6px; font-size:.75rem; }
+.badge { font-size:.6rem; font-weight:700; padding:.3rem .45rem; border-radius:10px; letter-spacing:.5px; background:#e9ecef; color:#495057; }
+.badge.pending { background:#fff3cd; color:#856404; }
+.badge.uploading { background:#cfe2ff; color:#084298; }
+.badge.failed { background:#f8d7da; color:#842029; }
+.badge.uploaded { background:#d1e7dd; color:#0f5132; }
+.status-badge { padding:.25rem .5rem; border-radius:12px; text-transform:capitalize; font-size:.65rem; font-weight:600; letter-spacing:.5px; }
+.status-badge.pending { background:#fff3cd; color:#856404; }
+.status-badge.uploading { background:#cfe2ff; color:#084298; }
+.status-badge.failed { background:#f8d7da; color:#842029; }
+.status-badge.uploaded { background:#d1e7dd; color:#0f5132; }
+
+/* Dark mode overrides */
+:root.dark .App { background:#121314; }
+:root.dark .child-form-wrapper, :root.dark .record-list { background:#1e1f21; box-shadow:0 2px 10px rgba(0,0,0,.4); }
+:root.dark .child-form input, :root.dark .child-form textarea { background:#2a2c2f; color:#eee; border-color:#3a3d40; }
+:root.dark .child-form label { color:#bbb; }
+:root.dark .record-list tbody tr:hover td { background:#2a2c2f; }
+:root.dark .record-list tbody tr.status-pending td { background:#2a2c2f; }
+:root.dark .record-list tbody tr.status-uploaded td { background:#1f3324; }
+:root.dark .record-list tbody tr.status-failed td { background:#332020; }
+:root.dark .record-filters input, :root.dark .record-filters select { background:#2a2c2f; border-color:#3a3d40; color:#eee; }
+:root.dark .sync-status { background:#1e2530; border-color:#2c3948; color:#d0d4d9; }
+:root.dark .sync-status button { background:#2563eb; }
+
 @media (max-width: 900px) {
   .child-form .grid { grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); }
 }
@@ -242,3 +269,10 @@
     padding: 1.5rem;
   }
 }
+
+/* Sync Status */
+.sync-status { background:#f7f9fc; border:1px solid #dbe2ec; padding:10px 14px; border-radius:6px; margin-top:1rem; font-size:13px; text-align:left; }
+.sync-status .sync-row { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+.sync-status button { background:#0d47a1; color:#fff; border:none; padding:6px 14px; border-radius:4px; cursor:pointer; font-size:13px; }
+.sync-status button:disabled { opacity:0.6; cursor:default; }
+.sync-status .meta { margin-top:4px; font-size:12px; color:#555; }
