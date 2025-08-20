@@ -18,6 +18,8 @@
   padding: 1rem 2rem;
 }
 
+.nav-left { display:flex; align-items:center; gap:1rem; }
+
 /* Brand/Logo Styles */
 .nav-brand h2 {
   color: #333;
@@ -70,7 +72,13 @@
   border-radius: 25px;
   transition: all 0.3s ease;
   color: #555;
+  margin-left: auto; /* ensure always on far right */
 }
+.nav-profile .profile-text { order: 1; }
+.nav-profile .session-countdown-wrapper { order: 1; }
+.nav-profile .profile-icon-group { order: 2; display:flex; flex-direction:column; align-items:center; line-height:1; }
+.nav-profile .profile-icon { order: 1; }
+.nav-profile .profile-icon-group .profile-text { order:2; font-size:0.7rem; margin-top:2px; }
 
 .nav-profile:hover {
   background-color: #f8f9fa;
@@ -103,6 +111,61 @@
   font-weight: 500;
   font-size: 0.9rem;
 }
+
+/* Session countdown in navbar */
+.session-countdown {
+  margin-left: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  background: #f1f3f5;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #343a40;
+  min-width: 54px;
+  text-align: center;
+  letter-spacing: 1px;
+  transition: background .3s, color .3s;
+}
+.session-countdown.warn {
+  background: #ffe8cc;
+  color: #d9480f;
+  animation: pulse 1s infinite alternate;
+}
+/* Countdown wrapper & label */
+.session-countdown-wrapper { display:flex; flex-direction:column; align-items:center; line-height:1; margin-left:8px; }
+.session-countdown-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; margin-bottom:2px; }
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 26px;
+  height: 20px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-right: 10px;
+  cursor: pointer;
+}
+.hamburger span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: #333;
+  border-radius: 2px;
+  transition: all .3s ease;
+}
+.hamburger.active span:nth-child(1) { transform: translateY(8.5px) rotate(45deg); }
+.hamburger.active span:nth-child(2) { opacity: 0; }
+.hamburger.active span:nth-child(3) { transform: translateY(-8.5px) rotate(-45deg); }
+
+/* Mobile Nav */
+.nav-menu.open { display: block; }
+.nav-menu.open .nav-list { flex-direction: column; gap: 0.75rem; }
+.nav-menu.open .nav-link { display: block; }
 
 /* User Profile Styles */
 .user-profile {
@@ -236,15 +299,67 @@
   box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4);
 }
 
+/* Session Timer */
+.session-timer-row .session-timer-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.expiring-badge {
+  background: #ffc107;
+  color: #664d03;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+.session-progress-wrapper {
+  margin: 10px 0 5px;
+}
+
+.session-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.session-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg,#28a745,#ffc107,#dc3545);
+  transition: width 1s linear;
+}
+
+.session-progress-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  margin-top: 2px;
+  color: #6c757d;
+}
+
+@media (max-width: 480px) {
+  .session-progress-legend { font-size: 9px; }
+  .session-timer-row .detail-label { min-width: 90px; }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .nav-container {
     padding: 1rem;
   }
-  
-  .nav-menu {
-    display: none;
-  }
+  .hamburger { display: flex; }
+  .nav-left { flex:1; }
+  .nav-profile { margin-left:auto; }
+  .nav-menu { display: none; position: absolute; top: 64px; left:0; right:0; background:#fff; padding:1rem 2rem 1.5rem; box-shadow:0 4px 12px rgba(0,0,0,.08); border-bottom:2px solid #f1f3f5; }
   
   .nav-brand h2 {
     font-size: 1.5rem;
@@ -267,4 +382,5 @@
   .nav-brand h2 {
     font-size: 1.3rem;
   }
+  .session-countdown { font-size: 0.75rem; padding: 3px 6px; }
 }

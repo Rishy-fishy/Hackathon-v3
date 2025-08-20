@@ -9,6 +9,9 @@ const Header = () => {
   const [userInfo, setUserInfo] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionExpiresAt, setSessionExpiresAt] = useState(null); // epoch ms
+  const [remainingSeconds, setRemainingSeconds] = useState(null);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const handleProfileClick = () => {
     console.log('Profile button clicked');
@@ -63,6 +66,11 @@ const Header = () => {
           setUserInfo(userInfo);
           setIsAuthenticated(true);
           console.log('✅ eSignet user loaded:', userInfo.name);
+          const ts = parseInt(sessionStorage.getItem('auth_timestamp'),10);
+          if (!isNaN(ts)) {
+            const expires = ts + 15*60*1000; // 15 minutes
+            setSessionExpiresAt(expires);
+          }
         }
       } else {
         // Check legacy authentication (old flow)
@@ -74,6 +82,11 @@ const Header = () => {
             setUserInfo(userInfo);
             setIsAuthenticated(true);
             console.log('✅ Legacy user loaded:', userInfo.name);
+            const ts = parseInt(localStorage.getItem('auth_timestamp'),10);
+            if (!isNaN(ts)) {
+              const expires = ts + 15*60*1000;
+              setSessionExpiresAt(expires);
+            }
           }
         }
       }
@@ -93,6 +106,40 @@ const Header = () => {
       localStorage.removeItem('is_authenticated');
     }
   }, []);
+
+  // Session countdown effect
+  useEffect(() => {
+    if (!sessionExpiresAt) return;
+    const update = () => {
+      const now = Date.now();
+      const remMs = sessionExpiresAt - now;
+      if (remMs <= 0) {
+        setRemainingSeconds(0);
+        handleLogout();
+        return;
+      }
+      setRemainingSeconds(Math.floor(remMs / 1000));
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [sessionExpiresAt]);
+
+  const formatRemaining = () => {
+    if (remainingSeconds == null) return '—';
+    const m = Math.floor(remainingSeconds / 60);
+    const s = remainingSeconds % 60;
+    return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  };
+
+  const sessionProgressPercent = () => {
+    if (!sessionExpiresAt) return 0;
+    const ts = parseInt(sessionStorage.getItem('auth_timestamp') || localStorage.getItem('auth_timestamp') || '0',10);
+    if (!ts) return 0;
+    const total = 15*60*1000;
+    const elapsed = Date.now() - ts;
+    return Math.min(100, Math.max(0, (elapsed/total)*100));
+  };
 
   const handleLogout = () => {
     // Clear legacy authentication data
@@ -120,13 +167,24 @@ const Header = () => {
   return (
     <header className="header">
       <div className="nav-container">
-        {/* Logo/Brand section */}
-        <div className="nav-brand">
-          <h2>MyApp</h2>
+        <div className="nav-left">
+          {/* Hamburger for mobile */}
+          <button
+            className={`hamburger ${showMobileMenu ? 'active' : ''}`}
+            aria-label="Toggle navigation menu"
+            aria-expanded={showMobileMenu}
+            onClick={() => setShowMobileMenu(v => !v)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+          {/* Logo/Brand section */}
+          <div className="nav-brand" aria-label="App Home" />
         </div>
-        
+
         {/* Navigation links */}
-        <nav className="nav-menu">
+        <nav className={`nav-menu ${showMobileMenu ? 'open' : ''}`}>
           <ul className="nav-list">
             <li className="nav-item">
               <a href="#home" className="nav-link">Home</a>
@@ -145,19 +203,27 @@ const Header = () => {
         
         {/* Profile icon on the right */}
         <div className="nav-profile" onClick={handleProfileClick}>
-          <div className="profile-icon">
-            <svg 
-              width="32" 
-              height="32" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <circle cx="12" cy="7" r="3" stroke="currentColor" strokeWidth="2"/>
-              <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="currentColor" strokeWidth="2"/>
-            </svg>
+          {isAuthenticated && remainingSeconds !== null && (
+            <div className="session-countdown-wrapper" title="Session time remaining">
+              <span className="session-countdown-label">Session</span>
+              <span className={`session-countdown ${remainingSeconds < 60 ? 'warn' : ''}`}>{formatRemaining()}</span>
+            </div>
+          )}
+          <div className="profile-icon-group">
+            <div className="profile-icon">
+              <svg 
+                width="32" 
+                height="32" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle cx="12" cy="7" r="3" stroke="currentColor" strokeWidth="2"/>
+                <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="currentColor" strokeWidth="2"/>
+              </svg>
+            </div>
+            <span className="profile-text">Profile</span>
           </div>
-          <span className="profile-text">Profile</span>
         </div>
       </div>
       
