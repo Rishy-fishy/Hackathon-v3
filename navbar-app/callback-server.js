@@ -296,7 +296,8 @@ app.get('/callback', async (req, res) => {
           <script>
             try {
               console.log('Preparing redirect with encoded auth payload...');
-              const target = 'http://localhost:3001/?auth_payload=${forwardB64}&authenticated=true';
+              // Use hash fragment instead of query params to avoid very long request lines causing 431 errors
+              const target = 'http://localhost:3001/#auth_payload=${forwardB64}&authenticated=true';
               // small delay so user sees success state briefly
               setTimeout(()=>{ window.location.replace(target); }, 600);
               

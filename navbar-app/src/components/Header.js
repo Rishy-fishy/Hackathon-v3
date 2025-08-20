@@ -37,8 +37,14 @@ const Header = () => {
     // Check if user is authenticated via eSignet (new flow)
     try {
       // New: handle auth_payload (base64url encoded JSON forwarded from callback server)
-      const params = new URLSearchParams(window.location.search);
-      const authPayloadB64 = params.get('auth_payload');
+      let params = new URLSearchParams(window.location.search);
+      let authPayloadB64 = params.get('auth_payload');
+      if (!authPayloadB64 && window.location.hash.startsWith('#')) {
+        // parse hash style #auth_payload=...&authenticated=true
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        authPayloadB64 = hashParams.get('auth_payload');
+        if (authPayloadB64) params = hashParams; // treat hash params for cleanup
+      }
       if (authPayloadB64) {
         try {
           const jsonStr = atob(authPayloadB64.replace(/-/g,'+').replace(/_/g,'/'));
@@ -59,7 +65,13 @@ const Header = () => {
         }
         // Clean auth_payload from URL
         params.delete('auth_payload');
-        window.history.replaceState({}, document.title, window.location.pathname + (params.toString()? ('?'+params.toString()):''));
+        if (window.location.hash && window.location.hash.includes('auth_payload')) {
+          // Clean hash
+          const newHashParams = new URLSearchParams(params.toString());
+          window.history.replaceState({}, document.title, window.location.pathname + (newHashParams.toString()? ('#'+newHashParams.toString()):''));
+        } else {
+          window.history.replaceState({}, document.title, window.location.pathname + (params.toString()? ('?'+params.toString()):''));
+        }
       }
 
       const esignetAuthenticated = sessionStorage.getItem('esignet_authenticated') === 'true';
