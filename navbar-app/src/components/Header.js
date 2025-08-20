@@ -29,6 +29,32 @@ const Header = () => {
   useEffect(() => {
     // Check if user is authenticated via eSignet (new flow)
     try {
+      // New: handle auth_payload (base64url encoded JSON forwarded from callback server)
+      const params = new URLSearchParams(window.location.search);
+      const authPayloadB64 = params.get('auth_payload');
+      if (authPayloadB64) {
+        try {
+          const jsonStr = atob(authPayloadB64.replace(/-/g,'+').replace(/_/g,'/'));
+          const payload = JSON.parse(jsonStr);
+          if (payload.userInfo) {
+            sessionStorage.setItem('esignet_authenticated','true');
+            sessionStorage.setItem('esignet_user', JSON.stringify(payload.userInfo));
+            sessionStorage.setItem('auth_timestamp', Date.now().toString());
+            if (payload.access_token) sessionStorage.setItem('access_token', payload.access_token);
+          }
+          if (payload.userInfo) {
+            setUserInfo(payload.userInfo);
+            setIsAuthenticated(true);
+            console.log('✅ Auth payload processed');
+          }
+        } catch (e) {
+          console.warn('Failed to process auth_payload:', e.message);
+        }
+        // Clean auth_payload from URL
+        params.delete('auth_payload');
+        window.history.replaceState({}, document.title, window.location.pathname + (params.toString()? ('?'+params.toString()):''));
+      }
+
       const esignetAuthenticated = sessionStorage.getItem('esignet_authenticated') === 'true';
       if (esignetAuthenticated) {
         const storedUserInfo = sessionStorage.getItem('esignet_user');

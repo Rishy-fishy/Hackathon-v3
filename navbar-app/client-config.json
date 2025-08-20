@@ -1,5 +1,5 @@
 {
-  "clientId": "IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwAObq",
+  "clientId": "3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M",
   "privateKey": {
     "kty": "RSA",
     "kid": "z5Em8Uhle_XmCcMgzx00RuZSoIMU5qJJ9UouYBHyKAU",
@@ -22,16 +22,67 @@
     "e": "AQAB",
     "n": "wAObqt3DknLdIXcNvEMnFJ1DhKhbhFRhJkqRAKN1O43uS-aaP1DWuAM-seFlW2S0k9Rruq8pg-cC5YvBBHWzG8dF1PTNvQxE9Q1fXnz8ccFPbQA5Eu1QIzmBmdrct2YQP90_1k1jhjxM0i01Nc0URoAthKG_1lEppU2oTG_K9hWuzG2ZHfL4kZzH8rtSlRb9EQ0IW2VWESZdX5DjyAhPSO0T5gLmoxbG4-WqR5xZvgc0__yTlfWNS-O0agASe2k5uWECLgWVh1JmqzK77bYQLP1KOedRwmMHS3KjBgAymualKVumUtwsiW3pyQN7cLZ36ygP18aSWryHSmZa5qihLQ"
   },
-  "redirectUri": "http://localhost:3001/callback",
+  "redirectUri": "http://localhost:5000/callback",
   "baseURL": "http://localhost:8088",
   "authorizeUrl": "http://localhost:3000/authorize",
   "createdAt": "2025-08-19T14:24:50.900Z",
-  "clientResponse": {
-    "responseTime": "2025-08-19T14:24:50.876Z",
+  "clientResponse": {},
+  "registrationResponse": {
+    "responseTime": "2025-08-20T17:56:28.516Z",
     "response": {
-      "clientId": "IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwAObq",
+      "clientId": "3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M",
       "status": "ACTIVE"
     },
     "errors": []
+  },
+  "registrationRequest": {
+    "requestTime": "2025-08-20T17:56:27.068Z",
+    "request": {
+      "clientId": "3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M",
+      "clientName": "React eSignet Demo App",
+      "publicKey": {
+        "kty": "RSA",
+        "kid": "z5Em8Uhle_XmCcMgzx00RuZSoIMU5qJJ9UouYBHyKAU",
+        "use": "sig",
+        "alg": "RS256",
+        "e": "AQAB",
+        "n": "wAObqt3DknLdIXcNvEMnFJ1DhKhbhFRhJkqRAKN1O43uS-aaP1DWuAM-seFlW2S0k9Rruq8pg-cC5YvBBHWzG8dF1PTNvQxE9Q1fXnz8ccFPbQA5Eu1QIzmBmdrct2YQP90_1k1jhjxM0i01Nc0URoAthKG_1lEppU2oTG_K9hWuzG2ZHfL4kZzH8rtSlRb9EQ0IW2VWESZdX5DjyAhPSO0T5gLmoxbG4-WqR5xZvgc0__yTlfWNS-O0agASe2k5uWECLgWVh1JmqzK77bYQLP1KOedRwmMHS3KjBgAymualKVumUtwsiW3pyQN7cLZ36ygP18aSWryHSmZa5qihLQ"
+      },
+      "relyingPartyId": "3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M",
+      "userClaims": [
+        "name",
+        "email",
+        "gender",
+        "phone_number",
+        "picture",
+        "birthdate"
+      ],
+      "authContextRefs": [
+        "mosip:idp:acr:generated-code",
+        "mosip:idp:acr:password"
+      ],
+      "logoUri": "https://via.placeholder.com/120",
+      "redirectUris": [
+        "http://localhost:5000/callback"
+      ],
+      "grantTypes": [
+        "authorization_code"
+      ],
+      "clientAuthMethods": [
+        "private_key_jwt"
+      ],
+      "clientNameLangMap": {
+        "eng": "React eSignet Demo App"
+      },
+      "additionalConfig": {
+        "userinfo_response_type": "JWS",
+        "purpose": {
+          "type": "verify"
+        },
+        "signup_banner_required": true,
+        "forgot_pwd_link_required": true,
+        "consent_expire_in_mins": 20
+      }
+    }
   }
 }

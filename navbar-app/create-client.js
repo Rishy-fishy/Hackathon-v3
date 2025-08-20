@@ -66,7 +66,7 @@ const registrationRequest = {
     logoUri: 'https://via.placeholder.com/150',
     redirectUris: [
       'http://localhost:5000/callback',
-      'http://localhost:3001/callback'
+  'http://localhost:5000/callback'
     ],
     grantTypes: ['authorization_code'],
     clientAuthMethods: ['private_key_jwt'],

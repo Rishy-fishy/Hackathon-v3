@@ -9,15 +9,19 @@ const ESignetAuth = () => {
   const initializationRef = useRef(false);
 
   // OIDC Configuration using the newly created client
+  // IMPORTANT: redirect_uri must match what is registered for the client AND
+  // what the backend callback server listens on for performing the code -> token exchange.
+  // We standardize on http://localhost:5000/callback (node callback-server.js) then it
+  // forwards the browser back to the React app at /?authenticated=true after storing tokens.
   const oidcConfig = {
     acr_values: 'mosip:idp:acr:generated-code',
-    authorizeUri: 'http://localhost:3000/authorize', // Fixed: Using UI port 3000
+    authorizeUri: 'http://localhost:3000/authorize',
     claims_locales: 'en',
-    client_id: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwAObq', // Using the new generated client ID
+    client_id: '3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M',
     display: 'page',
-    max_age: 21,
+    max_age: 600,
     prompt: 'consent',
-    redirect_uri: 'http://localhost:3001/callback', // Back to React app
+    redirect_uri: 'http://localhost:5000/callback',
     scope: 'openid profile',
     ui_locales: 'en'
   };
@@ -73,10 +77,7 @@ const ESignetAuth = () => {
         throw new Error('Button container not found');
       }
 
-      console.log('🚀 Initializing eSignet button with config:', {
-        oidcConfig,
-        buttonConfig
-      });
+  console.log('🚀 Initializing eSignet button with config:', { oidcConfig, buttonConfig });
 
       // Create a container for the plugin
       const container = buttonContainerRef.current;
@@ -88,27 +89,49 @@ const ESignetAuth = () => {
         signInElement: container
       });
 
+      // Wrap the anchor click to inject state + nonce BEFORE redirect if plugin does not manage them.
+      const anchor = container.querySelector('a[href]');
+      if (anchor) {
+        anchor.addEventListener('click', (e) => {
+          try {
+            // Generate state & nonce and persist *before* navigating away.
+            const state = generateRandomString(16);
+            const nonce = generateRandomString(16);
+            sessionStorage.setItem('esignet_state', state);
+            sessionStorage.setItem('esignet_nonce', nonce);
+
+            const original = anchor.getAttribute('href');
+            if (original) {
+              const url = new URL(original);
+              // Only add if absent (avoid double appending on retries)
+              if (!url.searchParams.get('state')) url.searchParams.set('state', state);
+              if (!url.searchParams.get('nonce')) url.searchParams.set('nonce', nonce);
+              // If dynamic client_id differs from existing param (e.g., placeholder), replace it
+              // Ensure correct client_id present
+              if (url.searchParams.get('client_id') !== oidcConfig.client_id) {
+                url.searchParams.set('client_id', oidcConfig.client_id);
+              }
+              anchor.setAttribute('href', url.toString());
+            }
+          } catch (wrapErr) {
+            console.warn('Failed to augment authorize URL with state/nonce:', wrapErr);
+          }
+        }, { once: true });
+      }
+
       setIsPluginReady(true);
       setIsLoading(false);
       console.log('✅ eSignet button initialized successfully');
 
       // Adjust malformed authorize URL if plugin renders '/authorize&...'
       try {
-        const anchor = container.querySelector('a[href]');
-        if (anchor) {
-          const href = anchor.getAttribute('href') || '';
+        const anchor2 = container.querySelector('a[href]');
+        if (anchor2) {
+          const href = anchor2.getAttribute('href') || '';
           if (href.includes('/authorize&')) {
             const fixed = href.replace('/authorize&', '/authorize?');
-            anchor.setAttribute('href', fixed);
+            anchor2.setAttribute('href', fixed);
           }
-          anchor.addEventListener('click', (e) => {
-            const h = anchor.getAttribute('href') || '';
-            if (h.includes('/authorize&')) {
-              e.preventDefault();
-              const fixed = h.replace('/authorize&', '/authorize?');
-              window.location.href = fixed;
-            }
-          });
         }
       } catch (adjErr) {
         console.warn('URL adjustment skipped:', adjErr);
@@ -130,14 +153,8 @@ const ESignetAuth = () => {
 
   // Initialize on component mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      initializeESignetButton();
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      initializationRef.current = false;
-    };
+    const t = setTimeout(() => initializeESignetButton(), 50);
+    return () => clearTimeout(t);
   }, []);
 
   // Retry initialization if it failed

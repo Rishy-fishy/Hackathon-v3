@@ -1,19 +1,6 @@
-const express = require('express'// Load client configuration
-let clientConfig;
-try {
-  clientConfig = JSON.parse(fs.readFileSync('client-config.json', 'utf8'));
-  
-  // Add missing configuration properties
-  clientConfig.baseURL = 'http://localhost:8088';
-  clientConfig.redirectUri = 'http://localhost:3001/callback';
-  
-  console.log('✅ Client configuration loaded');
-  console.log('📋 Client ID:', clientConfig.clientId);
-} catch (error) {
-  console.error('❌ Failed to load client configuration:', error.message);
-  console.log('💡 Run "node create-client.js" to generate a new client configuration');
-  process.exit(1);
-}ors = require('cors');
+// Clean, de-duplicated callback server implementation
+const express = require('express');
+const cors = require('cors');
 const fetch = require('node-fetch');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -45,12 +32,16 @@ function jwkToPem(jwk) {
 app.use(cors());
 app.use(express.json());
 
-// Load client configuration
+// Load client configuration ONCE
 let clientConfig;
 try {
   clientConfig = JSON.parse(fs.readFileSync('./client-config.json', 'utf8'));
+  // Standardize redirect URI to callback server (must match what was registered with eSignet)
+  clientConfig.redirectUri = 'http://localhost:5000/callback';
+  clientConfig.baseURL = clientConfig.baseURL || 'http://localhost:8088';
   console.log('✅ Client configuration loaded');
   console.log('📋 Client ID:', clientConfig.clientId);
+  console.log('🔁 Using redirect URI:', clientConfig.redirectUri);
 } catch (error) {
   console.error('❌ Failed to load client configuration:', error.message);
   console.log('💡 Run "node create-client.js" to generate a new client configuration');
@@ -98,6 +89,9 @@ function generateClientAssertion(clientId, audience) {
 }
 
 // Serve static HTML for callback
+// Keep simple in-memory set of processed authorization codes to avoid repeated exchanges (dev only)
+const processedCodes = new Set();
+
 app.get('/callback', async (req, res) => {
   const { code, state, error } = req.query;
 
@@ -114,6 +108,11 @@ app.get('/callback', async (req, res) => {
   }
 
   try {
+    if (processedCodes.has(code)) {
+      console.log('🔁 Authorization code already processed, ignoring duplicate.');
+      return res.redirect('http://localhost:3001/?authenticated=true');
+    }
+
     // Exchange authorization code for tokens
     console.log('🔄 Exchanging authorization code for tokens...');
     
@@ -140,7 +139,7 @@ app.get('/callback', async (req, res) => {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         code: code,
-        redirect_uri: 'http://localhost:5000/callback',
+  redirect_uri: clientConfig.redirectUri,
         client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
         client_assertion: clientAssertion
       })
@@ -191,28 +190,64 @@ app.get('/callback', async (req, res) => {
     const tokens = await tokenResponse.json();
     console.log('✅ Tokens received:', { access_token: tokens.access_token ? 'present' : 'missing' });
 
-    // Get user info if we have access token
+    // Mark code processed (whether userinfo succeeds or not)
+    processedCodes.add(code);
+
+    // Helper: try decoding JWS (header.payload.signature)
+    const tryDecodeJws = (input) => {
+      if (typeof input !== 'string') return null;
+      const parts = input.split('.');
+      if (parts.length !== 3) return null;
+      try {
+        const payloadB64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const pad = payloadB64.length % 4 === 0 ? '' : '='.repeat(4 - (payloadB64.length % 4));
+        const jsonStr = Buffer.from(payloadB64 + pad, 'base64').toString('utf8');
+        return JSON.parse(jsonStr);
+      } catch {
+        return null;
+      }
+    };
+
+    // Get user info (may be raw JSON or signed JWS per additionalConfig.userinfo_response_type)
     let userInfo = null;
     if (tokens.access_token) {
       try {
         const userResponse = await fetch('http://localhost:8088/v1/esignet/oidc/userinfo', {
-          headers: {
-            'Authorization': `Bearer ${tokens.access_token}`
-          }
+          headers: { 'Authorization': `Bearer ${tokens.access_token}` }
         });
-
         if (userResponse.ok) {
-          userInfo = await userResponse.json();
-          console.log('✅ User info received:', userInfo.name || userInfo.sub);
+          const text = await userResponse.text();
+            // Try JSON parse first
+            try {
+              userInfo = JSON.parse(text);
+              console.log('✅ User info (JSON) received.');
+            } catch {
+              // Maybe JWS
+              userInfo = tryDecodeJws(text);
+              if (userInfo) {
+                console.log('✅ User info (JWS decoded) received.');
+              } else {
+                console.warn('⚠️ User info neither JSON nor decodable JWS. Storing raw.');
+                userInfo = { raw: text };
+              }
+            }
         } else {
-          console.warn('⚠️ Failed to fetch user info');
+          console.warn('⚠️ Failed to fetch user info, status:', userResponse.status);
         }
       } catch (userError) {
         console.warn('⚠️ User info request failed:', userError.message);
       }
     }
 
-    // Create success HTML page that will store data and redirect
+    // Build auth payload to forward to SPA origin (different port so we cannot rely on storage written here)
+    const forwardPayload = {
+      access_token: tokens.access_token || null,
+      id_token: tokens.id_token || null,
+      userInfo: userInfo || null
+    };
+    const forwardB64 = Buffer.from(JSON.stringify(forwardPayload)).toString('base64url');
+
+    // Create success HTML page that immediately redirects with base64 payload (auth_payload) to React app
     const html = `
       <!DOCTYPE html>
       <html>
@@ -231,20 +266,10 @@ app.get('/callback', async (req, res) => {
           <p>Storing your profile information...</p>
           <script>
             try {
-              // Store authentication data in localStorage
-              localStorage.setItem('access_token', ${JSON.stringify(tokens.access_token || '')});
-              ${tokens.id_token ? `localStorage.setItem('id_token', ${JSON.stringify(tokens.id_token)});` : ''}
-              ${userInfo ? `localStorage.setItem('user_info', ${JSON.stringify(JSON.stringify(userInfo))});` : ''}
-              localStorage.setItem('is_authenticated', 'true');
-              localStorage.setItem('auth_timestamp', Date.now().toString());
-              localStorage.setItem('auth_method', 'esignet');
-              
-              console.log('✅ Authentication data stored successfully');
-              
-              // Redirect to React app
-              setTimeout(() => {
-                window.location.href = 'http://localhost:3001/?authenticated=true';
-              }, 1500);
+              console.log('Preparing redirect with encoded auth payload...');
+              const target = 'http://localhost:3001/?auth_payload=${forwardB64}&authenticated=true';
+              // small delay so user sees success state briefly
+              setTimeout(()=>{ window.location.replace(target); }, 600);
               
             } catch (error) {
               console.error('❌ Error storing authentication data:', error);
@@ -326,9 +351,9 @@ app.post('/exchange-token', async (req, res) => {
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
-        client_id: clientConfig.clientId,
-        code: code,
-        redirect_uri: clientConfig.redirectUri,
+  client_id: clientConfig.clientId,
+  code: code,
+  redirect_uri: clientConfig.redirectUri,
         client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
         client_assertion: clientAssertion
       })
@@ -393,6 +418,49 @@ app.post('/exchange-token', async (req, res) => {
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', port: port });
+});
+
+// Public client metadata (safe subset) for front-end to discover current clientId
+app.get('/client-meta', (req, res) => {
+  res.json({
+    clientId: clientConfig.clientId,
+    authorizeUri: 'http://localhost:3000/authorize',
+    redirect_uri: clientConfig.redirectUri
+  });
+});
+
+// Simple delegate style endpoint (GET) to mimic workshop example
+// Usage: /delegate/fetchUserInfo?code=AUTH_CODE
+app.get('/delegate/fetchUserInfo', async (req, res) => {
+  const code = req.query.code;
+  if (!code) return res.status(400).json({ error: 'missing_code' });
+  try {
+    const clientAssertion = generateClientAssertion(clientConfig.clientId, `${clientConfig.baseURL}/v1/esignet/oauth/v2/token`);
+    if (!clientAssertion) return res.status(500).json({ error: 'assertion_failed' });
+
+    const tokenResp = await fetch(`${clientConfig.baseURL}/v1/esignet/oauth/v2/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: clientConfig.redirectUri,
+        client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+        client_assertion: clientAssertion,
+        client_id: clientConfig.clientId
+      })
+    });
+    const tokenJson = await tokenResp.json().catch(()=>({}));
+    if (!tokenResp.ok) return res.status(tokenResp.status).json({ error: 'token_exchange_failed', details: tokenJson });
+    const accessToken = tokenJson.access_token;
+    if (!accessToken) return res.status(400).json({ error: 'no_access_token', details: tokenJson });
+    const uiResp = await fetch(`${clientConfig.baseURL}/v1/esignet/oidc/userinfo`, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const userInfo = await uiResp.json().catch(()=>({}));
+    if (!uiResp.ok) return res.status(uiResp.status).json({ error: 'userinfo_failed', details: userInfo, access_token: accessToken });
+    res.json({ ...userInfo, access_token: accessToken });
+  } catch (e) {
+    res.status(500).json({ error: 'delegate_internal_error', message: e.message });
+  }
 });
 
 app.listen(port, () => {

@@ -10,7 +10,7 @@ const AuthCallback = () => {
   const getClientConfig = () => {
     // Using the new client configuration
     return {
-      clientId: 'IIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwAObq',
+  clientId: '3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M',
       redirectUri: 'http://localhost:3001/callback',
       baseURL: 'http://localhost:8088'
     };

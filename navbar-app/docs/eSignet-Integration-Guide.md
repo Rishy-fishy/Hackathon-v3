@@ -22,7 +22,7 @@ Based on your environment variables, you're using:
 ESIGNET_BASE_URL=https://esignet.collab.mosip.net
 
 # Your application redirect URI
-REDIRECT_URI=http://localhost:3001/callback
+REDIRECT_URI=http://localhost:5000/callback
 
 # OIDC Configuration
 SCOPE=openid profile
@@ -96,7 +96,7 @@ Content-Type: application/json
         ],
         "logoUri": "{{$randomImageUrl}}",
         "redirectUris": [
-            "http://localhost:3001/callback",
+            "http://localhost:5000/callback",
             "http://localhost:3000/callback"
         ],
         "grantTypes": [
@@ -189,7 +189,7 @@ https://esignet.collab.mosip.net/authorize?
 
 After user authentication, eSignet redirects to your `redirect_uri` with:
 ```
-http://localhost:3001/callback?
+http://localhost:5000/callback?
   code={{authorization_code}}
   &state={{state}}
 ```
