@@ -4,7 +4,7 @@ import './ESignetAuth.css';
 const ESignetAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isPluginReady, setIsPluginReady] = useState(false);
+  // Plugin readiness no longer separately tracked; removing unused state.
   const buttonContainerRef = useRef(null);
   const initializationRef = useRef(false);
 
@@ -119,7 +119,6 @@ const ESignetAuth = () => {
         }, { once: true });
       }
 
-      setIsPluginReady(true);
       setIsLoading(false);
       console.log('✅ eSignet button initialized successfully');
 

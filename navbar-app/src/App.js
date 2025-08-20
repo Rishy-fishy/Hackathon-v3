@@ -9,6 +9,8 @@ import useConnectivity from './offline/useConnectivity';
 import { startAutoSync } from './offline/sync';
 
 function App() {
+  // Connectivity hook retained for potential future UI; currently unused.
+  // eslint-disable-next-line no-unused-vars
   const online = useConnectivity();
   // Check if we're on the callback route
   const isCallbackRoute = window.location.pathname === '/callback';

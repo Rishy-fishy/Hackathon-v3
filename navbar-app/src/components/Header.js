@@ -132,14 +132,7 @@ const Header = () => {
     return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
   };
 
-  const sessionProgressPercent = () => {
-    if (!sessionExpiresAt) return 0;
-    const ts = parseInt(sessionStorage.getItem('auth_timestamp') || localStorage.getItem('auth_timestamp') || '0',10);
-    if (!ts) return 0;
-    const total = 15*60*1000;
-    const elapsed = Date.now() - ts;
-    return Math.min(100, Math.max(0, (elapsed/total)*100));
-  };
+  // Removed unused sessionProgressPercent to reduce lint noise.
 
   const handleLogout = () => {
     // Clear legacy authentication data

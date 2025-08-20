@@ -6,12 +6,6 @@ const AuthCallback = () => {
   const [error, setError] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
 
-  // Load client configuration
-  const getClientConfig = () => ({
-    clientId: '3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M',
-    redirectUri: 'http://localhost:5000/callback',
-    baseURL: 'http://localhost:8088'
-  });
 
   // Process user info into standardized format
   const processUserInfo = (userInfo, accessToken) => {

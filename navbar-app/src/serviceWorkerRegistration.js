@@ -1,5 +1,6 @@
 // Standard CRA service worker registration helper (modified)
 /* eslint-disable no-console */
+// We build a custom InjectManifest service worker (custom-sw.js -> service-worker.js in build root)
 const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
 
 export function register() {

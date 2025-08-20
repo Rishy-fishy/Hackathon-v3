@@ -1,3 +1,26 @@
+/* eslint-disable no-restricted-globals */
+// Minimal Workbox InjectManifest-compatible service worker.
+import {precacheAndRoute} from 'workbox-precaching';
+
+// self.__WB_MANIFEST is injected at build time by Workbox (react-scripts)
+precacheAndRoute(self.__WB_MANIFEST || []);
+
+// Simple runtime cache: network-first for navigation requests (offline fallback to cached index.html)
+self.addEventListener('fetch', event => {
+  const { request } = event;
+  if (request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const network = await fetch(request);
+        return network;
+      } catch (e) {
+        const cache = await caches.open('precache-v1');
+        const cached = await cache.match('/index.html');
+        return cached || Response.error();
+      }
+    })());
+  }
+});
 /* Basic PWA service worker for offline shell + dynamic caching.
   Generated for child nutrition app. */
 /* eslint-disable no-restricted-globals */
