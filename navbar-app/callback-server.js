@@ -36,21 +36,22 @@ async function initMongo() {
   return mongoDb;
 }
 
-// Convert JWK to PEM format
-function jwkToPem(jwk) {
+// Obtain a usable private key in PEM form from config (accepts PEM string or JWK object)
+function getPrivateKeyPem(keyFromConfig) {
   try {
-    // Use Node.js crypto to create PEM from JWK
-    const keyObject = crypto.createPrivateKey({
-      key: jwk,
-      format: 'jwk'
-    });
-    
-    return keyObject.export({
-      format: 'pem',
-      type: 'pkcs8'
-    });
+    if (!keyFromConfig) throw new Error('No private key provided');
+    // Case 1: Already a PEM string
+    if (typeof keyFromConfig === 'string' && keyFromConfig.includes('BEGIN PRIVATE KEY')) {
+      return keyFromConfig; // pass-through
+    }
+    // Case 2: JWK object (Node >=15 can import directly)
+    if (typeof keyFromConfig === 'object' && keyFromConfig.kty === 'RSA') {
+      const keyObject = crypto.createPrivateKey({ key: keyFromConfig, format: 'jwk' });
+      return keyObject.export({ format: 'pem', type: 'pkcs8' });
+    }
+    throw new Error('Unsupported private key format');
   } catch (error) {
-    console.error('❌ Failed to convert JWK to PEM:', error.message);
+    console.error('❌ Private key processing failed:', error.message);
     return null;
   }
 }
@@ -95,8 +96,8 @@ function generateClientAssertion(clientId, audience) {
     console.log('🔐 Creating JWT client assertion...');
     console.log('📋 Payload:', JSON.stringify(payload, null, 2));
     
-    // Convert JWK to PEM format
-    const privateKeyPem = jwkToPem(clientConfig.privateKey);
+  // Get PEM private key (supports PEM string or JWK)
+  const privateKeyPem = getPrivateKeyPem(clientConfig.privateKey);
     if (!privateKeyPem) {
       throw new Error('Failed to convert private key to PEM format');
     }
@@ -160,7 +161,7 @@ app.get('/callback', async (req, res) => {
     console.log('📋 Client ID:', clientId);
     console.log('📋 Token endpoint:', tokenEndpoint);
     
-    const tokenResponse = await fetch(tokenEndpoint, {
+  const tokenResponse = await fetch(tokenEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -169,6 +170,7 @@ app.get('/callback', async (req, res) => {
         grant_type: 'authorization_code',
         code: code,
   redirect_uri: clientConfig.redirectUri,
+    client_id: clientId,
         client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
         client_assertion: clientAssertion
       })

@@ -17,7 +17,7 @@ const ESignetAuth = () => {
     acr_values: 'mosip:idp:acr:generated-code',
     authorizeUri: 'http://localhost:3000/authorize',
     claims_locales: 'en',
-    client_id: '3yz7-j3xRzU3SODdoNgSGvO_cD8UijH3AIWRDAg1x-M',
+    client_id: 'jgU6lnO_8ifzFSHtgbFjmxjJf3HYmHLgfvXrBtOtc80',
     display: 'page',
     max_age: 600,
     prompt: 'consent',

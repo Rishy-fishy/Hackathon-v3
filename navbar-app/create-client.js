@@ -15,29 +15,30 @@ const keyPair = crypto.generateKeyPairSync('rsa', {
   }
 });
 
-// Extract modulus and exponent from public key for JWK
-function pemToJWK(publicKeyPem) {
-  // Simple conversion - in production use a proper library
-  const keyData = publicKeyPem
-    .replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n/g, '')
-    .replace(/\//g, '_');
-  
-  return {
-    kty: 'RSA',
-    use: 'sig',
-    alg: 'RS256',
-    n: keyData.substring(0, 200), // truncated for demo
-    e: 'AQAB'
-  };
+// Build proper JWK (no truncation) using Node's crypto export
+function publicKeyToJwk(publicKeyPem) {
+  try {
+    const keyObj = crypto.createPublicKey(publicKeyPem);
+    const jwk = keyObj.export({ format: 'jwk' }); // { kty, n, e }
+    return {
+      kty: jwk.kty,
+      use: 'sig',
+      alg: 'RS256',
+      n: jwk.n, // full modulus (base64url)
+      e: jwk.e
+    };
+  } catch (e) {
+    console.error('Failed to convert public key to JWK:', e.message);
+    process.exit(1);
+  }
 }
 
 // Generate client ID from public key
-const publicKeyBase64 = keyPair.publicKey
-  .replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n/g, '')
-  .replace(/\//g, '_');
-
-const clientId = publicKeyBase64.substring(2, 50);
-const publicKeyJWK = pemToJWK(keyPair.publicKey);
+// Derive deterministic (but shortened) clientId from SHA-256 of public key
+const pubDerB64 = keyPair.publicKey
+  .replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n/g, '');
+const clientId = crypto.createHash('sha256').update(pubDerB64).digest('base64url').substring(0, 48);
+const publicKeyJWK = publicKeyToJwk(keyPair.publicKey);
 
 console.log('📝 Generated Client ID:', clientId);
 console.log('🔧 Public Key JWK:', JSON.stringify(publicKeyJWK, null, 2));
