@@ -3,12 +3,10 @@ import './App.css';
 import Header from './components/Header';
 import AuthCallback from './components/AuthCallback';
 import AuthSuccess from './components/AuthSuccess';
-import ChildForm from './offline/ChildForm';
-import RecordList from './offline/RecordList';
+import HomeDashboard from './components/HomeDashboard';
+import BottomNav from './components/BottomNav';
 import useConnectivity from './offline/useConnectivity';
 import { startAutoSync } from './offline/sync';
-import SyncStatus from './offline/SyncStatus';
-import ToastHost from './components/ToastHost';
 
 function App() {
   // Connectivity hook retained for potential future UI; currently unused.
@@ -34,12 +32,10 @@ function App() {
       <Header />
       <main className="main-content">
         <div className="content-container">
-          <ToastHost />
-          <SyncStatus />
-          <ChildForm />
-          <RecordList />
+          <HomeDashboard />
         </div>
       </main>
+      <BottomNav />
     </div>
   );
 }
