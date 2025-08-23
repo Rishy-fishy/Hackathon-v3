@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import './App.css';
+import  './glass.css';
 import Header from './components/Header';
 import AuthCallback from './components/AuthCallback';
 import AuthSuccess from './components/AuthSuccess';

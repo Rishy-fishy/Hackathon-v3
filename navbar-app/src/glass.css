@@ -1,0 +1,113 @@
+/* 🌟 Glassmorphism Add-on Styles */
+
+/* Glassmorphic containers */
+.child-form-wrapper,
+.record-list,
+.feature-section,
+.info-section,
+.status-section,
+.troubleshooting-section,
+.card,
+.panel {
+  background: rgba(255, 255, 255, 0.414); /* light frosted effect */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Dark mode adjustment */
+:root.dark .child-form-wrapper,
+:root.dark .record-list,
+:root.dark .feature-section,
+:root.dark .info-section,
+:root.dark .status-section,
+:root.dark .troubleshooting-section,
+:root.dark .card,
+:root.dark .panel {
+  background: rgba(18, 18, 18, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Inputs with glass effect */
+input, textarea, select {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px;
+}
+
+:root.dark input,
+:root.dark textarea,
+:root.dark select {
+  background: rgba(18, 18, 18, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Tables with glassy style */
+table {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+:root.dark table {
+  background: rgba(18, 18, 18, 0.3) !important;
+}
+
+/* Navbar with subtle frosted glass */
+nav {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+:root.dark nav {
+  background: rgba(18, 18, 18, 0.4) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Buttons as frosted pills */
+button, .theme-toggle {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+
+:root.dark button,
+:root.dark .theme-toggle {
+  background: rgba(18, 18, 18, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+button:hover, .theme-toggle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* 🌟 Profile Popup Glassmorphism */
+.profile-popup {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  padding: 1rem;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Dark mode */
+:root.dark .profile-popup {
+  background: rgba(18, 18, 18, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}

@@ -225,11 +225,9 @@
 .status-badge.failed { background:#f8d7da; color:#842029; }
 .status-badge.uploaded { background:#d1e7dd; color:#0f5132; }
 
-
 /* Dark mode overrides */
 :root.dark .App { background:#121314; }
 :root.dark .child-form-wrapper, :root.dark .record-list { background:#1e1f21; box-shadow:0 2px 10px rgba(0,0,0,.4); }
-:root.dark .content-container h1, :root.dark .child-form-wrapper h2, :root.dark .record-list h2, :root.dark .feature-section h2, :root.dark .info-section h2, :root.dark .status-section h2, :root.dark .troubleshooting-section h2 { color:#eee; }
 :root.dark .child-form input, :root.dark .child-form textarea { background:#2a2c2f; color:#eee; border-color:#3a3d40; }
 :root.dark .child-form label { color:#bbb; }
 :root.dark .record-list tbody tr:hover td { background:#2a2c2f; }
