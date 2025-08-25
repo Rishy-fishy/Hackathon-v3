@@ -232,34 +232,31 @@ const Header = () => {
             <span />
           </button>
           {/* Logo/Brand section */}
-          <div className="nav-brand" aria-label="App Home" />
+          <div className="nav-brand" aria-label="App Home">
+            <h2>Child Health Records</h2>
+          </div>
         </div>
 
-        {/* Navigation links */}
-        <nav className={`nav-menu ${showMobileMenu ? 'open' : ''}`}>
-          <ul className="nav-list">
-            <li className="nav-item">
-              <a href="#home" className="nav-link">Home</a>
-            </li>
-            <li className="nav-item">
-              <a href="#view-data" className="nav-link">View Data</a>
-            </li>
-            <li className="nav-item">
-              <a href="#services" className="nav-link">Services</a>
-            </li>
-            <li className="nav-item">
-              <a href="#contact" className="nav-link">Contact</a>
-            </li>
-            <li className="nav-item compact-hide">
-              <button className="dark-toggle" onClick={()=> setDarkMode(d => !d)} aria-label="Toggle dark mode">{darkMode ? '🌙' : '☀️'}</button>
-            </li>
-            {installPromptEvent && (
-              <li className="nav-item compact-hide">
-                <button className="install-btn" onClick={triggerInstall}>Install App</button>
-              </li>
-            )}
-          </ul>
-        </nav>
+        {/* Right side controls */}
+        <div className="nav-right">
+          <div className="nav-item compact-hide">
+            <select className="lang-select" aria-label="Language selector" defaultValue="en">
+              <option value="en">us English</option>
+              <option value="hi">हिन्दी</option>
+            </select>
+          </div>
+          <div className="nav-item compact-hide">
+            <button className="bell" aria-label="Notifications">🔔</button>
+          </div>
+          <div className="nav-item compact-hide">
+            <button className="dark-toggle" onClick={()=> setDarkMode(d => !d)} aria-label="Toggle dark mode">{darkMode ? '🌙' : '☀️'}</button>
+          </div>
+          {installPromptEvent && (
+            <div className="nav-item compact-hide">
+              <button className="install-btn" onClick={triggerInstall}>Install App</button>
+            </div>
+          )}
+        </div>
         
         {/* Profile icon on the right */}
         <div className="nav-profile" onClick={handleProfileClick}>

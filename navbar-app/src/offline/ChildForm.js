@@ -85,7 +85,7 @@ export default function ChildForm({ onSaved }) {
   };
 
   return (
-    <div className="child-form-wrapper">
+    <div className="child-form-wrapper" id="add-child">
       <h2>New Child Data</h2>
       <form onSubmit={handleSubmit} className="child-form">
         <div className="grid">
