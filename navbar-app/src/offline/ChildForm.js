@@ -93,17 +93,20 @@ export default function ChildForm({ onSaved, onClose }) {
 
   return (
   <div className="child-form-wrapper wizard-container" id="add-child">
-      <div className="steps-bar compact" aria-label="Form progress">
-        <div className={`step-chip ${step>=1?'active':''} ${step>1?'done':''} ${step===1?'current':''}`}> 
-          <span className="circle">1</span><span className="label">Name & Photo</span>
+      <div className="responsive-progress-bar" aria-label="Form progress">
+        <div className="progress-container">
+          <div className="step-wrapper completed">
+            <div className="step-number">1</div>
+          </div>
+          <div className="progress-line completed"></div>
+          <div className="step-wrapper active">
+            <div className="step-number">2</div>
+          </div>
+          <div className="progress-line inactive"></div>
+          <div className="step-wrapper inactive">
+            <div className="step-number">3</div>
+          </div>
         </div>
-        <div className={`step-chip ${step>=2?'active':''} ${step>2?'done':''} ${step===2?'current':''}`}>
-          <span className="circle">2</span><span className="label">Details</span>
-        </div>
-        <div className={`step-chip ${step>=3?'active':''} ${step===3?'current':''}`}>
-          <span className="circle">3</span><span className="label">Consent</span>
-        </div>
-        <div className="progress-rail"><div className="progress-thumb" style={{width: ((step-1)/2)*100 + '%'}} /></div>
       </div>
       <h2>Child Health Data</h2>
       {onClose && (
