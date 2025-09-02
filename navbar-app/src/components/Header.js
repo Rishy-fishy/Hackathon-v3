@@ -20,6 +20,7 @@ const Header = ({ onActiveViewChange }) => {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const handleProfileClick = () => {
     setIsLoading(true);
@@ -255,7 +256,11 @@ const Header = ({ onActiveViewChange }) => {
                 key={r.healthId}
                 type="button"
                 className={`record-row selectable ${selectedRecord?.healthId===r.healthId?'active':''}`}
-                onClick={()=>{ setSelectedRecord(r); setEditMode(false); }}
+                onClick={()=>{ 
+                  setSelectedRecord(r); 
+                  setEditMode(false); 
+                  setShowDetailModal(true);
+                }}
                 role="listitem"
                 aria-pressed={selectedRecord?.healthId===r.healthId}
               >
@@ -267,43 +272,7 @@ const Header = ({ onActiveViewChange }) => {
               </button>
             ))}
           </div>
-          <div className="overview-note">{selectedRecord? 'Selected record details below.' : 'Review entries before syncing. Ensure consent captured.'}</div>
-          {selectedRecord && (
-            <div className="record-detail" aria-label="Record detail">
-              <div className="detail-head">
-                <h3>{selectedRecord.name || '—'} <span className="rid">({selectedRecord.healthId})</span></h3>
-                <div className="detail-actions">
-                  {!editMode && <button className="mini-btn" onClick={()=> setEditMode(true)}>Modify</button>}
-                  {editMode && <button className="mini-btn" onClick={()=> setEditMode(false)}>Cancel</button>}
-                </div>
-              </div>
-              {!editMode && (
-                <div className="detail-grid">
-                  <div><strong>Age:</strong> {selectedRecord.ageMonths??'—'} m</div>
-                  <div><strong>Weight:</strong> {selectedRecord.weightKg??'—'} kg</div>
-                  <div><strong>Height:</strong> {selectedRecord.heightCm??'—'} cm</div>
-                  <div><strong>Guardian:</strong> {selectedRecord.guardianName||'—'}</div>
-                  <div className="full"><strong>Malnutrition Signs:</strong> {selectedRecord.malnutritionSigns||'N/A'}</div>
-                  <div className="full"><strong>Recent Illnesses:</strong> {selectedRecord.recentIllnesses||'N/A'}</div>
-                  <div><strong>Status:</strong> {selectedRecord.status}</div>
-                  <div><strong>Created:</strong> {new Date(selectedRecord.createdAt).toLocaleString()}</div>
-                </div>
-              )}
-              {editMode && (
-                <RecordEditForm
-                  record={selectedRecord}
-                  onSave={async (changes)=>{
-                    await updateChildRecord(selectedRecord.healthId, { ...changes, updatedAt: Date.now() });
-                    const updated = await listChildRecords();
-                    setRecords(updated);
-                    const newly = updated.find(r=> r.healthId === selectedRecord.healthId);
-                    setSelectedRecord(newly);
-                    setEditMode(false);
-                  }}
-                />
-              )}
-            </div>
-          )}
+          <div className="overview-note">Click on any record to view detailed information in a popup.</div>
         </div>
       )}
 
@@ -512,6 +481,60 @@ const Header = ({ onActiveViewChange }) => {
           </ErrorBoundary>
         )}
       </Modal>
+
+      {/* Record Detail Modal */}
+      <Modal isOpen={showDetailModal} onClose={() => {
+        setShowDetailModal(false);
+        setSelectedRecord(null);
+        setEditMode(false);
+      }}>
+        {selectedRecord && (
+          <>
+            <div className="detail-head">
+              <h3>{selectedRecord.name || '—'} <span className="rid">({selectedRecord.healthId})</span></h3>
+              <div className="detail-actions">
+                {!editMode && <button className="mini-btn" onClick={()=> setEditMode(true)}>Modify</button>}
+                {editMode && <button className="mini-btn" onClick={()=> setEditMode(false)}>Cancel</button>}
+              </div>
+            </div>
+            {!editMode && (
+              <div className="detail-content">
+                {selectedRecord.facePhoto && (
+                  <div className="detail-photo">
+                    <img src={selectedRecord.facePhoto} alt={`Photo of ${selectedRecord.name}`} className="child-photo" />
+                  </div>
+                )}
+                <div className="detail-grid">
+                  <div><strong>Age:</strong> {selectedRecord.ageMonths??'—'} m</div>
+                  <div><strong>Weight:</strong> {selectedRecord.weightKg??'—'} kg</div>
+                  <div><strong>Height:</strong> {selectedRecord.heightCm??'—'} cm</div>
+                  <div><strong>Guardian:</strong> {selectedRecord.guardianName||'—'}</div>
+                  <div className="full"><strong>Malnutrition Signs:</strong> {selectedRecord.malnutritionSigns||'N/A'}</div>
+                  <div className="full"><strong>Recent Illnesses:</strong> {selectedRecord.recentIllnesses||'N/A'}</div>
+                  <div><strong>Status:</strong> {selectedRecord.status}</div>
+                  <div><strong>Created:</strong> {new Date(selectedRecord.createdAt).toLocaleString()}</div>
+                </div>
+              </div>
+            )}
+            {editMode && (
+              <RecordEditForm
+                record={selectedRecord}
+                onSave={async (changes)=>{
+                  await updateChildRecord(selectedRecord.healthId, { ...changes, updatedAt: Date.now() });
+                  const updated = await listChildRecords();
+                  setRecords(updated);
+                  const newly = updated.find(r=> r.healthId === selectedRecord.healthId);
+                  setSelectedRecord(newly);
+                  setEditMode(false);
+                  setShowDetailModal(false);
+                  setSelectedRecord(null);
+                }}
+              />
+            )}
+          </>
+        )}
+      </Modal>
+
       {!online && (
         <div className="offline-banner" role="status" aria-live="polite">Offline mode – changes will sync when back online.</div>
       )}
@@ -530,10 +553,41 @@ function RecordEditForm({ record, onSave }) {
     heightCm: record.heightCm||'',
     guardianName: record.guardianName||'',
     malnutritionSigns: record.malnutritionSigns||'N/A',
-    recentIllnesses: record.recentIllnesses||'N/A'
+    recentIllnesses: record.recentIllnesses||'N/A',
+    facePhoto: record.facePhoto||null
   });
   const handleChange = e => {
-    const { name, value } = e.target; setForm(f=>({...f,[name]:value}));
+    const { name, value, type, files } = e.target;
+    if (type === 'file') {
+      const file = files[0];
+      if (!file) return;
+      // Resize/compress image to max 512px dimension (same logic as ChildForm)
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = () => {
+        img.onload = () => {
+          const maxDim = 512;
+          let { width, height } = img;
+          if (width > height && width > maxDim) {
+            height = Math.round(height * (maxDim/width));
+            width = maxDim;
+          } else if (height > maxDim) {
+            width = Math.round(width * (maxDim/height));
+            height = maxDim;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img,0,0,width,height);
+          const dataUrl = canvas.toDataURL('image/jpeg',0.7);
+          setForm(f => ({...f, facePhoto: dataUrl }));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setForm(f=>({...f,[name]:value}));
+    }
   };
   const submit = e => {
     e.preventDefault();
@@ -544,12 +598,42 @@ function RecordEditForm({ record, onSave }) {
       heightCm: form.heightCm? parseFloat(form.heightCm): null,
       guardianName: form.guardianName || 'N/A',
       malnutritionSigns: form.malnutritionSigns || 'N/A',
-      recentIllnesses: form.recentIllnesses || 'N/A'
+      recentIllnesses: form.recentIllnesses || 'N/A',
+      facePhoto: form.facePhoto
     });
   };
   return (
     <form onSubmit={submit} className="record-edit-form">
       <div className="edit-grid">
+        <div className="edit-photo-section">
+          <label>Photo</label>
+          <div className="edit-photo-container">
+            {form.facePhoto ? (
+              <div className="edit-photo-preview">
+                <img src={form.facePhoto} alt="Child" className="edit-photo-img" />
+                <button 
+                  type="button" 
+                  className="remove-edit-photo" 
+                  onClick={()=>setForm(f=>({...f, facePhoto:null}))}
+                  aria-label="Remove photo"
+                >×</button>
+              </div>
+            ) : (
+              <div className="edit-photo-placeholder">
+                <span>No photo</span>
+              </div>
+            )}
+            <input 
+              type="file" 
+              accept="image/*" 
+              capture="user" 
+              name="facePhoto" 
+              onChange={handleChange} 
+              className="edit-photo-input"
+              title="Update photo" 
+            />
+          </div>
+        </div>
         <label> Name
           <input name="name" value={form.name} onChange={handleChange} />
         </label>

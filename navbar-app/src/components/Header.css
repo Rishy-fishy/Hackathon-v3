@@ -32,20 +32,30 @@
 .record-row:nth-child(even){ background:#f5f5f5; }
 .record-row .id { font-weight:600; letter-spacing:.5px; }
 .record-row .status { text-transform:uppercase; font-size:.6rem; letter-spacing:.7px; }
-.record-row.selectable { cursor:default; background:#fff; text-align:left; width:100%; }
-.record-row.selectable.active { background:#000; color:#fff; }
+.record-row.selectable { cursor:pointer; background:#fff; text-align:left; width:100%; }
+.record-row.selectable.active { background:#059669; color:#fff; }
 .record-row.selectable.active .status { color:#fff; }
 .record-detail { margin-top:1rem; border:1px solid #000; padding:1rem 1.1rem 1.4rem; border-radius:6px; background:#fff; max-width:100%; overflow:hidden; box-sizing:border-box; }
 .record-detail .detail-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem; }
 .record-detail h3 { margin:0; font-size:1rem; letter-spacing:.5px; flex:1; min-width:0; }
 .record-detail .rid { font-size:.7rem; font-weight:400; }
 .record-detail .rid { word-break:break-word; overflow-wrap:anywhere; max-width:100%; display:block; }
+.record-detail .detail-content { display:flex; gap:1rem; flex-wrap:wrap; }
+.record-detail .detail-photo { flex:0 0 auto; max-width:120px; }
+.record-detail .child-photo { 
+  width:120px; 
+  height:150px; 
+  object-fit:cover; 
+  border:2px solid #000; 
+  border-radius:12px; 
+  box-shadow:2px 3px 0 #000;
+}
 /* Ensure any long tokens inside detail grid don't push layout */
 .record-detail .detail-grid > div { min-width:0; overflow:hidden; }
 .record-detail .detail-grid .value, .record-detail .detail-grid span, .record-detail .detail-grid p { word-break:break-word; overflow-wrap:anywhere; }
 .record-detail .detail-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:.55rem .9rem; font-size:.65rem; }
 .record-detail .detail-grid .full { grid-column:1 / -1; }
-.mini-btn { background:#fff; color:#000; border:1px solid #000; padding:.4rem .8rem; font-size:.6rem; font-weight:600; letter-spacing:.5px; cursor:default; border-radius:3px; text-transform:uppercase; }
+.mini-btn { background:#fff; color:#000; border:1px solid #000; padding:.4rem .8rem; font-size:.6rem; font-weight:600; letter-spacing:.5px; cursor:pointer; border-radius:3px; text-transform:uppercase; }
 .mini-btn.primary { background:#000; color:#fff; }
 .record-edit-form { margin-top:.5rem; }
 .record-edit-form .edit-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:.6rem .8rem; font-size:.65rem; }
@@ -53,7 +63,187 @@
 .record-edit-form input, .record-edit-form textarea { font-size:.7rem; padding:.4rem .5rem; border:1px solid #000; background:#fff; }
 .record-edit-form textarea { min-height:60px; }
 .record-edit-form .full { grid-column:1 / -1; }
-.edit-actions { margin-top:.8rem; display:flex; justify-content:flex-end; }
+.edit-actions { 
+  margin-top: .8rem; 
+  display: flex; 
+  justify-content: flex-end; 
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+  background: white;
+  position: sticky;
+  bottom: -2rem;
+  margin-left: -2rem;
+  margin-right: -2rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-bottom: 1rem;
+}
+
+/* Photo editing styles */
+.edit-photo-section { 
+  grid-column: 1 / -1; 
+  display: flex; 
+  flex-direction: column; 
+  gap: .5rem; 
+}
+.edit-photo-container { 
+  position: relative; 
+  width: 100px; 
+  height: 125px; 
+  border: 2px solid #000; 
+  border-radius: 12px; 
+  background: #fafafa; 
+  overflow: hidden; 
+  cursor: pointer;
+  box-shadow: 2px 3px 0 #000;
+}
+.edit-photo-preview { 
+  position: relative; 
+  width: 100%; 
+  height: 100%; 
+}
+.edit-photo-img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+}
+.remove-edit-photo { 
+  position: absolute; 
+  top: 4px; 
+  right: 4px; 
+  background: #fff; 
+  border: 1px solid #000; 
+  width: 20px; 
+  height: 20px; 
+  border-radius: 50%; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-size: 12px; 
+  line-height: 1; 
+  box-shadow: 1px 1px 0 #000;
+}
+.edit-photo-placeholder { 
+  width: 100%; 
+  height: 100%; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-size: .6rem; 
+  color: #666; 
+  font-weight: 600;
+}
+.edit-photo-input { 
+  position: absolute; 
+  inset: 0; 
+  opacity: 0; 
+  cursor: pointer; 
+}
+
+/* Record detail modal styles - Apply to modal content directly */
+.modal-content:has(.detail-head) {
+  min-width: 500px;
+  max-width: 700px;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  padding-right: 3rem; /* Add space to avoid close button overlap */
+  border-bottom: 2px solid #000;
+  flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.detail-head h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.rid {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 400;
+}
+
+.detail-content {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.detail-photo {
+  flex-shrink: 0;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  flex: 1;
+}
+
+.detail-grid > div {
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+}
+
+.detail-grid .full {
+  grid-column: 1 / -1;
+}
+
+.detail-grid strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .record-detail-modal {
+    min-width: unset;
+    width: 95vw;
+  }
+  
+  .record-detail-modal .detail-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .record-detail-modal .detail-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-content:has(.detail-head) {
+    min-width: unset;
+    width: 95vw;
+    margin: 1rem;
+  }
+  
+  .detail-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* Prevent horizontal overflow of records list */
 /* Use hidden horizontal overflow and ensure inner grid items can shrink without forcing scroll */
@@ -104,6 +294,8 @@
   .panel { padding: .75rem; max-width: calc(100vw - 1rem); margin: 0 auto; }
   .record-row { gap: .25rem; padding: .35rem .4rem; }
   .record-detail { padding: .75rem; }
+  .record-detail .detail-content { flex-direction: column; align-items: center; }
+  .record-detail .child-photo { width: 100px; height: 125px; }
 }
 @media (max-width:480px){
   .bw-bar { flex-direction:column; align-items:stretch; }
@@ -113,6 +305,7 @@
   .panel { padding: .5rem; max-width: calc(100vw - .5rem); }
   .record-row { gap: .2rem; padding: .3rem; font-size: .55rem; }
   .record-row > * { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .record-detail .child-photo { width: 80px; height: 100px; }
 }
 
 /* Pulse for session under 60s */
