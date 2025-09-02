@@ -2,7 +2,8 @@
 .header.minimal-header { position:sticky; top:0; z-index:1000; background:#fff; border-bottom:1px solid #000; color:#000; font-family: system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif; max-width:100vw; overflow-x:hidden; box-sizing:border-box; }
 .bw-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; padding:.75rem 1rem; max-width:100%; overflow:hidden; box-sizing:border-box; }
 .brand-block { display:flex; align-items:baseline; gap:1rem; }
-.app-title { margin:0; font-size:1.15rem; font-weight:700; letter-spacing:.5px; color:#000; }
+.app-title { margin:0; font-size:1.15rem; font-weight:700; letter-spacing:.5px; color:#000; cursor:pointer; user-select:none; }
+.app-title:active { opacity:0.8; }
 .session-inline { font-family: monospace; font-size:.85rem; padding:2px 6px; border:1px solid #000; border-radius:4px; }
 .nav-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
 .nav-btn, .profile-btn {
@@ -188,11 +189,11 @@
   padding: 15px;
   background-color: #f8f9fa;
   border-radius: 8px;
-  border-left: 4px solid #007bff;
+  border-left: 4px solid #28a745;
 }
 
 .detail-group h4 {
-  color: #007bff;
+  color: #28a745;
   font-size: 16px;
   margin-bottom: 15px;
   font-weight: 600;

@@ -62,7 +62,7 @@
 
 .feature-section li:before {
   content: '✓';
-  color: #007bff;
+  color: #28a745;
   font-weight: bold;
   position: absolute;
   left: 0;
@@ -469,13 +469,13 @@
   }
 }
 .child-form-wrapper .close-btn:hover { background:rgba(0,0,0,0.1); transform:rotate(90deg); }
-.child-form-wrapper .close-btn:focus { outline:2px solid #0d6efd; outline-offset:2px; }
+.child-form-wrapper .close-btn:focus { outline:2px solid #198754; outline-offset:2px; }
 /* Step 1 basic layout (wireframe style) */
 .basic-step-layout { display:grid; grid-template-columns: 1fr 220px; gap:2rem; position:relative; }
 .basic-fields { display:flex; flex-direction:column; gap:1.75rem; max-width:500px; }
 .basic-fields .sketch-input { font-size:.75rem; font-weight:600; color:#333; display:flex; flex-direction:column; gap:.4rem; }
 .sketch-input input, .sketch-input select { background:#fff; border:2px solid #222; border-radius:18px; padding:.75rem 1rem; font-size:.9rem; font-family:inherit; box-shadow:2px 3px 0 #222; transition:.2s; }
-.sketch-input input:focus, .sketch-input select:focus { outline:none; box-shadow:3px 4px 0 #0d6efd; border-color:#0d6efd; }
+.sketch-input input:focus, .sketch-input select:focus { outline:none; box-shadow:3px 4px 0 #198754; border-color:#198754; }
 .basic-photo { display:flex; flex-direction:column; align-items:center; gap:.5rem; }
 .photo-box { position:relative; width:180px; height:220px; border:2px solid #222; border-radius:38px; background:#fafafa; box-shadow:2px 3px 0 #222; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; }
 .photo-box input { position:absolute; inset:0; opacity:0; cursor:pointer; }
@@ -503,10 +503,10 @@
 .child-form textarea,
 .child-form input:not([type=checkbox]):not([type=file]) { border:1px solid #ced4da; border-radius:6px; padding:.55rem .65rem; font-size:.85rem; font-family:inherit; background:#fdfdfd; }
 .child-form textarea { min-height:70px; resize:vertical; }
-.child-form input:focus, .child-form textarea:focus { outline:2px solid #007bff33; border-color:#80bdff; }
+.child-form input:focus, .child-form textarea:focus { outline:2px solid #28a74533; border-color:#75dd89; }
 .child-form .consent { grid-column: span 2; flex-direction:row; align-items:center; font-size:.9rem; background:#f8f9fa; padding:.6rem .8rem; border:1px dashed #ced4da; border-radius:6px; }
 .child-form .consent input { margin-right:.6rem; }
-.child-form button { margin-top:1.25rem; background:linear-gradient(135deg,#007bff,#00b4d8); color:#fff; border:none; padding:.75rem 1.5rem; font-size:.9rem; border-radius:8px; cursor:pointer; font-weight:600; box-shadow:0 3px 8px rgba(0,123,255,.25); transition:all .25s; display:block; }
+.child-form button { margin-top:1.25rem; background:linear-gradient(135deg,#28a745,#00b894); color:#fff; border:none; padding:.75rem 1.5rem; font-size:.9rem; border-radius:8px; cursor:pointer; font-weight:600; box-shadow:0 3px 8px rgba(40,167,69,.25); transition:all .25s; display:block; }
 .child-form button:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 5px 14px rgba(0,123,255,.35); }
 .child-form button:disabled { background:#adb5bd; cursor:not-allowed; box-shadow:none; }
 .health-id-banner { margin-top:1rem; background:#e6f9ed; border-left:4px solid #20c997; padding:.75rem 1rem; border-radius:6px; font-size:.9rem; font-weight:600; color:#136c3a; }
@@ -607,7 +607,7 @@
 .wizard-container { max-width:880px; margin:0 auto; }
 .child-form.wizard label { font-size:.72rem; font-weight:600; letter-spacing:.4px; }
 .child-form.wizard input, .child-form.wizard textarea { font-size:.8rem; }
-.wizard-footer .submit-btn, .wizard-footer .nav-btn.next { background:linear-gradient(135deg,#007bff,#00b4d8); color:#fff; }
+.wizard-footer .submit-btn, .wizard-footer .nav-btn.next { background:linear-gradient(135deg,#28a745,#00b894); color:#fff; }
 .wizard-footer .nav-btn.next:disabled { background:#d0d5db; color:#7a7f85; }
 .wizard-footer .nav-btn.back { background:#e9ecef; color:#333; box-shadow:none; border:1px solid #d0d5db; }
 .wizard-footer .nav-btn.back:hover { background:#dde1e5; }
@@ -639,15 +639,15 @@
 }
 
 .step-item.completed .step-circle {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: #10b981;
+  border-color: #10b981;
   color: white;
 }
 
 .step-item.active .step-circle {
   background: white;
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: #10b981;
+  color: #10b981;
 }
 
 .step-item.inactive .step-circle {
@@ -663,7 +663,7 @@
 }
 
 .step-line.completed {
-  background: #3b82f6;
+  background: #10b981;
 }
 
 .step-line.inactive {
@@ -682,7 +682,7 @@
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
-  background: #3b82f6;
+  background: #10b981;
   color: white;
   font-size: 16px;
   font-weight: 600;
@@ -692,7 +692,7 @@
 }
 
 .nav-button:hover {
-  background: #2563eb;
+  background: #059669;
   transform: translateY(-1px);
 }
 
@@ -766,15 +766,15 @@
 }
 
 .step-wrapper.completed .step-number {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: #10b981;
+  border-color: #10b981;
   color: white;
 }
 
 .step-wrapper.active .step-number {
   background: white;
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: #10b981;
+  color: #10b981;
   box-shadow: 0 0 0 clamp(2px, 0.5vw, 3px) rgba(59, 130, 246, 0.2);
 }
 
@@ -792,7 +792,7 @@
 }
 
 .progress-line.completed {
-  background: #3b82f6;
+  background: #10b981;
 }
 
 .progress-line.inactive {
@@ -1004,7 +1004,7 @@
   padding: 12px 28px;
   border: none;
   border-radius: 10px;
-  background: #3b82f6;
+  background: #10b981;
   color: white;
   font-size: 16px;
   font-weight: 600;
@@ -1015,7 +1015,7 @@
 }
 
 .progress-btn:hover {
-  background: #2563eb;
+  background: #059669;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
 }
@@ -1130,13 +1130,13 @@
 .steps-bar.compact { background:transparent; border:none; border-radius:0; padding:0; box-shadow:none; justify-content:center; position:relative; width:100%; max-width:400px; margin:0 auto 30px; display:flex; align-items:center; }
 .steps-bar.compact .step-chip { position:relative; background:transparent; padding:0; min-width:auto; display:flex; align-items:center; justify-content:center; z-index:2; }
 .steps-bar.compact .step-chip:not(:last-child)::after { content:""; position:absolute; top:50%; left:calc(100% + 20px); width:60px; height:2px; background:#d1d5db; z-index:0; transform:translateY(-50%); }
-.steps-bar.compact .step-chip.active:not(:last-child)::after { background:#3b82f6; }
-.steps-bar.compact .step-chip.done:not(:last-child)::after { background:#3b82f6; }
+.steps-bar.compact .step-chip.active:not(:last-child)::after { background:#10b981; }
+.steps-bar.compact .step-chip.done:not(:last-child)::after { background:#10b981; }
 .steps-bar.compact .circle { width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#fff; font-size:16px; font-weight:600; color:#9ca3af; position:relative; border:2px solid #e5e7eb; transition:all .3s ease; }
 .steps-bar.compact .label { display:none; }
-.steps-bar.compact .step-chip.active .circle { background:#3b82f6; color:#fff; border-color:#3b82f6; }
-.steps-bar.compact .step-chip.done .circle { background:#3b82f6; color:#fff; border-color:#3b82f6; }
-.steps-bar.compact .step-chip.current .circle { background:#3b82f6; color:#fff; border-color:#3b82f6; }
+.steps-bar.compact .step-chip.active .circle { background:#10b981; color:#fff; border-color:#10b981; }
+.steps-bar.compact .step-chip.done .circle { background:#10b981; color:#fff; border-color:#10b981; }
+.steps-bar.compact .step-chip.current .circle { background:#10b981; color:#fff; border-color:#10b981; }
 @media (max-width: 760px){
   .steps-bar.compact { max-width:300px; }
   .steps-bar.compact .step-chip:not(:last-child)::after { width:40px; left:calc(100% + 18px); }
@@ -1228,7 +1228,7 @@
 :root.dark .record-list tbody tr.status-failed td { background:#332020; }
 :root.dark .record-filters input, :root.dark .record-filters select { background:#2a2c2f; border-color:#3a3d40; color:#eee; }
 :root.dark .sync-status { background:#1e2530; border-color:#2c3948; color:#d0d4d9; }
-:root.dark .sync-status button { background:#2563eb; }
+:root.dark .sync-status button { background:#059669; }
 
 @media (max-width: 900px) {
   .child-form .grid { grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); }

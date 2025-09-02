@@ -192,7 +192,21 @@ const Header = ({ onActiveViewChange }) => {
     <header className="header minimal-header">
       <div className="bw-bar">
         <div className="brand-block">
-          <h1 className="app-title">ChildHealthBooklet</h1>
+          <h1 
+            className="app-title" 
+            onClick={() => {
+              setActiveNav(null);
+              setShowChildForm(false);
+              setShowRecords(false);
+              setSelectedRecord(null);
+              setEditMode(false);
+              onActiveViewChange && onActiveViewChange('home');
+            }}
+            style={{ cursor: 'pointer' }}
+            title="Go to homepage"
+          >
+            ChildHealthBooklet
+          </h1>
           {isAuthenticated && (
             <div className="session-inline" title="Session time remaining">{formatRemaining()}</div>
           )}

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
 import  './glass.css';
-import './no-hover-fix.css'; // Global hover effect removal
 import Header from './components/Header';
 import AuthCallback from './components/AuthCallback';
 import AuthSuccess from './components/AuthSuccess';
