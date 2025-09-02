@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { addChildRecord } from './db';
 
-const initial = { name:'', age:'', idRef:'', weight:'', height:'', guardian:'', malnutrition:'N/A', illnesses:'N/A', consent:false, photo:null };
+const initial = { name:'', dob:'', idRef:'', weight:'', height:'', guardian:'', malnutrition:'N/A', illnesses:'N/A', consent:false, photo:null };
 
 export default function ChildForm({ onSaved, onClose }) {
   const [form, setForm] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [healthId, setHealthId] = useState(null);
   const [step, setStep] = useState(1); // 1 identity, 2 health, 3 consent
+  const [errors, setErrors] = useState({});
+
 
   const handleChange = e => {
     const { name, value, type, checked, files } = e.target;
@@ -40,14 +42,138 @@ export default function ChildForm({ onSaved, onClose }) {
         img.src = reader.result;
       };
       reader.readAsDataURL(file);
-  } else setForm(f => ({...f, [name]: value}));
+  } else {
+      let processedValue = value;
+      
+      // Input validation based on field type
+      if (name === 'name' || name === 'guardian') {
+        // Only allow alphabets and spaces
+        processedValue = value.replace(/[^a-zA-Z\s]/g, '');
+      } else if (name === 'weight' || name === 'height') {
+        // Only allow numbers and decimal point
+        processedValue = value.replace(/[^0-9.]/g, '');
+        // Prevent multiple decimal points
+        const parts = processedValue.split('.');
+        if (parts.length > 2) {
+          processedValue = parts[0] + '.' + parts.slice(1).join('');
+        }
+                    } else if (name === 'dob') {
+         // For date picker, we don't need manual text processing
+         processedValue = value;
+       }
+      
+      setForm(f => ({...f, [name]: processedValue}));
+    }
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const generateHealthId = () => 'H-' + nanoid(10).toUpperCase();
 
+  // Date picker functions
+  const formatDateForInput = (dateString) => {
+    if (!dateString || dateString.length !== 10) return '';
+    const [day, month, year] = dateString.split('/');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString || dateString.length !== 10) return '';
+    return dateString; // Already in DD/MM/YYYY format
+  };
+
+  const handleDateChange = (e) => {
+    const { value } = e.target;
+    if (value) {
+      const [year, month, day] = value.split('-');
+      const formattedDate = `${day}/${month}/${year}`;
+      setForm(f => ({...f, dob: formattedDate}));
+      if (errors.dob) {
+        setErrors(prev => ({ ...prev, dob: '' }));
+      }
+    } else {
+      setForm(f => ({...f, dob: ''}));
+    }
+  };
+
+  const calculateAge = (dob) => {
+    if (!dob || dob.length !== 10) return null;
+    const [day, month, year] = dob.split('/').map(Number);
+    const birthDate = new Date(year, month - 1, day);
+    const today = new Date();
+    
+    let years = today.getFullYear() - birthDate.getFullYear();
+    let months = today.getMonth() - birthDate.getMonth();
+    let days = today.getDate() - birthDate.getDate();
+    
+    // Adjust for negative months or days
+    if (days < 0) {
+      months--;
+      const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+      days += lastMonth.getDate();
+    }
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    
+    return { years, months, days };
+  };
+
+  const validateStep = (currentStep) => {
+    const newErrors = {};
+    
+         if (currentStep === 1) {
+       if (!form.name.trim()) newErrors.name = 'Fill the required field';
+       if (!form.dob.trim()) newErrors.dob = 'Fill the required field';
+       else if (form.dob.length !== 10) newErrors.dob = 'Enter date in DD/MM/YYYY format';
+               else {
+          // Validate date format and check if it's a valid date
+          const [day, month, year] = form.dob.split('/').map(Number);
+          
+          // Check if it's a valid date by comparing with the actual date created
+          const birthDate = new Date(year, month - 1, day);
+          const today = new Date();
+          today.setHours(23, 59, 59, 999); // End of today
+          
+          // Check if the date components match what was entered (prevents auto-correction)
+          const actualDay = birthDate.getDate();
+          const actualMonth = birthDate.getMonth() + 1;
+          const actualYear = birthDate.getFullYear();
+          
+          if (day !== actualDay || month !== actualMonth || year !== actualYear) {
+            newErrors.dob = 'Invalid date';
+          }
+          // Check if date is not in the future
+          else if (birthDate > today) {
+            newErrors.dob = 'Date cannot be in the future';
+          } else {
+            const age = calculateAge(form.dob);
+            if (age === null) newErrors.dob = 'Invalid date';
+            else if (age.years > 18) newErrors.dob = 'Age is more than 18';
+          }
+        }
+     }
+    
+    if (currentStep === 2) {
+      if (!form.weight.trim()) newErrors.weight = 'Fill the required field';
+      else if (isNaN(parseFloat(form.weight))) newErrors.weight = 'Enter valid number';
+      if (!form.height.trim()) newErrors.height = 'Fill the required field';
+      else if (isNaN(parseFloat(form.height))) newErrors.height = 'Enter valid number';
+      if (!form.guardian.trim()) newErrors.guardian = 'Fill the required field';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const nextStep = () => {
-    if (step === 1 && !form.name) return; // require name first step
-    if (step < 3) setStep(s=>s+1);
+    if (validateStep(step)) {
+      if (step < 3) setStep(s=>s+1);
+    }
   };
   const prevStep = () => { if (step>1) setStep(s=>s-1); };
 
@@ -71,7 +197,7 @@ export default function ChildForm({ onSaved, onClose }) {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       name: form.name || 'N/A',
-      ageMonths: form.age ? parseInt(form.age,10) : null,
+             ageMonths: form.dob ? (calculateAge(form.dob).years * 12 + calculateAge(form.dob).months) : null,
       weightKg: form.weight? parseFloat(form.weight): null,
       heightCm: form.height? parseFloat(form.height): null,
       guardianName: form.guardian || 'N/A',
@@ -117,6 +243,7 @@ export default function ChildForm({ onSaved, onClose }) {
           <div className="grid step-grid step-1">
             <label htmlFor="cf-name" className="field-span-2">Child's Name
               <input id="cf-name" name="name" value={form.name} onChange={handleChange} placeholder="Full name" required />
+              {errors.name && <div className="error-message">{errors.name}</div>}
             </label>
             <div className="photo-box photo-grid-item" aria-label="Face Photo">
               {form.photo ? (
@@ -132,24 +259,33 @@ export default function ChildForm({ onSaved, onClose }) {
               )}
               <input type="file" accept="image/*" capture="user" name="photo" onChange={handleChange} title="Add or capture face photo" />
             </div>
-            <label htmlFor="cf-age">Age (months)
-              <input id="cf-age" name="age" value={form.age} onChange={handleChange} inputMode="numeric" placeholder="e.g. 18" />
-            </label>
-            <label htmlFor="cf-idRef">ID (Local Tracking)
-              <input id="cf-idRef" name="idRef" value={form.idRef} onChange={handleChange} placeholder="Generated / Enter" />
-            </label>
+                         <label htmlFor="cf-dob">Date of Birth
+               <input 
+                 id="cf-dob" 
+                 name="dob" 
+                 type="date" 
+                 value={formatDateForInput(form.dob)} 
+                 onChange={handleDateChange} 
+                 max={new Date().toISOString().split('T')[0]}
+                 required 
+               />
+               {errors.dob && <div className="error-message">{errors.dob}</div>}
+             </label>
           </div>
         )}
         {step === 2 && (
           <div className="grid step-grid step-2">
             <label htmlFor="cf-weight">Weight (kg)
               <input id="cf-weight" name="weight" value={form.weight} onChange={handleChange} inputMode="decimal" placeholder="e.g. 11.2" />
+              {errors.weight && <div className="error-message">{errors.weight}</div>}
             </label>
             <label htmlFor="cf-height">Height (cm)
               <input id="cf-height" name="height" value={form.height} onChange={handleChange} inputMode="decimal" placeholder="e.g. 82" />
+              {errors.height && <div className="error-message">{errors.height}</div>}
             </label>
             <label htmlFor="cf-guardian" className="field-span-2">Parent/Guardian Name
               <input id="cf-guardian" name="guardian" value={form.guardian} onChange={handleChange} placeholder="Parent / Guardian" />
+              {errors.guardian && <div className="error-message">{errors.guardian}</div>}
             </label>
             <div className="field-span-2 optional-block">
               <div className="field-head">
@@ -169,11 +305,13 @@ export default function ChildForm({ onSaved, onClose }) {
         )}
         {step === 3 && (
           <div className="review-step">
-            <div className="review-grid">
-              <div><strong>Name:</strong> {form.name||'—'}</div>
-              <div><strong>Age (months):</strong> {form.age||'—'}</div>
-              <div><strong>ID:</strong> {form.idRef||'—'}</div>
-              <div><strong>Weight:</strong> {form.weight||'—'}</div>
+                         <div className="review-grid">
+               <div><strong>Name:</strong> {form.name||'—'}</div>
+                               <div><strong>Date of Birth:</strong> {form.dob||'—'} {form.dob && (() => {
+                  const age = calculateAge(form.dob);
+                  return `(${age.years} years, ${age.months} months, ${age.days} days)`;
+                })()}</div>
+               <div><strong>Weight:</strong> {form.weight||'—'}</div>
               <div><strong>Height:</strong> {form.height||'—'}</div>
               <div className="full"><strong>Guardian:</strong> {form.guardian||'—'}</div>
               <div className="full"><strong>Malnutrition Signs:</strong> {form.malnutrition||'N/A'}</div>
@@ -188,7 +326,7 @@ export default function ChildForm({ onSaved, onClose }) {
         )}
         <div className="wizard-footer">
           {step>1 && <button type="button" className="nav-btn back" onClick={prevStep}>Back</button>}
-          {step<3 && <button type="button" className="nav-btn next" onClick={nextStep} disabled={step===1 && !form.name}>Next</button>}
+          {step<3 && <button type="button" className="nav-btn next" onClick={nextStep}>Next</button>}
           {step===3 && <button disabled={saving || !form.consent} type="submit" className="submit-btn">{saving? 'Saving...' : 'Save Offline'}</button>}
         </div>
       </form>

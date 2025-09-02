@@ -496,7 +496,7 @@
 .child-form-wrapper h2 { margin-top:0; font-size:1.6rem; text-align:center; color:#222; }
 .child-form { margin-top:1rem; }
 .child-form .grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap:1rem 1.25rem; }
-.child-form label { display:flex; flex-direction:column; font-size:.8rem; font-weight:600; color:#555; gap:.35rem; }
+.child-form label { display:flex; flex-direction:column; font-size:.8rem; font-weight:600; color:#555; gap:.35rem; position: relative; }
 .child-form .field-span-2 { grid-column: span 2; }
 .child-form input[type=text],
 .child-form input[type=number],
@@ -766,22 +766,22 @@
 }
 
 .step-wrapper.completed .step-number {
-  background: #10b981;
-  border-color: #10b981;
-  color: white;
+  background: white;
+  border-color: #000;
+  color: #000;
 }
 
 .step-wrapper.active .step-number {
   background: white;
-  border-color: #10b981;
-  color: #10b981;
-  box-shadow: 0 0 0 clamp(2px, 0.5vw, 3px) rgba(59, 130, 246, 0.2);
+  border-color: #000;
+  color: #000;
+  box-shadow: none;
 }
 
 .step-wrapper.inactive .step-number {
   background: white;
-  border-color: #d1d5db;
-  color: #9ca3af;
+  border-color: #000;
+  color: #000;
 }
 
 .progress-line {
@@ -1303,13 +1303,16 @@
 /* === Minimal B/W overrides for stepper & inputs === */
 .child-form.wizard .progress-stepper .step-circle,
 .steps-bar.compact .circle,
-.step-circle { background:#fff !important; color:#000 !important; border-color:#000 !important; box-shadow:none !important; }
+.step-circle,
+.step-number { background:#fff !important; color:#000 !important; border-color:#000 !important; box-shadow:none !important; }
 .child-form.wizard .progress-stepper .step-circle.active,
 .child-form.wizard .progress-stepper .step-circle.current,
 .child-form.wizard .progress-stepper .step-circle.done,
 .steps-bar.compact .step-chip.active .circle,
 .steps-bar.compact .step-chip.current .circle,
-.steps-bar.compact .step-chip.done .circle { background:#000 !important; color:#fff !important; border-color:#000 !important; }
+.steps-bar.compact .step-chip.done .circle,
+.step-wrapper.active .step-number,
+.step-wrapper.completed .step-number { background:#fff !important; color:#000 !important; border-color:#000 !important; }
 .progress-line, .steps-bar.compact .step-chip:not(:last-child)::after { background:#000 !important; }
 .child-form.wizard input,
 .child-form.wizard textarea { background:#fff !important; border:1px solid #000 !important; box-shadow:none !important; }
@@ -1319,3 +1322,26 @@
 .pill-toggle[aria-pressed=true] { background:#000 !important; color:#fff !important; border-color:#000 !important; }
 /* Disabled textarea style for N/A state */
 .child-form.wizard textarea:disabled { background:#fafafa !important; color:#444 !important; border-color:#000 !important; opacity:0.55; cursor:not-allowed; }
+
+/* Error message styling */
+.error-message {
+  color: #dc3545;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.child-form.wizard input.error,
+.child-form.wizard textarea.error {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 1px #dc3545 !important;
+}
+
+
