@@ -154,16 +154,16 @@ export default function ChildForm({ onSaved, onClose }) {
             <div className="field-span-2 optional-block">
               <div className="field-head">
                 <label htmlFor="cf-malnutrition">Visible Signs of Malnutrition</label>
-                <button type="button" className="pill-toggle" aria-pressed={form.malnutrition==='N/A'} onClick={()=>setForm(f=>({...f, malnutrition: f.malnutrition==='N/A'?'': 'N/A'}))}>{form.malnutrition==='N/A'?'Skipped':'Skip'}</button>
+                <button type="button" className="pill-toggle" aria-pressed={form.malnutrition==='N/A'} onClick={()=>setForm(f=>({...f, malnutrition: f.malnutrition==='N/A'?'': 'N/A'}))}>N/A</button>
               </div>
-              <textarea id="cf-malnutrition" name="malnutrition" value={form.malnutrition} onChange={handleChange} placeholder="Describe or N/A" />
+              <textarea id="cf-malnutrition" name="malnutrition" value={form.malnutrition} onChange={handleChange} placeholder="Describe or N/A" disabled={form.malnutrition==='N/A'} aria-disabled={form.malnutrition==='N/A'} />
             </div>
             <div className="field-span-2 optional-block">
               <div className="field-head">
                 <label htmlFor="cf-illnesses">Recent Illnesses</label>
-                <button type="button" className="pill-toggle" aria-pressed={form.illnesses==='N/A'} onClick={()=>setForm(f=>({...f, illnesses: f.illnesses==='N/A'?'': 'N/A'}))}>{form.illnesses==='N/A'?'Skipped':'Skip'}</button>
+                <button type="button" className="pill-toggle" aria-pressed={form.illnesses==='N/A'} onClick={()=>setForm(f=>({...f, illnesses: f.illnesses==='N/A'?'': 'N/A'}))}>N/A</button>
               </div>
-              <textarea id="cf-illnesses" name="illnesses" value={form.illnesses} onChange={handleChange} placeholder="Describe or N/A" />
+              <textarea id="cf-illnesses" name="illnesses" value={form.illnesses} onChange={handleChange} placeholder="Describe or N/A" disabled={form.illnesses==='N/A'} aria-disabled={form.illnesses==='N/A'} />
             </div>
           </div>
         )}

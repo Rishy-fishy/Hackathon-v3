@@ -3,28 +3,28 @@ import './Header.css';
 import Modal from './Modal';
 import ESignetAuth from './ESignetAuth';
 import ErrorBoundary from './ErrorBoundary';
+import ChildForm from '../offline/ChildForm';
+import { listChildRecords, updateChildRecord } from '../offline/db';
 
-const Header = () => {
+const Header = ({ onActiveViewChange }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [sessionExpiresAt, setSessionExpiresAt] = useState(null); // epoch ms
   const [remainingSeconds, setRemainingSeconds] = useState(null);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('dark_mode') === 'true');
-  const [installPromptEvent, setInstallPromptEvent] = useState(null);
-  const [syncCounts, setSyncCounts] = useState({ pending: 0, failed: 0 });
+  const [showChildForm, setShowChildForm] = useState(false);
+  const [showRecords, setShowRecords] = useState(false);
+  const [activeNav, setActiveNav] = useState(null); // 'add' | 'view' | 'settings' | 'admin' | null
+  const [records, setRecords] = useState([]);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [editMode, setEditMode] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
 
   const handleProfileClick = () => {
-    console.log('Profile button clicked');
     setIsLoading(true);
     setIsModalOpen(true);
-    // Small delay to ensure modal is rendered before checking auth state
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
+    setTimeout(() => setIsLoading(false), 80);
   };
 
   const handleCloseModal = () => {
@@ -131,40 +131,12 @@ const Header = () => {
     window.addEventListener('offline', handleOffline);
     return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   },[]);
-
-  // Install prompt capture
+  // Load records when view is toggled
   useEffect(()=>{
-    const handler = (e) => {
-      e.preventDefault();
-      setInstallPromptEvent(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return ()=> window.removeEventListener('beforeinstallprompt', handler);
-  },[]);
-
-  // Dark mode effect
-  useEffect(()=>{
-    const root = document.documentElement;
-    if (darkMode) root.classList.add('dark'); else root.classList.remove('dark');
-    localStorage.setItem('dark_mode', darkMode ? 'true':'false');
-  },[darkMode]);
-
-  // Sync indicator listener (custom events dispatched by sync.js)
-  useEffect(()=>{
-    const handler = (e) => {
-      const detail = e.detail || {};
-      if (detail.counts) setSyncCounts(detail.counts);
-    };
-    window.addEventListener('sync-update', handler);
-    return ()=> window.removeEventListener('sync-update', handler);
-  },[]);
-
-  const triggerInstall = async () => {
-    if (!installPromptEvent) return;
-    installPromptEvent.prompt();
-    try { await installPromptEvent.userChoice; } catch {}
-    setInstallPromptEvent(null);
-  };
+    if (showRecords) {
+      listChildRecords().then(setRecords).catch(()=>{});
+    }
+  },[showRecords]);
 
   // Session countdown effect
   useEffect(() => {
@@ -217,79 +189,111 @@ const Header = () => {
   };
 
   return (
-    <header className="header">
-      <div className="nav-container">
-        <div className="nav-left">
-          {/* Hamburger for mobile */}
+    <header className="header minimal-header">
+      <div className="bw-bar">
+        <div className="brand-block">
+          <h1 className="app-title">ChildHealthBooklet</h1>
+          {isAuthenticated && (
+            <div className="session-inline" title="Session time remaining">{formatRemaining()}</div>
+          )}
+        </div>
+        <nav className="nav-actions" aria-label="Primary">
           <button
-            className={`hamburger ${showMobileMenu ? 'active' : ''}`}
-            aria-label="Toggle navigation menu"
-            aria-expanded={showMobileMenu}
-            onClick={() => setShowMobileMenu(v => !v)}
-          >
-            <span />
-            <span />
-            <span />
-          </button>
-          {/* Logo/Brand section */}
-          <div className="nav-brand" aria-label="App Home">
-            <h2>Child Health Records</h2>
-          </div>
-        </div>
-
-        {/* Right side controls */}
-        <div className="nav-right">
-          <div className="nav-item compact-hide">
-            <select className="lang-select" aria-label="Language selector" defaultValue="en">
-              <option value="en">us English</option>
-              <option value="hi">हिन्दी</option>
-            </select>
-          </div>
-          <div className="nav-item compact-hide">
-            <button className="bell" aria-label="Notifications">🔔</button>
-          </div>
-          <div className="nav-item compact-hide">
-            <button className="dark-toggle" onClick={()=> setDarkMode(d => !d)} aria-label="Toggle dark mode">{darkMode ? '🌙' : '☀️'}</button>
-          </div>
-          {installPromptEvent && (
-            <div className="nav-item compact-hide">
-              <button className="install-btn" onClick={triggerInstall}>Install App</button>
-            </div>
-          )}
-        </div>
-        
-        {/* Profile icon on the right */}
-        <div className="nav-profile" onClick={handleProfileClick}>
-          {/* Sync status indicator (small bullets) */}
-          <div className="sync-indicator" title={`Pending: ${syncCounts.pending} Failed: ${syncCounts.failed}`} aria-label="Sync status">
-            <span className={`dot pending ${syncCounts.pending? 'active':''}`}></span>
-            <span className={`dot failed ${syncCounts.failed? 'active':''}`}></span>
-          </div>
-          {isAuthenticated && remainingSeconds !== null && (
-            <div className="session-countdown-wrapper" title="Session time remaining">
-              <span className="session-countdown-label">Session</span>
-              <span className={`session-countdown ${remainingSeconds < 60 ? 'warn' : ''}`}>{formatRemaining()}</span>
-            </div>
-          )}
-          <div className="profile-icon-group">
-            <div className="profile-icon">
-              <svg 
-                width="32" 
-                height="32" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle cx="12" cy="7" r="3" stroke="currentColor" strokeWidth="2"/>
-                <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-            </div>
-            <span className="profile-text">Profile</span>
-          </div>
-        </div>
+            className={`nav-btn ${activeNav==='add'?'active':''}`}
+            onClick={()=>{
+              setShowChildForm(true); setShowRecords(false); setActiveNav('add');
+              onActiveViewChange && onActiveViewChange('add');
+            }}
+          >Add Child</button>
+          <button
+            className={`nav-btn ${activeNav==='view'?'active':''}`}
+            onClick={()=>{
+              setShowRecords(s=>{ const next=!s; setActiveNav(next?'view':null); onActiveViewChange && onActiveViewChange(next?'view':'home'); return next; });
+              if(!showRecords) listChildRecords().then(setRecords);
+              setShowChildForm(false);
+            }}
+          >View Data</button>
+          <button
+            className={`nav-btn ${activeNav==='settings'?'active':''}`}
+            onClick={()=>{ setActiveNav('settings'); onActiveViewChange && onActiveViewChange('settings'); alert('Settings placeholder'); }}
+          >Settings</button>
+          <button
+            className={`nav-btn ${activeNav==='admin'?'active':''}`}
+            onClick={()=>{ setActiveNav('admin'); onActiveViewChange && onActiveViewChange('admin'); alert('Admin placeholder'); }}
+          >Admin</button>
+          <button className="profile-btn" onClick={handleProfileClick} aria-label="Profile & Authentication">Profile</button>
+        </nav>
       </div>
-      
-      {/* Authentication Modal */}
+
+  {showChildForm && (
+        <div className="panel" role="region" aria-label="Add Child Form">
+  <ChildForm onClose={()=> { setShowChildForm(false); setActiveNav(null); onActiveViewChange && onActiveViewChange('home'); }} onSaved={()=> { setShowChildForm(false); setActiveNav(null); onActiveViewChange && onActiveViewChange('home'); }} />
+        </div>
+      )}
+
+      {showRecords && !showChildForm && (
+        <div className="panel records" role="region" aria-label="Child Records List">
+          <h2>Records Overview</h2>
+          <div className="records-list" role="list">
+            {records.length === 0 && <div className="empty">No records saved yet.</div>}
+            {records.map(r => (
+              <button
+                key={r.healthId}
+                type="button"
+                className={`record-row selectable ${selectedRecord?.healthId===r.healthId?'active':''}`}
+                onClick={()=>{ setSelectedRecord(r); setEditMode(false); }}
+                role="listitem"
+                aria-pressed={selectedRecord?.healthId===r.healthId}
+              >
+                <div className="id">{r.healthId}</div>
+                <div className="name">{r.name}</div>
+                <div className="age">{r.ageMonths ?? '—'}m</div>
+                <div className="wh">{r.weightKg ?? '—'}kg / {r.heightCm ?? '—'}cm</div>
+                <div className="status">{r.status}</div>
+              </button>
+            ))}
+          </div>
+          <div className="overview-note">{selectedRecord? 'Selected record details below.' : 'Review entries before syncing. Ensure consent captured.'}</div>
+          {selectedRecord && (
+            <div className="record-detail" aria-label="Record detail">
+              <div className="detail-head">
+                <h3>{selectedRecord.name || '—'} <span className="rid">({selectedRecord.healthId})</span></h3>
+                <div className="detail-actions">
+                  {!editMode && <button className="mini-btn" onClick={()=> setEditMode(true)}>Modify</button>}
+                  {editMode && <button className="mini-btn" onClick={()=> setEditMode(false)}>Cancel</button>}
+                </div>
+              </div>
+              {!editMode && (
+                <div className="detail-grid">
+                  <div><strong>Age:</strong> {selectedRecord.ageMonths??'—'} m</div>
+                  <div><strong>Weight:</strong> {selectedRecord.weightKg??'—'} kg</div>
+                  <div><strong>Height:</strong> {selectedRecord.heightCm??'—'} cm</div>
+                  <div><strong>Guardian:</strong> {selectedRecord.guardianName||'—'}</div>
+                  <div className="full"><strong>Malnutrition Signs:</strong> {selectedRecord.malnutritionSigns||'N/A'}</div>
+                  <div className="full"><strong>Recent Illnesses:</strong> {selectedRecord.recentIllnesses||'N/A'}</div>
+                  <div><strong>Status:</strong> {selectedRecord.status}</div>
+                  <div><strong>Created:</strong> {new Date(selectedRecord.createdAt).toLocaleString()}</div>
+                </div>
+              )}
+              {editMode && (
+                <RecordEditForm
+                  record={selectedRecord}
+                  onSave={async (changes)=>{
+                    await updateChildRecord(selectedRecord.healthId, { ...changes, updatedAt: Date.now() });
+                    const updated = await listChildRecords();
+                    setRecords(updated);
+                    const newly = updated.find(r=> r.healthId === selectedRecord.healthId);
+                    setSelectedRecord(newly);
+                    setEditMode(false);
+                  }}
+                />
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Profile / Auth Modal */}
       <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
         {isLoading ? (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
@@ -502,3 +506,61 @@ const Header = () => {
 };
 
 export default Header;
+
+// Inline lightweight edit form component
+function RecordEditForm({ record, onSave }) {
+  const [form,setForm] = useState({
+    name: record.name||'',
+    ageMonths: record.ageMonths||'',
+    weightKg: record.weightKg||'',
+    heightCm: record.heightCm||'',
+    guardianName: record.guardianName||'',
+    malnutritionSigns: record.malnutritionSigns||'N/A',
+    recentIllnesses: record.recentIllnesses||'N/A'
+  });
+  const handleChange = e => {
+    const { name, value } = e.target; setForm(f=>({...f,[name]:value}));
+  };
+  const submit = e => {
+    e.preventDefault();
+    onSave && onSave({
+      name: form.name || 'N/A',
+      ageMonths: form.ageMonths? parseInt(form.ageMonths,10): null,
+      weightKg: form.weightKg? parseFloat(form.weightKg): null,
+      heightCm: form.heightCm? parseFloat(form.heightCm): null,
+      guardianName: form.guardianName || 'N/A',
+      malnutritionSigns: form.malnutritionSigns || 'N/A',
+      recentIllnesses: form.recentIllnesses || 'N/A'
+    });
+  };
+  return (
+    <form onSubmit={submit} className="record-edit-form">
+      <div className="edit-grid">
+        <label> Name
+          <input name="name" value={form.name} onChange={handleChange} />
+        </label>
+        <label> Age (m)
+          <input name="ageMonths" value={form.ageMonths} onChange={handleChange} inputMode="numeric" />
+        </label>
+        <label> Weight (kg)
+          <input name="weightKg" value={form.weightKg} onChange={handleChange} inputMode="decimal" />
+        </label>
+        <label> Height (cm)
+          <input name="heightCm" value={form.heightCm} onChange={handleChange} inputMode="decimal" />
+        </label>
+        <label className="full"> Guardian
+          <input name="guardianName" value={form.guardianName} onChange={handleChange} />
+        </label>
+        <label className="full"> Malnutrition Signs
+          <textarea name="malnutritionSigns" value={form.malnutritionSigns} onChange={handleChange} />
+        </label>
+        <label className="full"> Recent Illnesses
+          <textarea name="recentIllnesses" value={form.recentIllnesses} onChange={handleChange} />
+        </label>
+      </div>
+      <div className="edit-actions">
+        <button type="submit" className="mini-btn primary">Save</button>
+      </div>
+    </form>
+  );
+}

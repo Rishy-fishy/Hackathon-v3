@@ -1199,7 +1199,7 @@
 .record-list tbody tr.status-pending td { background:#fffef5; }
 .record-list tbody tr.status-uploaded td { background:#f2fff6; }
 .record-list tbody tr.status-failed td { background:#fff5f5; }
-.record-list tbody tr:hover td { background:#f1f3f5; }
+/* .record-list tbody tr:hover td { background:#f1f3f5; } */
 
 .record-filters { display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:.75rem; align-items:center; }
 .record-filters input { flex:1 1 200px; border:1px solid #ced4da; padding:.45rem .6rem; border-radius:6px; font-size:.75rem; }
@@ -1222,7 +1222,7 @@
 :root.dark .content-container h1, :root.dark .child-form-wrapper h2, :root.dark .record-list h2, :root.dark .feature-section h2, :root.dark .info-section h2, :root.dark .status-section h2, :root.dark .troubleshooting-section h2 { color:#eee; }
 :root.dark .child-form input, :root.dark .child-form textarea { background:#2a2c2f; color:#eee; border-color:#3a3d40; }
 :root.dark .child-form label { color:#bbb; }
-:root.dark .record-list tbody tr:hover td { background:#2a2c2f; }
+/* :root.dark .record-list tbody tr:hover td { background:#2a2c2f; } */
 :root.dark .record-list tbody tr.status-pending td { background:#2a2c2f; }
 :root.dark .record-list tbody tr.status-uploaded td { background:#1f3324; }
 :root.dark .record-list tbody tr.status-failed td { background:#332020; }
@@ -1269,3 +1269,53 @@
 .sync-status button { background:#0d47a1; color:#fff; border:none; padding:6px 14px; border-radius:4px; cursor:pointer; font-size:13px; }
 .sync-status button:disabled { opacity:0.6; cursor:default; }
 .sync-status .meta { margin-top:4px; font-size:12px; color:#555; }
+
+/* ===== Minimalist homepage placeholder ===== */
+.minimalist-main { display:flex; align-items:center; justify-content:center; padding:2rem 1rem; background:#fff; }
+.placeholder-message { font-size:.75rem; letter-spacing:1px; text-transform:uppercase; border:1px dashed #000; padding:.9rem 1.2rem; color:#000; background:#fdfdfd; }
+
+/* === Minimal B/W overrides for child form wizard buttons === */
+/* Place at end so it wins over earlier gradient styles */
+.child-form.wizard .wizard-footer .nav-btn,
+.child-form.wizard .wizard-footer .submit-btn {
+  background:#fff !important;
+  color:#000 !important;
+  border:1px solid #000 !important;
+  box-shadow:none !important;
+  border-radius:4px;
+  font-weight:600;
+  letter-spacing:.5px;
+  transition:.15s;
+}
+.child-form.wizard .wizard-footer .nav-btn.back { opacity:.9; }
+.child-form.wizard .wizard-footer .nav-btn:hover:not(:disabled),
+.child-form.wizard .wizard-footer .submit-btn:hover:not(:disabled) {
+  background:#000 !important;
+  color:#fff !important;
+}
+.child-form.wizard .wizard-footer .nav-btn:disabled,
+.child-form.wizard .wizard-footer .submit-btn:disabled {
+  background:#f5f5f5 !important;
+  color:#888 !important;
+  border-color:#c2c2c2 !important;
+  cursor:not-allowed;
+}
+/* === Minimal B/W overrides for stepper & inputs === */
+.child-form.wizard .progress-stepper .step-circle,
+.steps-bar.compact .circle,
+.step-circle { background:#fff !important; color:#000 !important; border-color:#000 !important; box-shadow:none !important; }
+.child-form.wizard .progress-stepper .step-circle.active,
+.child-form.wizard .progress-stepper .step-circle.current,
+.child-form.wizard .progress-stepper .step-circle.done,
+.steps-bar.compact .step-chip.active .circle,
+.steps-bar.compact .step-chip.current .circle,
+.steps-bar.compact .step-chip.done .circle { background:#000 !important; color:#fff !important; border-color:#000 !important; }
+.progress-line, .steps-bar.compact .step-chip:not(:last-child)::after { background:#000 !important; }
+.child-form.wizard input,
+.child-form.wizard textarea { background:#fff !important; border:1px solid #000 !important; box-shadow:none !important; }
+.child-form.wizard input:focus,
+.child-form.wizard textarea:focus { outline:2px solid #000 !important; outline-offset:0; }
+.pill-toggle { background:#fff !important; border:1px solid #000 !important; color:#000 !important; }
+.pill-toggle[aria-pressed=true] { background:#000 !important; color:#fff !important; border-color:#000 !important; }
+/* Disabled textarea style for N/A state */
+.child-form.wizard textarea:disabled { background:#fafafa !important; color:#444 !important; border-color:#000 !important; opacity:0.55; cursor:not-allowed; }

@@ -1,15 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 import  './glass.css';
+import './no-hover-fix.css'; // Global hover effect removal
 import Header from './components/Header';
 import AuthCallback from './components/AuthCallback';
 import AuthSuccess from './components/AuthSuccess';
-import HomeDashboard from './components/HomeDashboard';
-import BottomNav from './components/BottomNav';
 import useConnectivity from './offline/useConnectivity';
 import { startAutoSync } from './offline/sync';
 
 function App() {
+  const [activeView, setActiveView] = useState('home'); // 'home' | 'add' | 'view' | 'settings' | 'admin'
   // Connectivity hook retained for potential future UI; currently unused.
   // eslint-disable-next-line no-unused-vars
   const online = useConnectivity();
@@ -30,13 +30,12 @@ function App() {
 
   return (
     <div className="App">
-      <Header />
-      <main className="main-content">
-        <div className="content-container">
-          <HomeDashboard />
-        </div>
-      </main>
-      <BottomNav />
+      <Header onActiveViewChange={setActiveView} />
+      {activeView === 'home' && (
+        <main className="main-content minimalist-main" aria-label="Main content">
+          <div className="placeholder-message">Select an option from the navigation bar to begin.</div>
+        </main>
+      )}
     </div>
   );
 }
