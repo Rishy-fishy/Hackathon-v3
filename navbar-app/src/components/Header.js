@@ -249,21 +249,20 @@ const Header = ({ onActiveViewChange }) => {
       {showRecords && !showChildForm && (
         <div className="panel records" role="region" aria-label="Child Records List">
           <h2>Records Overview</h2>
-          <div className="records-list" role="list">
-            {records.length === 0 && <div className="empty">No records saved yet.</div>}
-            {records.map(r => (
-              <button
-                key={r.healthId}
-                type="button"
-                className={`record-row selectable ${selectedRecord?.healthId===r.healthId?'active':''}`}
-                onClick={()=>{ 
-                  setSelectedRecord(r); 
-                  setEditMode(false); 
-                  setShowDetailModal(true);
-                }}
-                role="listitem"
-                aria-pressed={selectedRecord?.healthId===r.healthId}
-              >
+          {records.length === 0 && <div className="empty">No records saved yet.</div>}
+          {records.map(r => (
+            <button
+              key={r.healthId}
+              type="button"
+              className={`record-row selectable ${selectedRecord?.healthId===r.healthId?'active':''}`}
+              onClick={()=>{ 
+                setSelectedRecord(r); 
+                setEditMode(false); 
+                setShowDetailModal(true);
+              }}
+              role="listitem"
+              aria-pressed={selectedRecord?.healthId===r.healthId}
+            >
                 <div className="id">{r.healthId}</div>
                 <div className="name">{r.name}</div>
                 <div className="age">{r.ageMonths ?? '—'}m</div>
@@ -271,7 +270,6 @@ const Header = ({ onActiveViewChange }) => {
                 <div className="status">{r.status}</div>
               </button>
             ))}
-          </div>
           <div className="overview-note">Click on any record to view detailed information in a popup.</div>
         </div>
       )}
@@ -505,6 +503,7 @@ const Header = ({ onActiveViewChange }) => {
                   </div>
                 )}
                 <div className="detail-grid">
+                  <div><strong>Gender:</strong> {selectedRecord.gender||'—'}</div>
                   <div><strong>Age:</strong> {selectedRecord.ageMonths??'—'} m</div>
                   <div><strong>Weight:</strong> {selectedRecord.weightKg??'—'} kg</div>
                   <div><strong>Height:</strong> {selectedRecord.heightCm??'—'} cm</div>
@@ -548,6 +547,7 @@ export default Header;
 function RecordEditForm({ record, onSave }) {
   const [form,setForm] = useState({
     name: record.name||'',
+    gender: record.gender||'',
     ageMonths: record.ageMonths||'',
     weightKg: record.weightKg||'',
     heightCm: record.heightCm||'',
@@ -593,6 +593,7 @@ function RecordEditForm({ record, onSave }) {
     e.preventDefault();
     onSave && onSave({
       name: form.name || 'N/A',
+      gender: form.gender || 'N/A',
       ageMonths: form.ageMonths? parseInt(form.ageMonths,10): null,
       weightKg: form.weightKg? parseFloat(form.weightKg): null,
       heightCm: form.heightCm? parseFloat(form.heightCm): null,
@@ -636,6 +637,14 @@ function RecordEditForm({ record, onSave }) {
         </div>
         <label> Name
           <input name="name" value={form.name} onChange={handleChange} />
+        </label>
+        <label> Gender
+          <select name="gender" value={form.gender} onChange={handleChange}>
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
         </label>
         <label> Age (m)
           <input name="ageMonths" value={form.ageMonths} onChange={handleChange} inputMode="numeric" />

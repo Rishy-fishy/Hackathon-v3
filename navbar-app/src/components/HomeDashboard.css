@@ -92,13 +92,23 @@
   position: absolute;
   top: 12px;
   right: 14px;
-  font-size: 20px;
-  color: #4b5563;
+  background: #fff !important;
+  border: 1px solid #000 !important;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #000 !important;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 1px 1px 0 #000;
 }
 .close-btn:hover {
-  color: #111827;
+  background: #fee !important;
+  color: #000 !important;
 }
 
 /* Animation */

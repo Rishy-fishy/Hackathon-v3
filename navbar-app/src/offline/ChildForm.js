@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { nanoid } from 'nanoid';
 import { addChildRecord } from './db';
 
-const initial = { name:'', dob:'', idRef:'', weight:'', height:'', guardian:'', malnutrition:'N/A', illnesses:'N/A', consent:false, photo:null };
+const initial = { name:'', dob:'', gender:'Male', idRef:'', weight:'', height:'', guardian:'', malnutrition:'N/A', illnesses:'N/A', consent:false, photo:null };
 
 export default function ChildForm({ onSaved, onClose }) {
   const [form, setForm] = useState(initial);
@@ -11,11 +11,40 @@ export default function ChildForm({ onSaved, onClose }) {
   const [step, setStep] = useState(1); // 1 identity, 2 health, 3 consent
   const [errors, setErrors] = useState({});
   const [progressUpdate, setProgressUpdate] = useState(0); // Force re-render for progress
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Malnutrition options
+  const malnutritionOptions = [
+    "Stunting (low height for age)",
+    "Wasting (low weight for height)",
+    "Underweight (low weight for age)",
+    "Visible ribs/spine",
+    "Swollen belly",
+    "Pale skin/eyes",
+    "Hair changes (color/texture)",
+    "Delayed development",
+    "Frequent infections",
+    "Loss of appetite"
+  ];
 
   // Trigger progress update when form or errors change
   useEffect(() => {
     setProgressUpdate(prev => prev + 1);
   }, [form, errors]);
+
+  // Handle clicking outside dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
 
   const handleChange = e => {
@@ -63,26 +92,75 @@ export default function ChildForm({ onSaved, onClose }) {
         if (parts.length > 2) {
           processedValue = parts[0] + '.' + parts.slice(1).join('');
         }
-                    } else if (name === 'dob') {
+      } else if (name === 'dob') {
          // For date picker, we don't need manual text processing
          processedValue = value;
+      } else if (name === 'idRef') {
+        // Aadhaar formatting: allow only digits, format as XXXX-XXXX-XXXX
+        const digits = value.replace(/\D/g, '').slice(0, 12);
+        const groups = digits.match(/.{1,4}/g) || [];
+        processedValue = groups.join('-');
+      } else if (e.target && e.target.multiple) {
+        // Handle multi-selects (e.g., malnutrition signs)
+        processedValue = Array.from(e.target.selectedOptions).map(o => o.value);
        }
       
       setForm(f => ({...f, [name]: processedValue}));
     }
     
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+  // Clear error when user starts typing
+  if (errors[name]) {
+    setErrors(prev => ({ ...prev, [name]: '' }));
+  }
+};
+
+const generateHealthId = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const date = String(now.getDate()).padStart(2, '0');
+  
+  // Generate random text (5 characters)
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let randomText = '';
+  for (let i = 0; i < 5; i++) {
+    randomText += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  return `CH${year}${month}${date}${randomText}`;
+};  // Malnutrition dropdown functions
+  const toggleMalnutritionOption = (option) => {
+    if (form.malnutrition === 'N/A') {
+      setForm(f => ({...f, malnutrition: [option]}));
+    } else {
+      const currentSelections = Array.isArray(form.malnutrition) ? form.malnutrition : [];
+      const isSelected = currentSelections.includes(option);
+      
+      if (isSelected) {
+        const newSelections = currentSelections.filter(item => item !== option);
+        setForm(f => ({...f, malnutrition: newSelections.length === 0 ? 'N/A' : newSelections}));
+      } else {
+        setForm(f => ({...f, malnutrition: [...currentSelections, option]}));
+      }
     }
   };
 
-  const generateHealthId = () => 'H-' + nanoid(10).toUpperCase();
+  const getSelectedMalnutritionCount = () => {
+    if (form.malnutrition === 'N/A' || !Array.isArray(form.malnutrition)) return 0;
+    return form.malnutrition.length;
+  };
+
+  const getMalnutritionDisplayText = () => {
+    if (form.malnutrition === 'N/A') return 'N/A';
+    if (!Array.isArray(form.malnutrition) || form.malnutrition.length === 0) return 'Select signs of malnutrition';
+    if (form.malnutrition.length === 1) return form.malnutrition[0];
+    return `${form.malnutrition.length} signs selected`;
+  };
 
   // Field completion tracking functions
   const getStepCompletion = (stepNumber) => {
     if (stepNumber === 1) {
-      const fields = ['name', 'dob'];
+      const fields = ['name', 'dob', 'gender'];
       const validFields = [];
       
       // Check name field
@@ -93,6 +171,11 @@ export default function ChildForm({ onSaved, onClose }) {
       // Check dob field
       if (form.dob && form.dob.trim() && !errors.dob) {
         validFields.push('dob');
+      }
+      
+      // Check gender field
+      if (form.gender && form.gender.trim() && !errors.gender) {
+        validFields.push('gender');
       }
       
       return validFields.length / fields.length;
@@ -190,7 +273,7 @@ export default function ChildForm({ onSaved, onClose }) {
        if (!form.name.trim()) newErrors.name = 'Fill the required field';
        if (!form.dob.trim()) newErrors.dob = 'Fill the required field';
        else if (form.dob.length !== 10) newErrors.dob = 'Enter date in DD/MM/YYYY format';
-               else {
+       else {
           // Validate date format and check if it's a valid date
           const [day, month, year] = form.dob.split('/').map(Number);
           
@@ -216,6 +299,11 @@ export default function ChildForm({ onSaved, onClose }) {
             else if (age.years > 18) newErrors.dob = 'Age is more than 18';
           }
         }
+       if (!form.gender.trim()) newErrors.gender = 'Fill the required field';
+       // Optional Aadhaar: if provided, must match XXXX-XXXX-XXXX
+       if (form.idRef && !/^\d{4}-\d{4}-\d{4}$/.test(form.idRef)) {
+         newErrors.idRef = 'Enter 12 digits (XXXX-XXXX-XXXX)';
+       }
      }
     
     if (currentStep === 2) {
@@ -257,11 +345,14 @@ export default function ChildForm({ onSaved, onClose }) {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       name: form.name || 'N/A',
+      gender: form.gender || 'N/A',
              ageMonths: form.dob ? (calculateAge(form.dob).years * 12 + calculateAge(form.dob).months) : null,
       weightKg: form.weight? parseFloat(form.weight): null,
       heightCm: form.height? parseFloat(form.height): null,
       guardianName: form.guardian || 'N/A',
-      malnutritionSigns: form.malnutrition || 'N/A',
+      malnutritionSigns: Array.isArray(form.malnutrition) 
+        ? (form.malnutrition.length ? form.malnutrition.join(', ') : 'N/A')
+        : (form.malnutrition || 'N/A'),
       recentIllnesses: form.illnesses || 'N/A',
       parentalConsent: form.consent,
       facePhoto: form.photo,
@@ -278,7 +369,7 @@ export default function ChildForm({ onSaved, onClose }) {
   };
 
   return (
-  <div className="child-form-wrapper wizard-container" id="add-child">
+  <div className="child-form-wrapper" id="add-child">
       <div className="new-progress-bar" aria-label="Form progress">
         <div className="progress-steps">
           {/* Step 1 */}
@@ -377,22 +468,46 @@ export default function ChildForm({ onSaved, onClose }) {
               )}
               <input type="file" accept="image/*" capture="user" name="photo" onChange={handleChange} title="Add or capture face photo" />
             </div>
-            <label htmlFor="cf-name">Child's Name
-              <input id="cf-name" name="name" value={form.name} onChange={handleChange} placeholder="Full name" required />
-              {errors.name && <div className="error-message">{errors.name}</div>}
-            </label>
-            <label htmlFor="cf-dob">Date of Birth
-               <input 
-                 id="cf-dob" 
-                 name="dob" 
-                 type="date" 
-                 value={formatDateForInput(form.dob)} 
-                 onChange={handleDateChange} 
-                 max={new Date().toISOString().split('T')[0]}
-                 required 
-               />
-               {errors.dob && <div className="error-message">{errors.dob}</div>}
-             </label>
+            <div className="identity-fields">
+              <label htmlFor="cf-name">Child's Name
+                <input id="cf-name" name="name" value={form.name} onChange={handleChange} placeholder="Full name" required />
+                {errors.name && <div className="error-message">{errors.name}</div>}
+              </label>
+              <div className="row two-cols">
+                <label htmlFor="cf-dob">Date of Birth
+                  <input 
+                    id="cf-dob" 
+                    name="dob" 
+                    type="date" 
+                    value={formatDateForInput(form.dob)} 
+                    onChange={handleDateChange} 
+                    max={new Date().toISOString().split('T')[0]}
+                    required 
+                  />
+                  {errors.dob && <div className="error-message">{errors.dob}</div>}
+                </label>
+                <label htmlFor="cf-gender">Gender
+                  <select id="cf-gender" name="gender" value={form.gender} onChange={handleChange} required>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  {errors.gender && <div className="error-message">{errors.gender}</div>}
+                </label>
+              </div>
+              <label htmlFor="cf-idRef">Aadhaar ID (optional)
+                <input 
+                  id="cf-idRef" 
+                  name="idRef" 
+                  inputMode="numeric" 
+                  pattern="\d{4}-\d{4}-\d{4}" 
+                  placeholder="XXXX-XXXX-XXXX" 
+                  value={form.idRef} 
+                  onChange={handleChange}
+                />
+                {errors.idRef && <div className="error-message">{errors.idRef}</div>}
+              </label>
+            </div>
           </div>
         )}
         {step === 2 && (
@@ -412,9 +527,55 @@ export default function ChildForm({ onSaved, onClose }) {
             <div className="field-span-2 optional-block">
               <div className="field-head">
                 <label htmlFor="cf-malnutrition">Visible Signs of Malnutrition</label>
-                <button type="button" className="pill-toggle" aria-pressed={form.malnutrition==='N/A'} onClick={()=>setForm(f=>({...f, malnutrition: f.malnutrition==='N/A'?'': 'N/A'}))}>N/A</button>
+                <button type="button" className="pill-toggle" aria-pressed={form.malnutrition==='N/A'} onClick={()=>setForm(f=>({...f, malnutrition: f.malnutrition==='N/A'?[]: 'N/A'}))}>N/A</button>
               </div>
-              <textarea id="cf-malnutrition" name="malnutrition" value={form.malnutrition} onChange={handleChange} placeholder="Describe or N/A" disabled={form.malnutrition==='N/A'} aria-disabled={form.malnutrition==='N/A'} />
+              <div className="custom-dropdown" ref={dropdownRef}>
+                <div 
+                  className={`dropdown-trigger ${form.malnutrition === 'N/A' ? 'disabled' : ''}`}
+                  onClick={() => form.malnutrition !== 'N/A' && setIsDropdownOpen(!isDropdownOpen)}
+                  role="button"
+                  tabIndex={form.malnutrition === 'N/A' ? -1 : 0}
+                  aria-expanded={form.malnutrition === 'N/A' ? false : isDropdownOpen}
+                  aria-haspopup="listbox"
+                  aria-disabled={form.malnutrition === 'N/A'}
+                >
+                  <span className="dropdown-text">{getMalnutritionDisplayText()}</span>
+                  <svg 
+                    className={`dropdown-arrow ${isDropdownOpen && form.malnutrition !== 'N/A' ? 'rotated' : ''}`}
+                    width="12" 
+                    height="12" 
+                    viewBox="0 0 12 12" 
+                    fill="none"
+                  >
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                {isDropdownOpen && form.malnutrition !== 'N/A' && (
+                  <div className="dropdown-menu" role="listbox">
+                      {malnutritionOptions.map((option, index) => {
+                        const isSelected = Array.isArray(form.malnutrition) && form.malnutrition.includes(option);
+                        return (
+                          <div
+                            key={index}
+                            className={`dropdown-option ${isSelected ? 'selected' : ''}`}
+                            onClick={() => toggleMalnutritionOption(option)}
+                            role="option"
+                            aria-selected={isSelected}
+                          >
+                            <div className="option-checkbox">
+                              {isSelected && (
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                  <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              )}
+                            </div>
+                            <span className="option-text">{option}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
             </div>
             <div className="field-span-2 optional-block">
               <div className="field-head">
@@ -433,10 +594,15 @@ export default function ChildForm({ onSaved, onClose }) {
                   const age = calculateAge(form.dob);
                   return `(${age.years} years, ${age.months} months, ${age.days} days)`;
                 })()}</div>
+               <div><strong>Gender:</strong> {form.gender||'—'}</div>
                <div><strong>Weight:</strong> {form.weight||'—'}</div>
               <div><strong>Height:</strong> {form.height||'—'}</div>
               <div className="full"><strong>Guardian:</strong> {form.guardian||'—'}</div>
-              <div className="full"><strong>Malnutrition Signs:</strong> {form.malnutrition||'N/A'}</div>
+              <div className="full"><strong>Malnutrition Signs:</strong> {
+                Array.isArray(form.malnutrition) 
+                  ? (form.malnutrition.length ? form.malnutrition.join(', ') : 'N/A')
+                  : (form.malnutrition || 'N/A')
+              }</div>
               <div className="full"><strong>Recent Illnesses:</strong> {form.illnesses||'N/A'}</div>
               <div className="full photo-preview-mini">{form.photo && <img src={form.photo} alt="Child" />}</div>
             </div>

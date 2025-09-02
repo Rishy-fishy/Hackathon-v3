@@ -198,8 +198,8 @@
   position: absolute; 
   top: clamp(8px, 2vw, 12px); 
   right: clamp(8px, 2vw, 12px); 
-  border: none; 
-  background: rgba(0,0,0,0.05); 
+  border: 1px solid #000 !important; 
+  background: #fff !important; 
   width: clamp(28px, 6vw, 32px); 
   height: clamp(28px, 6vw, 32px); 
   border-radius: 8px; 
@@ -468,7 +468,7 @@
     border-width: 2px;
   }
 }
-.child-form-wrapper .close-btn:hover { background:rgba(0,0,0,0.1); transform:rotate(90deg); }
+.child-form-wrapper .close-btn:hover { background:#fee !important; color:#000 !important; transform:rotate(90deg); }
 .child-form-wrapper .close-btn:focus { outline:2px solid #198754; outline-offset:2px; }
 /* Step 1 basic layout (wireframe style) */
 .basic-step-layout { display:grid; grid-template-columns: 1fr 220px; gap:2rem; position:relative; }
@@ -487,7 +487,22 @@
 .photo-caption { font-size:.8rem; font-weight:600; color:#555; }
 .nav-row { grid-column:1 / -1; display:flex; justify-content:flex-end; margin-top:2rem; }
 .next-btn { background:#111; color:#fff; border:2px solid #111; padding:.65rem 2.2rem; border-radius:20px; font-size:.9rem; cursor:pointer; box-shadow:2px 3px 0 #111; transition:.25s; }
-.next-btn:disabled { opacity:.4; cursor:not-allowed; }
+/* Global button transparency fix - ensure no button is ever transparent */
+button, .btn, [role="button"], .close-btn, .nav-btn, .mini-btn, .remove-photo, .remove-edit-photo {
+  opacity: 1 !important;
+}
+
+/* Ensure all buttons have solid backgrounds */
+button:not([class*="transparent"]), 
+.btn:not([class*="transparent"]), 
+[role="button"]:not([class*="transparent"]),
+.close-btn, .nav-btn, .mini-btn, .remove-photo, .remove-edit-photo {
+  background: var(--btn-bg, #fff) !important;
+  border: var(--btn-border, 1px solid #000) !important;
+  color: var(--btn-color, #000) !important;
+}
+
+.next-btn:disabled { opacity:1 !important; background:#e9ecef !important; color:#6c757d !important; border:2px solid #ced4da !important; cursor:not-allowed; }
 .next-btn:not(:disabled):hover { transform:translateY(-2px); box-shadow:4px 5px 0 #111; }
 .step-footer { display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem; }
 .back-btn { background:#fff; border:1px solid #adb5bd; padding:.55rem 1.2rem; border-radius:8px; cursor:pointer; font-size:.8rem; }
@@ -535,8 +550,21 @@
   margin-bottom: clamp(1rem, 3vw, 1.5rem);
 }
 
-.child-form.wizard input, .child-form.wizard textarea { 
-  font-size: clamp(0.75rem, 2vw, 0.8rem); 
+/* Remove vertical gaps between fields in Step 1 specifically */
+.child-form.wizard .step-grid.step-1 { 
+  row-gap: 0 !important; 
+  grid-row-gap: 0 !important;
+  column-gap: 1rem; /* keep some horizontal spacing */
+  gap: 0 1rem !important; /* 0 vertical, keep some horizontal spacing */
+}
+.child-form.wizard .step-1 label { margin: 0 !important; padding: 0 !important; gap: 0.2rem !important; }
+.child-form.wizard .step-1 label + label { margin-top: 0 !important; }
+.child-form.wizard .step-1 input,
+.child-form.wizard .step-1 select,
+.child-form.wizard .step-1 textarea { margin: 0 !important; }
+
+.child-form.wizard input, .child-form.wizard textarea, .child-form.wizard select { 
+  font-size: clamp(0.85rem, 2vw, 0.95rem); 
   padding: clamp(0.4rem, 1.2vw, 0.5rem) clamp(0.5rem, 1.5vw, 0.6rem);
 }
 
@@ -551,7 +579,7 @@
 
 .wizard-footer .nav-btn { 
   padding: clamp(0.6rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.25rem); 
-  font-size: clamp(0.8rem, 2.2vw, 0.9rem); 
+  font-size: clamp(0.9rem, 2.2vw, 1rem); 
   border-radius: 6px; 
   border: none; 
   cursor: pointer; 
@@ -601,12 +629,38 @@
     max-width: none;
   }
 }
-.child-form.wizard .step-1 { grid-template-columns:260px 1fr; }
+.child-form.wizard .step-1 { grid-template-columns:260px 1fr; row-gap: 0; }
+.child-form.wizard .step-1 .photo-grid-item { grid-column: 1 / 2; }
+.child-form.wizard .step-1 label[for="cf-name"],
+.child-form.wizard .step-1 label[for="cf-dob"],
+.child-form.wizard .step-1 label[for="cf-gender"] { grid-column: 2 / 3; }
+.child-form.wizard .step-1 .identity-fields {
+  grid-column: 2 / 3;
+  grid-row: 1 / span 2; /* sit next to photo, avoid grid row gaps */
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem !important; /* small vertical gap between fields */
+}
+.child-form.wizard .step-1 .identity-fields > label { margin: 0 !important; padding: 0 !important; gap: 0.1rem !important; }
+.child-form.wizard .step-1 .identity-fields > label + label { margin-top: 0 !important; }
+.child-form.wizard .step-1 .identity-fields > label > input,
+.child-form.wizard .step-1 .identity-fields > label > select,
+.child-form.wizard .step-1 .identity-fields > label > textarea { margin: 0 !important; }
+
+/* Optional: slightly reduce control vertical padding to visually tighten fields */
+.child-form.wizard .step-1 .identity-fields input,
+.child-form.wizard .step-1 .identity-fields select {
+  padding-top: 0.4rem !important;
+  padding-bottom: 0.4rem !important;
+}
+
+@media (max-width: 640px){
+  .child-form.wizard .step-1 .identity-fields { grid-row: auto; }
+}
 .child-form.wizard .step-1 > label.field-span-2 { grid-column:1 / -1; }
 .child-form.wizard .step-1 .photo-grid-item { grid-row: span 2; height:260px; }
-.wizard-container { max-width:880px; margin:0 auto; }
-.child-form.wizard label { font-size:.72rem; font-weight:600; letter-spacing:.4px; }
-.child-form.wizard input, .child-form.wizard textarea { font-size:.8rem; }
+.child-form.wizard label { font-size:.82rem; font-weight:600; letter-spacing:.4px; }
+.child-form.wizard input, .child-form.wizard textarea { font-size:.9rem; }
 .wizard-footer .submit-btn, .wizard-footer .nav-btn.next { background:linear-gradient(135deg,#28a745,#00b894); color:#fff; }
 .wizard-footer .nav-btn.next:disabled { background:#d0d5db; color:#7a7f85; }
 .wizard-footer .nav-btn.back { background:#e9ecef; color:#333; box-shadow:none; border:1px solid #d0d5db; }
@@ -1239,7 +1293,7 @@
 
 .steps-bar { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:30px; position:relative; width:100%; max-width:400px; margin:0 auto 30px; }
 .steps-bar.compact { background:transparent; border:none; border-radius:0; padding:0; box-shadow:none; justify-content:center; position:relative; width:100%; max-width:400px; margin:0 auto 30px; display:flex; align-items:center; }
-.steps-bar.compact .step-chip { position:relative; background:transparent; padding:0; min-width:auto; display:flex; align-items:center; justify-content:center; z-index:2; }
+.steps-bar.compact .step-chip { position:relative; background:#fff !important; padding:0.25rem; min-width:auto; display:flex; align-items:center; justify-content:center; z-index:2; border-radius:50%; }
 .steps-bar.compact .step-chip:not(:last-child)::after { content:""; position:absolute; top:50%; left:calc(100% + 20px); width:60px; height:2px; background:#d1d5db; z-index:0; transform:translateY(-50%); }
 .steps-bar.compact .step-chip.active:not(:last-child)::after { background:#10b981; }
 .steps-bar.compact .step-chip.done:not(:last-child)::after { background:#10b981; }
@@ -1259,10 +1313,10 @@
 .wizard-footer { display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.25rem; }
 .wizard-footer .nav-btn { background:#111; color:#fff; border:none; padding:.6rem 1.4rem; font-size:.8rem; border-radius:10px; cursor:pointer; font-weight:600; box-shadow:0 3px 8px rgba(0,0,0,.25); transition:.25s; }
 .wizard-footer .nav-btn.back { background:#6c757d; }
-.wizard-footer .nav-btn:disabled { opacity:.35; cursor:not-allowed; }
+.wizard-footer .nav-btn:disabled { opacity:1 !important; background:#e9ecef !important; color:#6c757d !important; border:1px solid #ced4da !important; cursor:not-allowed; }
 .wizard-footer .nav-btn:hover:not(:disabled) { transform:translateY(-2px); }
 .review-step { background:#f8f9fa; padding:1rem 1.25rem 1.5rem; border:1px solid #e9ecef; border-radius:14px; }
-.review-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:.6rem 1rem; font-size:.7rem; margin-bottom:1rem; }
+.review-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:.6rem 1rem; font-size:.85rem; margin-bottom:1rem; }
 .review-grid .full { grid-column:1 / -1; }
 .photo-preview-mini img { max-width:140px; border-radius:14px; border:2px solid #fff; box-shadow:0 2px 4px rgba(0,0,0,.2); }
 /* Optional block toggles */
@@ -1292,7 +1346,7 @@
 .child-form .photo-preview { width:100%; height:100%; object-fit:cover; display:block; }
 .child-form .file-input-overlay { position:absolute; inset:0; opacity:0; cursor:pointer; }
 .child-form .hint { font-size:.6rem; color:#6c757d; }
-.child-form .link-btn { background:none; border:none; padding:0; font-size:.65rem; color:#0d6efd; cursor:pointer; text-decoration:underline; }
+.child-form .link-btn { background:#f8f9fa !important; border:1px solid #dee2e6 !important; padding:0.3rem 0.6rem !important; font-size:.65rem; color:#0d6efd !important; cursor:pointer; text-decoration:none !important; border-radius:4px !important; display:inline-block !important; }
 .child-form .link-btn:hover { color:#084298; }
 .child-form .submit-btn { width:100%; }
 
@@ -1303,9 +1357,9 @@
 /* Record List */
 .record-list { background:#ffffff; margin-top:2rem; padding:1.5rem 1.75rem; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.06); text-align:left; }
 .record-list h2 { margin-top:0; font-size:1.4rem; text-align:center; color:#222; }
-.record-list table { width:100%; border-collapse:collapse; font-size:.85rem; }
-.record-list th, .record-list td { padding:.6rem .55rem; border-bottom:1px solid #e9ecef; }
-.record-list th { text-align:left; font-size:.7rem; letter-spacing:.5px; text-transform:uppercase; color:#6c757d; }
+.record-list table { width:100%; border-collapse:collapse; font-size:.9rem; }
+.record-list th, .record-list td { padding:1.2rem .8rem; border-bottom:1px solid #e9ecef; }
+.record-list th { text-align:left; font-size:.75rem; letter-spacing:.5px; text-transform:uppercase; color:#6c757d; }
 .record-list tbody tr:last-child td { border-bottom:none; }
 .record-list tbody tr.status-pending td { background:#fffef5; }
 .record-list tbody tr.status-uploaded td { background:#f2fff6; }
@@ -1378,7 +1432,7 @@
 .sync-status { background:#f7f9fc; border:1px solid #dbe2ec; padding:10px 14px; border-radius:6px; margin-top:1rem; font-size:13px; text-align:left; }
 .sync-status .sync-row { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
 .sync-status button { background:#0d47a1; color:#fff; border:none; padding:6px 14px; border-radius:4px; cursor:pointer; font-size:13px; }
-.sync-status button:disabled { opacity:0.6; cursor:default; }
+.sync-status button:disabled { opacity:1 !important; background:#e9ecef !important; color:#6c757d !important; border:1px solid #ced4da !important; cursor:default; }
 .sync-status .meta { margin-top:4px; font-size:12px; color:#555; }
 
 /* ===== Minimalist homepage placeholder ===== */
@@ -1398,7 +1452,7 @@
   letter-spacing:.5px;
   transition:.15s;
 }
-.child-form.wizard .wizard-footer .nav-btn.back { opacity:.9; }
+.child-form.wizard .wizard-footer .nav-btn.back { opacity:1 !important; background:#fff !important; color:#000 !important; border:1px solid #000 !important; }
 .child-form.wizard .wizard-footer .nav-btn:hover:not(:disabled),
 .child-form.wizard .wizard-footer .submit-btn:hover:not(:disabled) {
   background:#000 !important;
@@ -1410,6 +1464,30 @@
   color:#888 !important;
   border-color:#c2c2c2 !important;
   cursor:not-allowed;
+}
+
+/* Wizard remove photo button styling */
+.child-form.wizard .photo-box .remove-photo {
+  position:absolute;
+  top:6px;
+  right:6px;
+  background:#fff !important;
+  border:1px solid #000 !important;
+  width:32px;
+  height:32px;
+  border-radius:12px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  line-height:1;
+  color:#000 !important;
+  box-shadow:2px 2px 0 #000 !important;
+  z-index:10;
+}
+.child-form.wizard .photo-box .remove-photo:hover {
+  background:#fee !important;
 }
 /* === Minimal B/W overrides for stepper & inputs === */
 .child-form.wizard .progress-stepper .step-circle,
@@ -1426,9 +1504,54 @@
 .step-wrapper.completed .step-number { background:#fff !important; color:#000 !important; border-color:#000 !important; }
 .progress-line, .steps-bar.compact .step-chip:not(:last-child)::after { background:#000 !important; }
 .child-form.wizard input,
-.child-form.wizard textarea { background:#fff !important; border:1px solid #000 !important; box-shadow:none !important; }
+.child-form.wizard textarea,
+.child-form.wizard select { background:#fff !important; border:1px solid #000 !important; box-shadow:none !important; }
 .child-form.wizard input:focus,
-.child-form.wizard textarea:focus { outline:2px solid #000 !important; outline-offset:0; }
+.child-form.wizard textarea:focus,
+.child-form.wizard select:focus { outline:2px solid #000 !important; outline-offset:0; }
+
+/* Two-column row inside identity fields for DOB and Gender */
+.child-form.wizard .step-1 .identity-fields .row.two-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 0.75rem;
+}
+.child-form.wizard .step-1 .identity-fields .row.two-cols > label {
+  grid-column: auto !important; /* override earlier grid-column:2/3 rule */
+}
+
+@media (max-width: 600px) {
+  .child-form.wizard .step-1 .identity-fields .row.two-cols {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
+
+/* Make all fields rectangular (match Name/DOB shape) */
+.child-form.wizard .step-1 input,
+.child-form.wizard .step-1 select {
+  border-radius: 6px !important; /* rectangular like name/dob */
+}
+
+/* Multi-select dropdown styling */
+.child-form.wizard select[multiple] {
+  min-height: 120px;
+  padding: 0.5rem;
+  border: 1px solid #000 !important;
+  border-radius: 6px !important;
+  background: #fff !important;
+}
+
+.child-form.wizard select[multiple] option {
+  padding: 0.3rem 0.5rem;
+  margin: 0.1rem 0;
+  border-radius: 3px;
+}
+
+.child-form.wizard select[multiple] option:checked {
+  background: #000 !important;
+  color: #fff !important;
+}
 .pill-toggle { background:#fff !important; border:1px solid #000 !important; color:#000 !important; }
 .pill-toggle[aria-pressed=true] { background:#000 !important; color:#fff !important; border-color:#000 !important; }
 /* Disabled textarea style for N/A state */
@@ -1453,6 +1576,209 @@
 .child-form.wizard textarea.error {
   border-color: #dc3545 !important;
   box-shadow: 0 0 0 1px #dc3545 !important;
+}
+
+/* Custom Dropdown Styles for Malnutrition Selection */
+.custom-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.dropdown-trigger {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #000;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  min-height: 38px;
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.dropdown-trigger:hover {
+  border-color: #333;
+}
+
+.dropdown-trigger:focus {
+  outline: 2px solid #000;
+  outline-offset: 0;
+}
+
+.dropdown-trigger.disabled {
+  background-color: #fafafa !important;
+  color: #999 !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
+.dropdown-trigger.disabled:hover {
+  border-color: #000 !important;
+}
+
+.dropdown-trigger.disabled .dropdown-arrow {
+  opacity: 0.5;
+}
+
+.dropdown-text {
+  flex: 1;
+  text-align: left;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown-arrow {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.dropdown-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #000;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-option {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.65rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.dropdown-option:hover {
+  background-color: #f8f9fa;
+}
+
+.dropdown-option.selected {
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.dropdown-option.selected:hover {
+  background-color: #e9ecef;
+}
+
+.option-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #999;
+  border-radius: 3px;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  background-color: #fff;
+}
+
+.dropdown-option.selected .option-checkbox {
+  border-color: #28a745;
+  background-color: #28a745;
+  color: #fff;
+}
+
+.dropdown-option:not(.selected) .option-checkbox {
+  border-color: #999;
+}
+
+.dropdown-option:hover:not(.selected) .option-checkbox {
+  border-color: #666;
+}
+
+.option-text {
+  flex: 1;
+  line-height: 1.3;
+}
+
+/* Responsive adjustments for dropdown */
+@media (max-width: 768px) {
+  .dropdown-menu {
+    max-height: 160px;
+  }
+  
+  .dropdown-option {
+    padding: 0.6rem 0.65rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dropdown-trigger {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.6rem;
+  }
+  
+  .dropdown-option {
+    font-size: 0.75rem;
+    padding: 0.55rem 0.6rem;
+  }
+  
+  .dropdown-menu {
+    max-height: 140px;
+  }
+}
+
+/* Fix height matching and spacing for malnutrition and illness fields */
+.child-form.wizard .step-2 .optional-block {
+  margin-bottom: 2rem;
+}
+
+.child-form.wizard .step-2 .optional-block textarea {
+  min-height: 38px !important;
+  max-height: 38px !important;
+  height: 38px !important;
+  resize: none !important;
+  padding: 0.55rem 0.65rem !important;
+  font-size: 0.9rem !important;
+  line-height: 1.2 !important;
+  border: 1px solid #000 !important;
+  border-radius: 6px !important;
+  font-family: inherit !important;
+  box-sizing: border-box !important;
+  overflow-y: auto;
+}
+
+/* Ensure dropdown and textarea visual consistency */
+.custom-dropdown {
+  margin-top: 0.35rem;
+}
+
+.child-form.wizard .step-2 .optional-block textarea {
+  margin-top: 0.35rem;
+}
+
+/* Add consistent spacing between the two optional blocks */
+.child-form.wizard .step-2 .field-span-2.optional-block:first-of-type {
+  margin-bottom: 2.5rem;
 }
 
 

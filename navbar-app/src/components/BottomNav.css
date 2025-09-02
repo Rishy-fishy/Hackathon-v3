@@ -104,11 +104,14 @@
 }
 
 .task-window-header button {
-  background: transparent;
-  border: none;
-  color: #fff;
+  background: #fff !important;
+  border: 1px solid #000 !important;
+  color: #000 !important;
   font-size: 16px;
   cursor: pointer;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-weight: 600;
 }
 
 .task-window-body {
