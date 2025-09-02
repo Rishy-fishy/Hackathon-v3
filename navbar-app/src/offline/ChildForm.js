@@ -10,6 +10,12 @@ export default function ChildForm({ onSaved, onClose }) {
   const [healthId, setHealthId] = useState(null);
   const [step, setStep] = useState(1); // 1 identity, 2 health, 3 consent
   const [errors, setErrors] = useState({});
+  const [progressUpdate, setProgressUpdate] = useState(0); // Force re-render for progress
+
+  // Trigger progress update when form or errors change
+  useEffect(() => {
+    setProgressUpdate(prev => prev + 1);
+  }, [form, errors]);
 
 
   const handleChange = e => {
@@ -72,6 +78,60 @@ export default function ChildForm({ onSaved, onClose }) {
   };
 
   const generateHealthId = () => 'H-' + nanoid(10).toUpperCase();
+
+  // Field completion tracking functions
+  const getStepCompletion = (stepNumber) => {
+    if (stepNumber === 1) {
+      const fields = ['name', 'dob'];
+      const validFields = [];
+      
+      // Check name field
+      if (form.name && form.name.trim() && !errors.name) {
+        validFields.push('name');
+      }
+      
+      // Check dob field
+      if (form.dob && form.dob.trim() && !errors.dob) {
+        validFields.push('dob');
+      }
+      
+      return validFields.length / fields.length;
+    }
+    
+    if (stepNumber === 2) {
+      const fields = ['weight', 'height', 'guardian'];
+      const validFields = [];
+      
+      // Check weight field
+      if (form.weight && form.weight.trim() && !errors.weight && !isNaN(parseFloat(form.weight))) {
+        validFields.push('weight');
+      }
+      
+      // Check height field
+      if (form.height && form.height.trim() && !errors.height && !isNaN(parseFloat(form.height))) {
+        validFields.push('height');
+      }
+      
+      // Check guardian field
+      if (form.guardian && form.guardian.trim() && !errors.guardian) {
+        validFields.push('guardian');
+      }
+      
+      return validFields.length / fields.length;
+    }
+    
+    if (stepNumber === 3) {
+      return form.consent ? 1 : 0;
+    }
+    
+    return 0;
+  };
+
+  const isStepCompleted = (stepNumber) => {
+    if (stepNumber < step) return true;
+    if (stepNumber === step) return getStepCompletion(stepNumber) === 1;
+    return false;
+  };
 
   // Date picker functions
   const formatDateForInput = (dateString) => {
@@ -219,18 +279,80 @@ export default function ChildForm({ onSaved, onClose }) {
 
   return (
   <div className="child-form-wrapper wizard-container" id="add-child">
-      <div className="responsive-progress-bar" aria-label="Form progress">
-        <div className="progress-container">
-          <div className="step-wrapper completed">
-            <div className="step-number">1</div>
+      <div className="new-progress-bar" aria-label="Form progress">
+        <div className="progress-steps">
+          {/* Step 1 */}
+          <div className="step-container">
+            <div className={`step-circle ${isStepCompleted(1) ? 'completed' : step === 1 ? 'active' : 'inactive'}`}>
+              {isStepCompleted(1) ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </div>
+            {step >= 1 && (
+              <div className="step-line-container">
+                <div 
+                  className="step-line-fill" 
+                  style={{
+                    width: step > 1 ? '100%' : `${getStepCompletion(1) * 100}%`
+                  }}
+                ></div>
+                <div className="step-line-bg"></div>
+              </div>
+            )}
           </div>
-          <div className="progress-line completed"></div>
-          <div className="step-wrapper active">
-            <div className="step-number">2</div>
+          
+          {/* Step 2 */}
+          <div className="step-container">
+            <div className={`step-circle ${isStepCompleted(2) ? 'completed' : step === 2 ? 'active' : 'inactive'}`}>
+              {isStepCompleted(2) ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 2V8H14V2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 8V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M21 18H13L8 22L3 18V10L8 6L13 10H21V18Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </div>
+            {step >= 1 && (
+              <div className="step-line-container">
+                <div 
+                  className="step-line-fill" 
+                  style={{
+                    width: step > 2 ? '100%' : `${getStepCompletion(2) * 100}%`
+                  }}
+                ></div>
+                <div className="step-line-bg"></div>
+              </div>
+            )}
           </div>
-          <div className="progress-line inactive"></div>
-          <div className="step-wrapper inactive">
-            <div className="step-number">3</div>
+          
+          {/* Step 3 */}
+          <div className="step-container">
+            <div className={`step-circle ${isStepCompleted(3) ? 'completed' : step === 3 ? 'active' : 'inactive'}`}>
+              {isStepCompleted(3) ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16 13H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16 17H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M10 9H9H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -241,10 +363,6 @@ export default function ChildForm({ onSaved, onClose }) {
       <form onSubmit={handleSubmit} className="child-form wizard" noValidate>
         {step === 1 && (
           <div className="grid step-grid step-1">
-            <label htmlFor="cf-name" className="field-span-2">Child's Name
-              <input id="cf-name" name="name" value={form.name} onChange={handleChange} placeholder="Full name" required />
-              {errors.name && <div className="error-message">{errors.name}</div>}
-            </label>
             <div className="photo-box photo-grid-item" aria-label="Face Photo">
               {form.photo ? (
                 <>
@@ -259,7 +377,11 @@ export default function ChildForm({ onSaved, onClose }) {
               )}
               <input type="file" accept="image/*" capture="user" name="photo" onChange={handleChange} title="Add or capture face photo" />
             </div>
-                         <label htmlFor="cf-dob">Date of Birth
+            <label htmlFor="cf-name">Child's Name
+              <input id="cf-name" name="name" value={form.name} onChange={handleChange} placeholder="Full name" required />
+              {errors.name && <div className="error-message">{errors.name}</div>}
+            </label>
+            <label htmlFor="cf-dob">Date of Birth
                <input 
                  id="cf-dob" 
                  name="dob" 

@@ -729,13 +729,124 @@
   }
 }
 
-/* Enhanced Responsive 3-Step Progress Bar */
-.responsive-progress-bar {
+/* New Clean Progress Bar */
+.new-progress-bar {
   width: 100%;
   display: flex;
   justify-content: center;
   margin: clamp(20px, 4vw, 30px) auto;
   padding: 0 clamp(10px, 3vw, 20px);
+}
+
+.progress-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.step-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.step-circle {
+  width: clamp(40px, 8vw, 50px);
+  height: clamp(40px, 8vw, 50px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(16px, 3.5vw, 20px);
+  font-weight: 700;
+  border: 3px solid #000;
+  background: #fff;
+  color: #000;
+  transition: all 0.3s ease;
+  z-index: 2;
+  position: relative;
+}
+
+.step-circle.completed {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+.step-circle.active {
+  background: #fff;
+  color: #000;
+  border-color: #000;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.step-circle.inactive {
+  background: #f5f5f5;
+  color: #999;
+  border-color: #ddd;
+}
+
+.step-line-container {
+  position: relative;
+  width: clamp(80px, 15vw, 120px);
+  height: 4px;
+  margin-left: clamp(8px, 2vw, 12px);
+}
+
+.step-line-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #e0e0e0;
+  border-radius: 2px;
+}
+
+.step-line-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: #000;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  z-index: 1;
+}
+
+/* Mobile responsive styles for new progress bar */
+@media (max-width: 768px) {
+  .step-circle {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    border-width: 2px;
+  }
+  
+  .step-line-container {
+    width: 60px;
+    margin-left: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .step-circle {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+    border-width: 2px;
+  }
+  
+  .step-line-container {
+    width: 50px;
+    height: 3px;
+    margin-left: 5px;
+  }
+  
+  .step-line-bg,
+  .step-line-fill {
+    height: 3px;
+  }
 }
 
 .progress-container {
@@ -766,9 +877,9 @@
 }
 
 .step-wrapper.completed .step-number {
-  background: white;
+  background: #000;
   border-color: #000;
-  color: #000;
+  color: #fff;
 }
 
 .step-wrapper.active .step-number {
