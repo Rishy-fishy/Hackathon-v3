@@ -1752,6 +1752,19 @@ button:not([class*="transparent"]),
   margin-bottom: 2rem;
 }
 
+/* Two-column layout for phone and relation fields */
+.child-form.wizard .step-2 .contact-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  grid-column: 1 / -1;
+  margin-top: 1rem;
+}
+
+.child-form.wizard .step-2 .optional-block {
+  margin-bottom: 2rem;
+}
+
 .child-form.wizard .step-2 .optional-block textarea {
   min-height: 38px !important;
   max-height: 38px !important;

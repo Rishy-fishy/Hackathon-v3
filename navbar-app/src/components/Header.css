@@ -1,5 +1,16 @@
 /* ===== Minimal Black & White Header ===== */
-.header.minimal-header { position:sticky; top:0; z-index:1000; background:#fff; border-bottom:1px solid #000; color:#000; font-family: system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif; max-width:100vw; overflow-x:hidden; box-sizing:border-box; }
+.header.minimal-header { 
+  position: sticky; 
+  top: 0; 
+  z-index: 1000; 
+  background: #fff; 
+  border-bottom: 1px solid #000; 
+  color: #000; 
+  font-family: system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif; 
+  max-width: 100vw; 
+  overflow-x: hidden; 
+  box-sizing: border-box; 
+}
 .bw-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; padding:.75rem 1rem; max-width:100%; overflow:hidden; box-sizing:border-box; }
 .brand-block { display:flex; align-items:baseline; gap:1rem; }
 .app-title { margin:0; font-size:1.15rem; font-weight:700; letter-spacing:.5px; color:#000; cursor:pointer; user-select:none; }
@@ -55,9 +66,10 @@
 .mini-btn { background:#fff !important; color:#000 !important; border:1px solid #000 !important; padding:.4rem .8rem; font-size:.6rem; font-weight:600; letter-spacing:.5px; cursor:pointer; border-radius:3px; text-transform:uppercase; }
 .mini-btn.primary { background:#000 !important; color:#fff !important; }
 .record-edit-form { margin-top:.5rem; }
-.record-edit-form .edit-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:.6rem .8rem; font-size:.65rem; }
+.record-edit-form .edit-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:.6rem .8rem; font-size:.65rem; }
 .record-edit-form .edit-grid label { font-weight:600; font-size:.6rem; letter-spacing:.5px; display:flex; flex-direction:column; gap:.25rem; }
-.record-edit-form input, .record-edit-form textarea { font-size:.7rem; padding:.4rem .5rem; border:1px solid #000; background:#fff; }
+.record-edit-form input, .record-edit-form textarea { font-size:.7rem; padding:.4rem .5rem; border:1px solid #000; background:#fff; border-radius:4px; }
+.record-edit-form select { font-size:.7rem; padding:.4rem .5rem; border:1px solid #000; background:#fff; border-radius:4px; }
 .record-edit-form textarea { min-height:60px; }
 .record-edit-form .full { grid-column:1 / -1; }
 .edit-actions { 
@@ -277,6 +289,22 @@
 @media (max-width: 640px){
   .record-row { grid-template-columns: 7rem 1fr; grid-auto-rows:auto; }
   .record-row .age, .record-row .wh, .record-row .status { grid-column:1 / -1; display:flex; gap:.25rem; font-size:.8rem; }
+  
+  .record-edit-form .edit-grid { 
+    grid-template-columns: 1fr !important; 
+    gap: .5rem !important; 
+  }
+  
+  .record-edit-form .edit-grid label { 
+    font-size: .7rem !important; 
+  }
+  
+  .record-edit-form input, 
+  .record-edit-form textarea, 
+  .record-edit-form select { 
+    font-size: .8rem !important; 
+    padding: .5rem .6rem !important; 
+  }
 }
 .empty { font-size:.8rem; font-style:italic; color:#555; }
 .overview-note { margin-top:1rem; font-size:.65rem; text-transform:uppercase; letter-spacing:1px; color:#222; }
@@ -528,4 +556,32 @@
     font-size: 1.3rem;
   }
   .session-countdown { font-size: 0.75rem; padding: 3px 6px; }
+}
+
+/* Field container styles for edit form */
+.field-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.field-head label {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Required field styling */
+.record-edit-form input[required] {
+  border-left: 3px solid #dc3545;
+}
+
+.record-edit-form input[required]:valid {
+  border-left: 3px solid #28a745;
 }

@@ -22,6 +22,113 @@ const Header = ({ onActiveViewChange }) => {
   const [online, setOnline] = useState(navigator.onLine);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Format age for display with years, months, and days
+  const formatAgeDisplay = (ageMonths) => {
+    if (ageMonths === null || ageMonths === undefined) return '—';
+    
+    const today = new Date();
+    const birthDate = new Date(today);
+    birthDate.setMonth(birthDate.getMonth() - ageMonths);
+    
+    // Calculate exact age in years, months, and days
+    let years = today.getFullYear() - birthDate.getFullYear();
+    let months = today.getMonth() - birthDate.getMonth();
+    let days = today.getDate() - birthDate.getDate();
+    
+    if (days < 0) {
+      months--;
+      const daysInPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+      days += daysInPrevMonth;
+    }
+    
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    
+    let ageStr = '';
+    if (years > 0) ageStr += `${years}y `;
+    if (months > 0) ageStr += `${months}m `;
+    if (days > 0) ageStr += `${days}d`;
+    if (!ageStr) ageStr = 'Today';
+    
+    return ageStr.trim();
+  };
+
+  // Enhanced DOB and age utility functions
+  const calculateAgeFromDOB = (dobString) => {
+    if (!dobString) return { years: 0, months: 0, days: 0, totalMonths: 0 };
+    
+    const birthDate = new Date(dobString);
+    const today = new Date();
+    
+    let years = today.getFullYear() - birthDate.getFullYear();
+    let months = today.getMonth() - birthDate.getMonth();
+    let days = today.getDate() - birthDate.getDate();
+    
+    if (days < 0) {
+      months--;
+      const daysInPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+      days += daysInPrevMonth;
+    }
+    
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    
+    const totalMonths = years * 12 + months;
+    
+    return { years, months, days, totalMonths };
+  };
+
+  const formatDateOfBirth = (record) => {
+    // Priority: use stored dateOfBirth, then calculate from ageMonths, then fallback
+    let dobString = '';
+    
+    if (record.dateOfBirth) {
+      dobString = record.dateOfBirth;
+    } else if (record.ageMonths !== null && record.ageMonths !== undefined) {
+      // Calculate DOB from age months as fallback
+      const today = new Date();
+      const birthDate = new Date(today);
+      birthDate.setMonth(birthDate.getMonth() - record.ageMonths);
+      dobString = birthDate.toISOString().split('T')[0];
+    }
+    
+    if (!dobString) return '—';
+    
+    const date = new Date(dobString);
+    return date.toLocaleDateString();
+  };
+
+  const formatAgeFromDOB = (dobString) => {
+    if (!dobString) return '—';
+    
+    const age = calculateAgeFromDOB(dobString);
+    
+    let ageStr = '';
+    if (age.years > 0) ageStr += `${age.years}y `;
+    if (age.months > 0) ageStr += `${age.months}m `;
+    if (age.days > 0) ageStr += `${age.days}d`;
+    if (!ageStr) ageStr = 'Today';
+    
+    return ageStr.trim();
+  };
+
+  const getDateOfBirthForEdit = (record) => {
+    // For edit form, prioritize stored DOB, then calculate from age
+    if (record.dateOfBirth) {
+      return record.dateOfBirth;
+    } else if (record.ageMonths !== null && record.ageMonths !== undefined && record.ageMonths > 0) {
+      const today = new Date();
+      const birthDate = new Date(today);
+      birthDate.setMonth(birthDate.getMonth() - record.ageMonths);
+      return birthDate.toISOString().split('T')[0];
+    }
+    return '';
+  };
+
   const handleProfileClick = () => {
     setIsLoading(true);
     setIsModalOpen(true);
@@ -265,7 +372,11 @@ const Header = ({ onActiveViewChange }) => {
             >
                 <div className="id">{r.healthId}</div>
                 <div className="name">{r.name}</div>
-                <div className="age">{r.ageMonths ?? '—'}m</div>
+                <div className="age">{
+                  r.dateOfBirth 
+                    ? formatAgeFromDOB(r.dateOfBirth)
+                    : formatAgeDisplay(r.ageMonths)
+                }</div>
                 <div className="wh">{r.weightKg ?? '—'}kg / {r.heightCm ?? '—'}cm</div>
                 <div className="status">{r.status}</div>
               </button>
@@ -499,15 +610,23 @@ const Header = ({ onActiveViewChange }) => {
               <div className="detail-content">
                 {selectedRecord.facePhoto && (
                   <div className="detail-photo">
-                    <img src={selectedRecord.facePhoto} alt={`Photo of ${selectedRecord.name}`} className="child-photo" />
+                    <img src={selectedRecord.facePhoto} alt={selectedRecord.name} className="child-photo" />
                   </div>
                 )}
                 <div className="detail-grid">
                   <div><strong>Gender:</strong> {selectedRecord.gender||'—'}</div>
-                  <div><strong>Age:</strong> {selectedRecord.ageMonths??'—'} m</div>
+                  <div><strong>Date of Birth:</strong> {formatDateOfBirth(selectedRecord)}</div>
+                  <div><strong>Age:</strong> {
+                    selectedRecord.dateOfBirth 
+                      ? formatAgeFromDOB(selectedRecord.dateOfBirth)
+                      : formatAgeDisplay(selectedRecord.ageMonths)
+                  }</div>
                   <div><strong>Weight:</strong> {selectedRecord.weightKg??'—'} kg</div>
                   <div><strong>Height:</strong> {selectedRecord.heightCm??'—'} cm</div>
+                  <div><strong>Aadhaar ID:</strong> {selectedRecord.idReference||'—'}</div>
                   <div><strong>Guardian:</strong> {selectedRecord.guardianName||'—'}</div>
+                  <div><strong>Phone:</strong> {selectedRecord.guardianPhone||'—'}</div>
+                  <div><strong>Relation:</strong> {selectedRecord.guardianRelation||'—'}</div>
                   <div className="full"><strong>Malnutrition Signs:</strong> {selectedRecord.malnutritionSigns||'N/A'}</div>
                   <div className="full"><strong>Recent Illnesses:</strong> {selectedRecord.recentIllnesses||'N/A'}</div>
                   <div><strong>Status:</strong> {selectedRecord.status}</div>
@@ -545,17 +664,116 @@ export default Header;
 
 // Inline lightweight edit form component
 function RecordEditForm({ record, onSave }) {
+  // DOB utility functions for this component
+  const calculateAgeFromDOB = (dobString) => {
+    if (!dobString) return { years: 0, months: 0, days: 0, totalMonths: 0 };
+    
+    const birthDate = new Date(dobString);
+    const today = new Date();
+    
+    let years = today.getFullYear() - birthDate.getFullYear();
+    let months = today.getMonth() - birthDate.getMonth();
+    let days = today.getDate() - birthDate.getDate();
+    
+    if (days < 0) {
+      months--;
+      const daysInPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+      days += daysInPrevMonth;
+    }
+    
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    
+    const totalMonths = years * 12 + months;
+    
+    return { years, months, days, totalMonths };
+  };
+
+  const getDateOfBirthForEdit = (record) => {
+    // For edit form, prioritize stored DOB, then calculate from age
+    if (record.dateOfBirth) {
+      return record.dateOfBirth;
+    } else if (record.ageMonths !== null && record.ageMonths !== undefined && record.ageMonths > 0) {
+      const today = new Date();
+      const birthDate = new Date(today);
+      birthDate.setMonth(birthDate.getMonth() - record.ageMonths);
+      return birthDate.toISOString().split('T')[0];
+    }
+    return '';
+  };
+
+  // Malnutrition options (same as ChildForm)
+  const malnutritionOptions = [
+    "Stunting (low height for age)",
+    "Wasting (low weight for height)",
+    "Underweight (low weight for age)",
+    "Visible ribs/spine",
+    "Swollen belly",
+    "Pale skin/eyes",
+    "Hair changes (color/texture)",
+    "Delayed development",
+    "Frequent infections",
+    "Loss of appetite"
+  ];
+
   const [form,setForm] = useState({
     name: record.name||'',
     gender: record.gender||'',
-    ageMonths: record.ageMonths||'',
+    dateOfBirth: getDateOfBirthForEdit(record),
+    idRef: record.idReference || '',
     weightKg: record.weightKg||'',
     heightCm: record.heightCm||'',
     guardianName: record.guardianName||'',
+    guardianPhone: record.guardianPhone || '',
+    guardianRelation: record.guardianRelation || '',
     malnutritionSigns: record.malnutritionSigns||'N/A',
     recentIllnesses: record.recentIllnesses||'N/A',
     facePhoto: record.facePhoto||null
   });
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Handle clicking outside dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (isDropdownOpen && !event.target.closest('.custom-dropdown')) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  // Malnutrition dropdown toggle function
+  const toggleMalnutritionOption = (option) => {
+    if (form.malnutritionSigns === 'N/A') {
+      setForm(f => ({...f, malnutritionSigns: [option]}));
+    } else {
+      // Handle both array and string formats
+      let currentSelections = [];
+      if (Array.isArray(form.malnutritionSigns)) {
+        currentSelections = form.malnutritionSigns;
+      } else if (form.malnutritionSigns && form.malnutritionSigns !== 'N/A') {
+        // Convert string to array (split by comma or treat as single item)
+        currentSelections = form.malnutritionSigns.includes(',') 
+          ? form.malnutritionSigns.split(',').map(s => s.trim())
+          : [form.malnutritionSigns];
+      }
+      
+      const isSelected = currentSelections.includes(option);
+      
+      if (isSelected) {
+        const newSelections = currentSelections.filter(item => item !== option);
+        setForm(f => ({...f, malnutritionSigns: newSelections.length === 0 ? 'N/A' : newSelections}));
+      } else {
+        setForm(f => ({...f, malnutritionSigns: [...currentSelections, option]}));
+      }
+    }
+  };
   const handleChange = e => {
     const { name, value, type, files } = e.target;
     if (type === 'file') {
@@ -586,18 +804,72 @@ function RecordEditForm({ record, onSave }) {
       };
       reader.readAsDataURL(file);
     } else {
-      setForm(f=>({...f,[name]:value}));
+      let processedValue = value;
+      
+      // Input validation based on field type (same as ChildForm)
+      if (name === 'name' || name === 'guardianName' || name === 'guardianRelation') {
+        // Only allow alphabets and spaces
+        processedValue = value.replace(/[^a-zA-Z\s]/g, '');
+      } else if (name === 'weightKg' || name === 'heightCm') {
+        // Only allow numbers and decimal point
+        processedValue = value.replace(/[^0-9.]/g, '');
+        // Prevent multiple decimal points
+        const parts = processedValue.split('.');
+        if (parts.length > 2) {
+          processedValue = parts[0] + '.' + parts.slice(1).join('');
+        }
+      } else if (name === 'guardianPhone') {
+        // Phone: allow only digits, limit to 10 digits
+        processedValue = value.replace(/\D/g, '').slice(0, 10);
+      } else if (name === 'idRef') {
+        // Aadhaar formatting: allow only digits, format as XXXX-XXXX-XXXX
+        const digits = value.replace(/\D/g, '').slice(0, 12);
+        const groups = digits.match(/.{1,4}/g) || [];
+        processedValue = groups.join('-');
+      } else if (name === 'dateOfBirth') {
+        // Date of Birth validation
+        if (value) {
+          const selectedDate = new Date(value);
+          const today = new Date();
+          const eighteenYearsAgo = new Date();
+          eighteenYearsAgo.setFullYear(today.getFullYear() - 18);
+          
+          // Prevent future dates
+          if (selectedDate > today) {
+            return; // Don't update if future date
+          }
+          
+          // Prevent age over 18 years
+          if (selectedDate < eighteenYearsAgo) {
+            return; // Don't update if older than 18
+          }
+        }
+        processedValue = value;
+      }
+      
+      setForm(f=>({...f,[name]:processedValue}));
     }
   };
   const submit = e => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!form.name || form.name.trim() === '') {
+      alert('Name is required');
+      return;
+    }
+    
     onSave && onSave({
-      name: form.name || 'N/A',
+      name: form.name.trim(),
       gender: form.gender || 'N/A',
-      ageMonths: form.ageMonths? parseInt(form.ageMonths,10): null,
+      dateOfBirth: form.dateOfBirth || null,
+      ageMonths: form.dateOfBirth ? calculateAgeFromDOB(form.dateOfBirth).totalMonths : null,
+      idReference: form.idRef || '',
       weightKg: form.weightKg? parseFloat(form.weightKg): null,
       heightCm: form.heightCm? parseFloat(form.heightCm): null,
       guardianName: form.guardianName || 'N/A',
+      guardianPhone: form.guardianPhone || 'N/A',
+      guardianRelation: form.guardianRelation || 'N/A',
       malnutritionSigns: form.malnutritionSigns || 'N/A',
       recentIllnesses: form.recentIllnesses || 'N/A',
       facePhoto: form.facePhoto
@@ -635,35 +907,166 @@ function RecordEditForm({ record, onSave }) {
             />
           </div>
         </div>
-        <label> Name
-          <input name="name" value={form.name} onChange={handleChange} />
+        <label> Name *
+          <input name="name" value={form.name} onChange={handleChange} required />
         </label>
         <label> Gender
           <select name="gender" value={form.gender} onChange={handleChange}>
-            <option value="">Select Gender</option>
             <option value="Male">Male</option>
             <option value="Female">Female</option>
             <option value="Other">Other</option>
           </select>
         </label>
-        <label> Age (m)
-          <input name="ageMonths" value={form.ageMonths} onChange={handleChange} inputMode="numeric" />
+        <label> Date of Birth
+          <input 
+            name="dateOfBirth" 
+            type="date" 
+            value={form.dateOfBirth} 
+            onChange={handleChange}
+            max={new Date().toISOString().split('T')[0]}
+            min={new Date(new Date().getFullYear() - 18, new Date().getMonth(), new Date().getDate()).toISOString().split('T')[0]}
+          />
+        </label>
+        <label> Aadhaar ID (optional)
+          <input 
+            name="idRef" 
+            value={form.idRef} 
+            onChange={handleChange}
+            inputMode="numeric" 
+            pattern="\d{4}-\d{4}-\d{4}" 
+            placeholder="XXXX-XXXX-XXXX"
+          />
         </label>
         <label> Weight (kg)
-          <input name="weightKg" value={form.weightKg} onChange={handleChange} inputMode="decimal" />
+          <input name="weightKg" value={form.weightKg} onChange={handleChange} inputMode="decimal" placeholder="e.g. 11.2" />
         </label>
         <label> Height (cm)
-          <input name="heightCm" value={form.heightCm} onChange={handleChange} inputMode="decimal" />
+          <input name="heightCm" value={form.heightCm} onChange={handleChange} inputMode="decimal" placeholder="e.g. 82" />
         </label>
         <label className="full"> Guardian
-          <input name="guardianName" value={form.guardianName} onChange={handleChange} />
+          <input name="guardianName" value={form.guardianName} onChange={handleChange} placeholder="Parent / Guardian" />
         </label>
-        <label className="full"> Malnutrition Signs
-          <textarea name="malnutritionSigns" value={form.malnutritionSigns} onChange={handleChange} />
+        <label> Phone Number
+          <input 
+            name="guardianPhone" 
+            value={form.guardianPhone} 
+            onChange={handleChange}
+            inputMode="numeric" 
+            pattern="\d{10}" 
+            placeholder="10-digit phone number" 
+            maxLength="10"
+          />
         </label>
-        <label className="full"> Recent Illnesses
-          <textarea name="recentIllnesses" value={form.recentIllnesses} onChange={handleChange} />
+        <label> Relation with Child
+          <input 
+            name="guardianRelation" 
+            value={form.guardianRelation} 
+            onChange={handleChange}
+            placeholder="e.g. Father, Mother, Uncle"
+          />
         </label>
+        <div className="full field-container">
+          <div className="field-head">
+            <label>Malnutrition Signs</label>
+            <button 
+              type="button" 
+              className="pill-toggle" 
+              aria-pressed={form.malnutritionSigns==='N/A'} 
+              onClick={()=>setForm(f=>({...f, malnutritionSigns: f.malnutritionSigns==='N/A'?[]: 'N/A'}))}
+            >
+              N/A
+            </button>
+          </div>
+          <div className="custom-dropdown" onClick={() => form.malnutritionSigns !== 'N/A' && setIsDropdownOpen(!isDropdownOpen)}>
+            <div className={`dropdown-display ${form.malnutritionSigns === 'N/A' ? 'disabled' : ''}`}>
+              <span>
+                {form.malnutritionSigns === 'N/A' 
+                  ? 'N/A'
+                  : (() => {
+                      if (Array.isArray(form.malnutritionSigns) && form.malnutritionSigns.length > 0) {
+                        return `${form.malnutritionSigns.length} selected`;
+                      } else if (typeof form.malnutritionSigns === 'string' && form.malnutritionSigns !== 'N/A' && form.malnutritionSigns !== '') {
+                        const selections = form.malnutritionSigns.includes(',') 
+                          ? form.malnutritionSigns.split(',').map(s => s.trim())
+                          : [form.malnutritionSigns];
+                        return `${selections.length} selected`;
+                      } else {
+                        return 'Select signs of malnutrition';
+                      }
+                    })()
+                }
+              </span>
+              <svg 
+                className={`dropdown-arrow ${isDropdownOpen && form.malnutritionSigns !== 'N/A' ? 'open' : ''}`}
+                width="12" 
+                height="12" 
+                viewBox="0 0 12 12" 
+                fill="none"
+              >
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            {isDropdownOpen && form.malnutritionSigns !== 'N/A' && (
+              <div className="dropdown-menu" role="listbox" onClick={(e) => e.stopPropagation()}>
+                  {malnutritionOptions.map((option, index) => {
+                    // Handle both array and string formats for checking selection
+                    let isSelected = false;
+                    if (Array.isArray(form.malnutritionSigns)) {
+                      isSelected = form.malnutritionSigns.includes(option);
+                    } else if (typeof form.malnutritionSigns === 'string' && form.malnutritionSigns !== 'N/A') {
+                      const selections = form.malnutritionSigns.includes(',') 
+                        ? form.malnutritionSigns.split(',').map(s => s.trim())
+                        : [form.malnutritionSigns];
+                      isSelected = selections.includes(option);
+                    }
+                    
+                    return (
+                      <div
+                        key={index}
+                        className={`dropdown-option ${isSelected ? 'selected' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleMalnutritionOption(option);
+                        }}
+                        role="option"
+                        aria-selected={isSelected}
+                      >
+                        <div className="option-checkbox">
+                          {isSelected && (
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                        <span className="option-text">{option}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+          </div>
+        </div>
+        <div className="full field-container">
+          <div className="field-head">
+            <label>Recent Illnesses</label>
+            <button 
+              type="button" 
+              className="pill-toggle" 
+              aria-pressed={form.recentIllnesses==='N/A'} 
+              onClick={()=>setForm(f=>({...f, recentIllnesses: f.recentIllnesses==='N/A'?'': 'N/A'}))}
+            >
+              N/A
+            </button>
+          </div>
+          <textarea 
+            name="recentIllnesses" 
+            value={form.recentIllnesses} 
+            onChange={handleChange}
+            placeholder="Describe recent illnesses or conditions"
+            disabled={form.recentIllnesses==='N/A'}
+            aria-disabled={form.recentIllnesses==='N/A'}
+          />
+        </div>
       </div>
       <div className="edit-actions">
         <button type="submit" className="mini-btn primary">Save</button>

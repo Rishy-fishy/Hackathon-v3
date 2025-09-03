@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { nanoid } from 'nanoid';
 import { addChildRecord } from './db';
 
-const initial = { name:'', dob:'', gender:'Male', idRef:'', weight:'', height:'', guardian:'', malnutrition:'N/A', illnesses:'N/A', consent:false, photo:null };
+const initial = { name:'', dob:'', gender:'Male', idRef:'', weight:'', height:'', guardian:'', phone:'', relation:'', malnutrition:'N/A', illnesses:'N/A', consent:false, photo:null };
 
 export default function ChildForm({ onSaved, onClose }) {
   const [form, setForm] = useState(initial);
@@ -81,7 +81,7 @@ export default function ChildForm({ onSaved, onClose }) {
       let processedValue = value;
       
       // Input validation based on field type
-      if (name === 'name' || name === 'guardian') {
+      if (name === 'name' || name === 'guardian' || name === 'relation') {
         // Only allow alphabets and spaces
         processedValue = value.replace(/[^a-zA-Z\s]/g, '');
       } else if (name === 'weight' || name === 'height') {
@@ -92,6 +92,9 @@ export default function ChildForm({ onSaved, onClose }) {
         if (parts.length > 2) {
           processedValue = parts[0] + '.' + parts.slice(1).join('');
         }
+      } else if (name === 'phone') {
+        // Phone: allow only digits, limit to 10 digits
+        processedValue = value.replace(/\D/g, '').slice(0, 10);
       } else if (name === 'dob') {
          // For date picker, we don't need manual text processing
          processedValue = value;
@@ -182,7 +185,7 @@ const generateHealthId = () => {
     }
     
     if (stepNumber === 2) {
-      const fields = ['weight', 'height', 'guardian'];
+      const fields = ['weight', 'height', 'guardian', 'phone', 'relation'];
       const validFields = [];
       
       // Check weight field
@@ -198,6 +201,16 @@ const generateHealthId = () => {
       // Check guardian field
       if (form.guardian && form.guardian.trim() && !errors.guardian) {
         validFields.push('guardian');
+      }
+      
+      // Check phone field
+      if (form.phone && form.phone.trim() && !errors.phone && form.phone.length === 10) {
+        validFields.push('phone');
+      }
+      
+      // Check relation field
+      if (form.relation && form.relation.trim() && !errors.relation) {
+        validFields.push('relation');
       }
       
       return validFields.length / fields.length;
@@ -312,6 +325,9 @@ const generateHealthId = () => {
       if (!form.height.trim()) newErrors.height = 'Fill the required field';
       else if (isNaN(parseFloat(form.height))) newErrors.height = 'Enter valid number';
       if (!form.guardian.trim()) newErrors.guardian = 'Fill the required field';
+      if (!form.phone.trim()) newErrors.phone = 'Fill the required field';
+      else if (form.phone.length !== 10) newErrors.phone = 'Enter exactly 10 digits';
+      if (!form.relation.trim()) newErrors.relation = 'Fill the required field';
     }
     
     setErrors(newErrors);
@@ -350,6 +366,8 @@ const generateHealthId = () => {
       weightKg: form.weight? parseFloat(form.weight): null,
       heightCm: form.height? parseFloat(form.height): null,
       guardianName: form.guardian || 'N/A',
+      guardianPhone: form.phone || 'N/A',
+      guardianRelation: form.relation || 'N/A',
       malnutritionSigns: Array.isArray(form.malnutrition) 
         ? (form.malnutrition.length ? form.malnutrition.join(', ') : 'N/A')
         : (form.malnutrition || 'N/A'),
@@ -524,6 +542,31 @@ const generateHealthId = () => {
               <input id="cf-guardian" name="guardian" value={form.guardian} onChange={handleChange} placeholder="Parent / Guardian" />
               {errors.guardian && <div className="error-message">{errors.guardian}</div>}
             </label>
+            <div className="contact-row">
+              <label htmlFor="cf-phone">Phone Number
+                <input 
+                  id="cf-phone" 
+                  name="phone" 
+                  value={form.phone} 
+                  onChange={handleChange} 
+                  inputMode="numeric" 
+                  pattern="\d{10}" 
+                  placeholder="10-digit phone number" 
+                  maxLength="10"
+                />
+                {errors.phone && <div className="error-message">{errors.phone}</div>}
+              </label>
+              <label htmlFor="cf-relation">Relation with Child
+                <input 
+                  id="cf-relation" 
+                  name="relation" 
+                  value={form.relation} 
+                  onChange={handleChange} 
+                  placeholder="e.g. Father, Mother, Uncle" 
+                />
+                {errors.relation && <div className="error-message">{errors.relation}</div>}
+              </label>
+            </div>
             <div className="field-span-2 optional-block">
               <div className="field-head">
                 <label htmlFor="cf-malnutrition">Visible Signs of Malnutrition</label>
@@ -598,6 +641,8 @@ const generateHealthId = () => {
                <div><strong>Weight:</strong> {form.weight||'—'}</div>
               <div><strong>Height:</strong> {form.height||'—'}</div>
               <div className="full"><strong>Guardian:</strong> {form.guardian||'—'}</div>
+              <div><strong>Phone:</strong> {form.phone||'—'}</div>
+              <div><strong>Relation:</strong> {form.relation||'—'}</div>
               <div className="full"><strong>Malnutrition Signs:</strong> {
                 Array.isArray(form.malnutrition) 
                   ? (form.malnutrition.length ? form.malnutrition.join(', ') : 'N/A')
