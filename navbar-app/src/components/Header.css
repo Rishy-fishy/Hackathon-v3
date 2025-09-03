@@ -818,3 +818,22 @@ font-size: 0.75rem;
   }
 }
 
+/* Mobile fix for panel container */
+@media (max-width: 640px) {
+  .panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0.75rem !important;
+    box-sizing: border-box !important;
+    border-radius: 6px;
+  }
+
+  /* Make sure child form inside panel also shrinks */
+  .panel .child-form-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+  }
+}
