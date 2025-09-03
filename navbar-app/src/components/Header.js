@@ -30,100 +30,6 @@ const Header = ({ onActiveViewChange }) => {
     return () => window.removeEventListener('resize', handler);
   },[]);
 
-  // Format age for display with years, months, and days
-  const formatAgeDisplay = (ageMonths) => {
-    if (ageMonths === null || ageMonths === undefined) return '—';
-    
-    const today = new Date();
-    const birthDate = new Date(today);
-    birthDate.setMonth(birthDate.getMonth() - ageMonths);
-    
-    // Calculate exact age in years, months, and days
-    let years = today.getFullYear() - birthDate.getFullYear();
-    let months = today.getMonth() - birthDate.getMonth();
-    let days = today.getDate() - birthDate.getDate();
-    
-    if (days < 0) {
-      months--;
-      const daysInPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
-      days += daysInPrevMonth;
-    }
-    
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-    
-    let ageStr = '';
-    if (years > 0) ageStr += `${years}y `;
-    if (months > 0) ageStr += `${months}m `;
-    if (days > 0) ageStr += `${days}d`;
-    if (!ageStr) ageStr = 'Today';
-    
-    return ageStr.trim();
-  };
-
-  // Enhanced DOB and age utility functions
-  const calculateAgeFromDOB = (dobString) => {
-    if (!dobString) return { years: 0, months: 0, days: 0, totalMonths: 0 };
-    
-    const birthDate = new Date(dobString);
-    const today = new Date();
-    
-    let years = today.getFullYear() - birthDate.getFullYear();
-    let months = today.getMonth() - birthDate.getMonth();
-    let days = today.getDate() - birthDate.getDate();
-    
-    if (days < 0) {
-      months--;
-      const daysInPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
-      days += daysInPrevMonth;
-    }
-    
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-    
-    const totalMonths = years * 12 + months;
-    
-    return { years, months, days, totalMonths };
-  };
-
-  const formatDateOfBirth = (record) => {
-    // Priority: use stored dateOfBirth, then calculate from ageMonths, then fallback
-    let dobString = '';
-    
-    if (record.dateOfBirth) {
-      dobString = record.dateOfBirth;
-    } else if (record.ageMonths !== null && record.ageMonths !== undefined) {
-      // Calculate DOB from age months as fallback
-      const today = new Date();
-      const birthDate = new Date(today);
-      birthDate.setMonth(birthDate.getMonth() - record.ageMonths);
-      dobString = birthDate.toISOString().split('T')[0];
-    }
-    
-    if (!dobString) return '—';
-    
-    const date = new Date(dobString);
-    return date.toLocaleDateString();
-  };
-
-  const formatAgeFromDOB = (dobString) => {
-    if (!dobString) return '—';
-    
-    const age = calculateAgeFromDOB(dobString);
-    
-    let ageStr = '';
-    if (age.years > 0) ageStr += `${age.years}y `;
-    if (age.months > 0) ageStr += `${age.months}m `;
-    if (age.days > 0) ageStr += `${age.days}d`;
-    if (!ageStr) ageStr = 'Today';
-    
-    return ageStr.trim();
-  };
-
   const handleProfileClick = () => {
     setIsLoading(true);
     setIsModalOpen(true);
@@ -131,14 +37,43 @@ const Header = ({ onActiveViewChange }) => {
   };
 
   const handleCloseModal = () => {
-    console.log('Closing modal');
     setIsModalOpen(false);
     setIsLoading(false);
   };
 
+  // Age formatting helpers (restored)
+  const formatAgeDisplay = (ageMonths) => {
+    if (ageMonths === null || ageMonths === undefined) return '—';
+    const today = new Date();
+    const birthDate = new Date(today);
+    birthDate.setMonth(birthDate.getMonth() - ageMonths);
+    let years = today.getFullYear() - birthDate.getFullYear();
+    let months = today.getMonth() - birthDate.getMonth();
+    let days = today.getDate() - birthDate.getDate();
+    if (days < 0) { months--; const daysInPrev = new Date(today.getFullYear(), today.getMonth(), 0).getDate(); days += daysInPrev; }
+    if (months < 0) { years--; months += 12; }
+    let ageStr=''; if (years>0) ageStr+=years+'y '; if (months>0) ageStr+=months+'m '; if (days>0) ageStr+=days+'d'; return ageStr.trim()||'Today';
+  };
+  const calculateAgeFromDOB = (dobString) => {
+    if (!dobString) return { years:0, months:0, days:0, totalMonths:0 };
+    const birthDate = new Date(dobString); const today=new Date();
+    let years=today.getFullYear()-birthDate.getFullYear(); let months=today.getMonth()-birthDate.getMonth(); let days=today.getDate()-birthDate.getDate();
+    if (days<0){ months--; const daysInPrev=new Date(today.getFullYear(), today.getMonth(),0).getDate(); days+=daysInPrev; }
+    if (months<0){ years--; months+=12; }
+    const totalMonths=years*12+months; return { years, months, days, totalMonths };
+  };
+  const formatAgeFromDOB = (dobString) => {
+    if (!dobString) return '—'; const age=calculateAgeFromDOB(dobString); let str=''; if(age.years>0) str+=age.years+'y '; if(age.months>0) str+=age.months+'m '; if(age.days>0) str+=age.days+'d'; return str.trim()||'Today';
+  };
+  const formatDateOfBirth = (record) => {
+    let dobString=''; if (record.dateOfBirth) dobString=record.dateOfBirth; else if (record.ageMonths!=null){ const today=new Date(); const birth=new Date(today); birth.setMonth(birth.getMonth()-record.ageMonths); dobString=birth.toISOString().split('T')[0]; }
+    if(!dobString) return '—'; return new Date(dobString).toLocaleDateString();
+  };
+  
+  // Auth check + URL payload processing
   useEffect(() => {
-    // Check if user is authenticated via eSignet (new flow)
-    try {
+  // Check if user is authenticated via eSignet (new flow)
+  try {
       // New: handle auth_payload (base64url encoded JSON forwarded from callback server)
       let params = new URLSearchParams(window.location.search);
       let authPayloadB64 = params.get('auth_payload');
@@ -176,7 +111,7 @@ const Header = ({ onActiveViewChange }) => {
           window.history.replaceState({}, document.title, window.location.pathname + (params.toString()? ('?'+params.toString()):''));
         }
       }
-
+      
       const esignetAuthenticated = sessionStorage.getItem('esignet_authenticated') === 'true';
       if (esignetAuthenticated) {
         const storedUserInfo = sessionStorage.getItem('esignet_user');
@@ -209,7 +144,7 @@ const Header = ({ onActiveViewChange }) => {
           }
         }
       }
-
+      
       // Check if we just authenticated
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('authenticated') === 'true') {
@@ -443,16 +378,16 @@ const Header = ({ onActiveViewChange }) => {
       )}
 
       {/* Profile / Auth Modal */}
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
+  <Modal isOpen={isModalOpen} onClose={handleCloseModal} extraClass="profile-square">
         {isLoading ? (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
             <div className="loading-spinner" style={{ margin: '0 auto 1rem' }}></div>
             <p>Loading...</p>
           </div>
         ) : isAuthenticated && userInfo ? (
-          <div className="user-profile">
-            <div className="profile-header">
-              <div className="profile-avatar">
+          <div className="user-profile sketch-layout">
+            <div className="profile-top-row">
+              <div className="profile-avatar large">
                 {userInfo.picture ? (
                   <img src={userInfo.picture} alt="Profile" />
                 ) : (
@@ -461,185 +396,19 @@ const Header = ({ onActiveViewChange }) => {
                   </div>
                 )}
               </div>
-              <h2>{userInfo.name}</h2>
-              <p className="profile-email">{userInfo.email}</p>
+              <div className="profile-name-block">
+                <h2 className="profile-name-main">{userInfo.name}</h2>
+              </div>
             </div>
-            
-            <div className="profile-details">
-              <h3>Profile Information</h3>
-              
-              {/* Basic Information */}
-              <div className="detail-group">
-                <h4>Personal Details</h4>
-                <div className="detail-row">
-                  <span className="detail-label">Full Name:</span>
-                  <span className="detail-value">{userInfo.name || 'Not provided'}</span>
-                </div>
-                {userInfo.given_name && (
-                  <div className="detail-row">
-                    <span className="detail-label">First Name:</span>
-                    <span className="detail-value">{userInfo.given_name}</span>
-                  </div>
-                )}
-                {userInfo.family_name && (
-                  <div className="detail-row">
-                    <span className="detail-label">Last Name:</span>
-                    <span className="detail-value">{userInfo.family_name}</span>
-                  </div>
-                )}
-                {userInfo.uin && (
-                  <div className="detail-row">
-                    <span className="detail-label">UIN:</span>
-                    <span className="detail-value">{userInfo.uin}</span>
-                  </div>
-                )}
-                {userInfo.birthdate && (
-                  <div className="detail-row">
-                    <span className="detail-label">Date of Birth:</span>
-                    <span className="detail-value">{userInfo.birthdate}</span>
-                  </div>
-                )}
-                {userInfo.gender && (
-                  <div className="detail-row">
-                    <span className="detail-label">Gender:</span>
-                    <span className="detail-value">{userInfo.gender}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Contact Information */}
-              <div className="detail-group">
-                <h4>Contact Information</h4>
-                <div className="detail-row">
-                  <span className="detail-label">Email:</span>
-                  <span className="detail-value">
-                    {userInfo.email || 'Not provided'}
-                    {userInfo.email_verified && <span className="verified-badge">✅ Verified</span>}
-                  </span>
-                </div>
-                {userInfo.phone_number && (
-                  <div className="detail-row">
-                    <span className="detail-label">Phone:</span>
-                    <span className="detail-value">
-                      {userInfo.phone_number}
-                      {userInfo.phone_number_verified && <span className="verified-badge">✅ Verified</span>}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Address Information */}
-              {userInfo.address && (
-                <div className="detail-group">
-                  <h4>Address</h4>
-                  {typeof userInfo.address === 'string' ? (
-                    <div className="detail-row">
-                      <span className="detail-label">Address:</span>
-                      <span className="detail-value">{userInfo.address}</span>
-                    </div>
-                  ) : (
-                    <>
-                      {userInfo.address.formatted && (
-                        <div className="detail-row">
-                          <span className="detail-label">Address:</span>
-                          <span className="detail-value">{userInfo.address.formatted}</span>
-                        </div>
-                      )}
-                      {userInfo.address.locality && (
-                        <div className="detail-row">
-                          <span className="detail-label">City:</span>
-                          <span className="detail-value">{userInfo.address.locality}</span>
-                        </div>
-                      )}
-                      {userInfo.address.region && (
-                        <div className="detail-row">
-                          <span className="detail-label">State:</span>
-                          <span className="detail-value">{userInfo.address.region}</span>
-                        </div>
-                      )}
-                      {userInfo.address.postal_code && (
-                        <div className="detail-row">
-                          <span className="detail-label">Postal Code:</span>
-                          <span className="detail-value">{userInfo.address.postal_code}</span>
-                        </div>
-                      )}
-                      {userInfo.address.country && (
-                        <div className="detail-row">
-                          <span className="detail-label">Country:</span>
-                          <span className="detail-value">{userInfo.address.country}</span>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Authentication Information */}
-              <div className="detail-group">
-                <h4>Authentication Details</h4>
-                <div className="detail-row">
-                  <span className="detail-label">User ID:</span>
-                  <span className="detail-value">{userInfo.sub || 'Not available'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Authentication Method:</span>
-                  <span className="detail-value">eSignet OIDC</span>
-                </div>
-                {userInfo.iss && (
-                  <div className="detail-row">
-                    <span className="detail-label">Issuer:</span>
-                    <span className="detail-value">{userInfo.iss}</span>
-                  </div>
-                )}
-                {userInfo.auth_method && (
-                  <div className="detail-row">
-                    <span className="detail-label">Auth Provider:</span>
-                    <span className="detail-value">{userInfo.auth_method}</span>
-                  </div>
-                )}
-                <div className="detail-row">
-                  <span className="detail-label">Session:</span>
-                  <span className="detail-value">Active</span>
-                </div>
-                {userInfo.login_timestamp && (
-                  <div className="detail-row">
-                    <span className="detail-label">Login Time:</span>
-                    <span className="detail-value">
-                      {new Date(userInfo.login_timestamp).toLocaleString()}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Debug Information - Show raw data for development */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="detail-group">
-                  <h4>Debug Information</h4>
-                  <div className="detail-row">
-                    <span className="detail-label">Available Fields:</span>
-                    <span className="detail-value" style={{fontSize: '12px', fontFamily: 'monospace'}}>
-                      {Object.keys(userInfo).join(', ')}
-                    </span>
-                  </div>
-                  <details style={{marginTop: '10px'}}>
-                    <summary style={{cursor: 'pointer', fontWeight: 'bold'}}>Raw User Data</summary>
-                    <pre style={{
-                      backgroundColor: '#f5f5f5', 
-                      padding: '10px', 
-                      fontSize: '12px', 
-                      overflow: 'auto', 
-                      maxHeight: '200px'
-                    }}>
-                      {JSON.stringify(userInfo, null, 2)}
-                    </pre>
-                  </details>
-                </div>
-              )}
+            <div className="profile-info-box">
+              <div className="info-row"><span className="info-label">Gender:</span><span className="info-value">{userInfo.gender || '—'}</span></div>
+              <div className="info-row"><span className="info-label">Phone No:</span><span className="info-value">{userInfo.phone_number || '—'}</span></div>
+              <div className="info-row"><span className="info-label">Birthdate:</span><span className="info-value">{userInfo.birthdate || '—'}</span></div>
+              <div className="info-row"><span className="info-label">Email :</span><span className="info-value">{userInfo.email || '—'}</span></div>
             </div>
-            
-            <button className="logout-btn" onClick={handleLogout}>
-              Sign Out
-            </button>
+            <div className="logout-row">
+              <button className="logout-btn button" type="button" onClick={handleLogout} aria-label="Logout"><span>LOGOUT</span></button>
+            </div>
           </div>
         ) : (
           <ErrorBoundary>
@@ -1130,3 +899,6 @@ function RecordEditForm({ record, onSave }) {
     </form>
   );
 }
+
+// End of RecordEditForm
+

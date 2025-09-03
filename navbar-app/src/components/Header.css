@@ -455,6 +455,201 @@ margin: auto;
 .detail-group h4 { color:#000; }
 .logout-btn { background:#000; box-shadow:none; border-radius:3px; }
 
+/* ================= Profile Modal Enhanced Layout ================= */
+.user-profile { display:flex; flex-direction:column; gap:1.5rem; max-width:100%; box-sizing:border-box; }
+.user-profile .profile-header { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; text-align:left; }
+.user-profile .profile-avatar { width:80px; height:80px; border-radius:50%; overflow:hidden; border:2px solid #000; background:#fafafa; display:flex; align-items:center; justify-content:center; box-shadow:2px 3px 0 #000; font-weight:600; font-size:1.25rem; letter-spacing:.5px; }
+.user-profile .profile-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+.user-profile .avatar-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#fff; }
+.user-profile h2 { margin:0; font-size:1.35rem; line-height:1.1; }
+.user-profile .profile-email { margin:0; font-size:.8rem; color:#444; width:100%; }
+
+.profile-details { display:flex; flex-direction:column; gap:1.25rem; }
+.profile-details .detail-group { padding:.85rem 1rem 1rem; border-radius:12px; position:relative; background:#fff; }
+.profile-details .detail-group h4 { margin:.1rem 0 .75rem; font-size:.75rem; letter-spacing:.6px; text-transform:uppercase; font-weight:700; }
+.profile-details .detail-row { display:flex; gap:.5rem; font-size:.8rem; line-height:1.3; flex-wrap:wrap; align-items:flex-start; }
+.profile-details .detail-label { font-weight:600; font-size:.6rem; letter-spacing:.5px; text-transform:uppercase; color:#111; min-width:110px; flex:0 0 auto; }
+.profile-details .detail-value { flex:1 1 auto; min-width:140px; word-break:break-word; overflow-wrap:anywhere; }
+.profile-details .verified-badge { margin-left:.4rem; font-size:.65rem; background:#e6ffe6; border:1px solid #0a0; padding:2px 5px; border-radius:10px; }
+.profile-details .two-section-group { display:flex; flex-direction:row; gap:1.25rem; flex-wrap:wrap; }
+.profile-details .two-section-group .subsection { flex:1 1 260px; display:flex; flex-direction:column; gap:.45rem; }
+.profile-details .two-section-group .section-divider { width:1px; background:#ddd; align-self:stretch; flex:0 0 1px; }
+@media (max-width:680px){
+  .profile-details .two-section-group { flex-direction:column; }
+  .profile-details .two-section-group .section-divider { display:none; }
+}
+
+/* Removed old logout-btn base style to prevent conflicts with new themed button */
+
+/* Two-column grouping on wide screens */
+@media (min-width:860px){
+  .profile-details { display:grid; grid-template-columns:repeat(2, minmax(320px, 1fr)); gap:1.25rem 1.5rem; }
+  .profile-details .detail-group { height:100%; display:flex; flex-direction:column; }
+}
+
+/* Compact adjustments for tablets */
+@media (max-width:860px){
+  .user-profile .profile-header { justify-content:flex-start; }
+  .user-profile h2 { font-size:1.2rem; }
+}
+
+/* Mobile layout refinements */
+@media (max-width:640px){
+  .user-profile .profile-avatar { width:64px; height:64px; font-size:1rem; }
+  .user-profile h2 { font-size:1.05rem; }
+  .profile-details .detail-row { font-size:.75rem; }
+  .profile-details .detail-label { font-size:.55rem; min-width:90px; }
+  .profile-details .detail-group { padding:.75rem .85rem .85rem; }
+  .logout-btn { width:100%; text-align:center; }
+}
+
+/* Very small devices */
+@media (max-width:420px){
+  .user-profile .profile-header { flex-direction:row; }
+  .profile-details .detail-row { flex-direction:column; gap:.25rem; }
+  .profile-details .detail-label { min-width:0; }
+}
+
+/* Improve scroll usability if modal content grows */
+.modal-content .user-profile { max-height:calc(90vh - 2rem); overflow-y:auto; padding-right:0; }
+.modal-content .user-profile::-webkit-scrollbar { width:6px; }
+.modal-content .user-profile::-webkit-scrollbar-thumb { background:#ccc; border-radius:3px; }
+.modal-content .user-profile::-webkit-scrollbar-track { background:transparent; }
+
+/* ===== Sketch Layout Specific ===== */
+.sketch-layout { font-family: system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif; }
+.sketch-layout .profile-top-row { display:flex; align-items:center; gap:1rem; margin-bottom:1.2rem; }
+.sketch-layout .profile-avatar.large { width:90px; height:90px; border-radius:50%; border:2px solid #000; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#fafafa; box-shadow:1px 2px 0 #000; }
+.sketch-layout .profile-avatar.large img { width:100%; height:100%; object-fit:cover; }
+.sketch-layout .profile-name-main { margin:0 0 .25rem; font-size:1.3rem; font-weight:700; }
+.sketch-layout .profile-email.subtle { margin:0; font-size:.75rem; color:#444; }
+.sketch-layout .profile-info-box { border:2px solid #000; border-radius:30px; padding:1.4rem 1.6rem 1.6rem; display:flex; flex-direction:column; gap:.9rem; background:#fff; max-width:100%; flex:1; }
+.sketch-layout { overflow:visible; }
+.sketch-layout .info-row { display:flex; gap:.75rem; font-size:.8rem; }
+.sketch-layout .info-label { width:110px; font-weight:600; letter-spacing:.5px; font-size:.7rem; text-transform:none; }
+.sketch-layout .info-value { flex:1; word-break:break-word; }
+.sketch-layout .logout-row { margin-top:1.25rem; margin-left:1.1rem; }
+.sketch-layout .logout-btn.sketch { 
+  background:#fff; 
+  color:#000; 
+  border:2px solid #000; 
+  padding:.6rem 1.4rem; 
+  font-size:.8rem; 
+  font-weight:600; 
+  border-radius:10px; 
+  box-shadow:2px 3px 0 #000; 
+  cursor:pointer; 
+  display:inline-block; 
+  transition:transform .16s ease, box-shadow .16s ease, background .2s ease, color .2s ease; 
+  will-change:transform; 
+  position:relative; 
+}
+.sketch-layout .logout-btn.sketch:hover { 
+  /* Removed negative translate to avoid clipping from parent overflow */
+  box-shadow:3px 4px 0 #000; 
+}
+.sketch-layout .logout-btn.sketch:active { 
+  transform:none; 
+  box-shadow:1px 2px 0 #000; 
+}
+.sketch-layout .logout-btn.sketch:focus-visible { outline:2px dashed #000; outline-offset:3px; }
+
+/* ===== Fancy Logout Button Variant ===== */
+/* Reset/override previous fancy variant with simpler pill style (black hover) */
+/* Uiverse style logout button */
+.logout-btn.button {
+  all: unset;
+  cursor: pointer;
+  position: relative;
+  padding:10px 24px;
+  font-size:16px;
+  color:#000 !important; /* ensure visible text */
+  border:2px solid #000;
+  border-radius:34px;
+  background-color:transparent;
+  font-weight:600;
+  letter-spacing:.5px;
+  transition:all .3s cubic-bezier(.23,1,.32,1);
+  overflow:hidden;
+  display:inline-block;
+  isolation:isolate; /* keep pseudo-element behind text */
+}
+.logout-btn.button::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  margin:auto;
+  width:50px;
+  height:50px;
+  border-radius:inherit;
+  scale:0;
+  z-index:-1;
+  background-color:#000;
+  transition:all .6s cubic-bezier(.23,1,.32,1);
+}
+.logout-btn.button:hover::before { scale:3; }
+.logout-btn.button:hover {
+  color:#fff !important;
+  scale:1.08;
+  box-shadow:0 0 20px rgba(0,0,0,0.35);
+}
+.logout-btn.button:active { scale:1; }
+.logout-btn.button:focus-visible { outline:2px solid #000; outline-offset:4px; }
+@media (max-width:520px){
+  .sketch-layout .profile-avatar.large { width:72px; height:72px; }
+  .sketch-layout .profile-info-box { border-radius:24px; padding:1.1rem 1.2rem 1.2rem; }
+  .sketch-layout .info-label { width:95px; font-size:.65rem; }
+}
+
+/* ===== Profile Modal Responsive (Revised: remove forced square) ===== */
+.modal-content:has(.user-profile){
+  width:min(92vw, 820px);
+  max-width:820px;
+  max-height:90vh;
+  height:auto;
+  aspect-ratio:auto !important;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  padding:1.75rem 1.75rem 1.25rem;
+}
+.modal-content:has(.user-profile) .user-profile{ flex:1 1 auto; overflow-y:auto; }
+
+/* Square variant specifically when profile-square class present */
+.modal-content.profile-square:has(.user-profile){
+  width:min(90vw, 660px);
+  max-width:660px;
+  aspect-ratio:1/1; /* enforce square */
+  max-height:min(90vh, 660px);
+  height:auto;
+  overflow:hidden; /* prevent internal scroll bar line bleed */
+  background-clip:padding-box;
+}
+.modal-content.profile-square:has(.user-profile) .user-profile{ max-height:100%; }
+/* Hide scrollbar specifically for profile square modal to remove vertical grey line */
+.modal-content.profile-square:has(.user-profile) .user-profile { 
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.modal-content.profile-square:has(.user-profile) .user-profile::-webkit-scrollbar { width:0 !important; height:0 !important; }
+@media (max-height:700px){
+  .modal-content.profile-square:has(.user-profile){ max-height:85vh; width:auto; aspect-ratio:1/1; }
+}
+@media (max-width:520px){
+  .modal-content.profile-square:has(.user-profile){ width:90vw; max-width:90vw; aspect-ratio:1/1; padding:1.1rem 1.1rem 1rem; }
+}
+
+/* Override earlier grid definition to prevent empty column spacing */
+.profile-details { display:flex !important; flex-direction:column !important; gap:1.25rem; }
+/* Removed wide-screen row layout so detail sections always appear beneath the heading */
+/* Fine tune when only one detail-group to use full width */
+.profile-details .detail-group:only-child { width:100%; flex:1 1 100%; }
+
+/* Compact phones */
+@media (max-width:480px){
+  .modal-content:has(.user-profile){ padding:1.1rem 1rem; }
+}
+
 /* Offline banner */
 .offline-banner { position:fixed; top:0; left:0; right:0; background:#000; color:#fff; text-align:center; padding:4px 8px; font-size:.65rem; font-weight:600; letter-spacing:.5px; z-index:1500; }
 
