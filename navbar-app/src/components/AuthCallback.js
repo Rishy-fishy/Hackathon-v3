@@ -92,7 +92,7 @@ const AuthCallback = () => {
 
         // Use backend /exchange-token (robust JWT client assertion) instead of delegate service.
         console.log('🔄 Exchanging code via backend callback server...');
-        const exchangeResp = await fetch('http://localhost:5000/exchange-token', {
+  const exchangeResp = await fetch('http://localhost:3002/exchange-token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code, state })

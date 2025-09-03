@@ -428,6 +428,27 @@ margin: auto;
 .empty { font-size:.8rem; font-style:italic; color:#555; }
 .overview-note { margin-top:1rem; font-size:.65rem; text-transform:uppercase; letter-spacing:1px; color:#222; }
 
+/* Square Upload Button styling */
+.upload-btn {
+  background:#fff;
+  color:#000;
+  border:1px solid #000;
+  padding:.5rem .9rem;
+  font-size:.75rem;
+  font-weight:600;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  border-radius:3px;
+  cursor:pointer;
+  line-height:1;
+  min-width:70px; /* keep a consistent width similar to PROFILE */
+}
+.upload-btn:disabled { opacity:.45; cursor:not-allowed; }
+.upload-btn:active { background:#000; color:#fff; }
+
+/* Optional square variant if needed later */
+.upload-btn.square { width:42px; height:42px; padding:0; display:flex; align-items:center; justify-content:center; min-width:42px; }
+
 /* Override modal specifics for b/w feel */
 .user-profile h2 { color:#000; }
 .detail-group { background:#fff; border:1px solid #000; border-left-width:4px; }

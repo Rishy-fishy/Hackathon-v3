@@ -1,24 +1,24 @@
 {
-  "clientId": "osDOeJmyvlt9yTXIgt0Y4gH7lLyRrnsDLRyIC07O-Qs",
-  "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDFoY9gp5zRpKB+\nL2prKCQhrzvAlcQhdvi/zxEXKSXEamI27uqA0N07Ni08pt1AeZEfkcQZAuTWvR6p\n1pXGcrjrFbZXPYdimM2Dd6XW2Jyn3oNHG8G9qXwQo19w6H3eep6vJTsFTjl+2Vr2\nc2j3TAoZ1r6fRbhl+Op9l118eRvkubVy7UD/JOgMHTATGQSQ//l8sZbs+qsztC+x\nUvOAByv3r/vDuq2A8gKP503GxP5VMOIm33u9s3fBoqn5wqaa1yhv+jSaAppLN8eV\nuZzNQ+1/FnBJ6K1GJjb3WcQVK33IA6HLFD/3+iDzck+q6/1QP+BrCTMuIidY10qO\nQ/XAGNhZAgMBAAECggEADi0ZmMhNImiZrpN+IbOea+Ai/ByCFhhvnWqgAjZMZDtx\nUhlvLtBMnjuzoP8jLcXKmCYfl9+yRIkKUwp2cea2xv4mtzlNpc/qJf0GI1QkYJJA\nfnBKRG2M3bCqXvH+XWAUU+HqyuWikCvNL5J1vA9zRgk2YTxiDsZ9I4chCJWzX4Om\nYz4K7zqSGnH9RmyQpwyhBT7pDZYlILaoBcbXOJirA1nyj/1DwjAl6S9l644fG6Bo\ngrs1Q41OqsNBLpVGAJcuoydjOXWYDUGSJLIiPuDGmWim2rspVM4s29nHR4lwtcAl\nPkNtbdfAjjCaD5ZaM4BQkNlMWEoXNKy5FyOHKqrp0QKBgQDuAf0eAOXShAIbPizP\nK2t7W+RfabnCsY7iaEQy/yn4wQ/cBNxUvXHWPaIi4OjdN4gvnMqP3q9vbfQ85nTk\nA5QUjf+AbDDy4PcMp2oQ7QK/Z193qGL6HdZh8DNegjPLzalEbo/WwxcP44oa+onK\nDGmeSseOXEJgMdD96CKcj13iNQKBgQDUkjABKS9h7uoj5Mc6e3TLknTDYmfORJ8i\nrUPY4Ecjo0SyPKwmzWq2PdUJMR3SfpA9LZNQruZJj9wsLA6BFkyKao4K4c69bHOg\nEb8vdnHIoVAIuq4oWYNP02+iOLGmlg1PIEB3S82kwFZpgGKJ29n1K4lMS8dMzSze\nDim30zliFQKBgFZG+EeBEc6fNdhEUKAE4GCGbiG8RK90CBTAsUA/SSq4aZRbWreJ\nORPtobG9EAzpDYAc+Tzv/26IUEonTGY/edV9qAoYriHNNSEsKwHZuO5DfdL1gnOi\nj01Pcn+m+Tm+4sZAwfmbHOgQlsay3XIVz8+m0fIkNZeDV3xDQxC309OlAoGAHG0g\nNkeHqpUEgqBJdCymRcLkEmzKbO8ISN7av9neKYnf2eX7L4UwzAYgwwXqcwexyjya\nAqQg751pWA7cMa8FtUziidoAh5xFKha1dmdkd+v6g/BS8dpmkPo5Z3wlZZ2TUg2C\nEXH1oh6Gb71XcBASaZLU3XsUv9SAN4G1WnvIpLECgYAkuV9NfuzzOk/wJ3TREnxo\nbdHr5imkr+qxQmFZu479ikq6ZOMlIbBl3HLuIsbqCF79aHxa4L06FeeHcbUXe6z5\nbWt3wUwjCxtygGlffJxCaJbm18i7nBqCzSGaGM6zsBfW2wr0NKhf8c+NkZOfiLve\nhfGMvMihmbII0SRb9jMtIg==\n-----END PRIVATE KEY-----\n",
-  "publicKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxaGPYKec0aSgfi9qaygk\nIa87wJXEIXb4v88RFyklxGpiNu7qgNDdOzYtPKbdQHmRH5HEGQLk1r0eqdaVxnK4\n6xW2Vz2HYpjNg3el1ticp96DRxvBval8EKNfcOh93nqeryU7BU45ftla9nNo90wK\nGda+n0W4ZfjqfZddfHkb5Lm1cu1A/yToDB0wExkEkP/5fLGW7PqrM7QvsVLzgAcr\n96/7w7qtgPICj+dNxsT+VTDiJt97vbN3waKp+cKmmtcob/o0mgKaSzfHlbmczUPt\nfxZwSeitRiY291nEFSt9yAOhyxQ/9/og83JPquv9UD/gawkzLiInWNdKjkP1wBjY\nWQIDAQAB\n-----END PUBLIC KEY-----\n",
+  "clientId": "HAvrWZPm0i-y34H1s5uDrQWcMBBGhX1aS5Jh2p3yc4E",
+  "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCy3Q5mTJZXw5jV\nfs8yDekrdIrwXJ2l4bKnQrMoDMYTv2C95Fz/rYhc6GdJVJpsneoTwRDweqfGc/XK\naep6zCuEMp8yv2PGEGMq3Z1JWptSkM79zaQXDV1HGTwFnnO05iw2mRW8P1MwP7lD\nlg7SYg/pNHj4IKJpnVkzgx2JkVaLeukqYWVMbXo/Tmm++n9hhkHLV+Y/8xAjkYLf\n7m3zh8DXttLgVNS9FTBpoaFPpTKITVhQnA0534gR2Tk/aqoEQ7h2B0IvlGnrBJgP\nCRHjNIihxt4iWRKSv703QH0PZ2w+4W65s6ix2g5Un1CPc+HlTmATwjAUonTufhf2\nN8GAHZdvAgMBAAECggEAQX3AgoOjfvIvGWkru5OtX0x2fSkkTjNUY3sAN3dp5Zwq\n84zU4odrST2NaCPSwVeW+HG2Xp9CpF8cTee3RAxTGL4iXYYHpeOlM/JeX5gODE7a\ng8MSxKAPmfNq71HD4yZuZPVrqHh1YNLMZqtgtPbUBZtBefUVEt/a5AorvA3b5wjV\nfNW0Ns1+UkH8oumnaBic4gOcsXKVSZFxaTbcJDiJR0lS3ntzvF5Mdr44QuOx/QrK\nqXhX0FM1urLiM+PllNbqenmttiLuEi5f5N9Pj9NPvEjQfGSE0+Hx+k/hL4+amof7\nezP8WLlfVgnuR2jAW1zlmORH4oXoRCLwedKgtt6snQKBgQD1gKdgN6oB+kMdPweu\nqcJNtm7UabUEr3K0slBxr9o/awo10rwRnvViF7dR0/ESVQh0RXaED+1ih9O3TVwr\nkK3OYsdQLCAIRPaSywiU2Qjg8ugEPopA5MPTQNzabnlRpEjB96HaNaKFDzftKFfr\nHUmMGDTYDqcgNa0DyAH+aCpqawKBgQC6gvNw555m2IduGFiml3j3e8YC/c1xyXKZ\nYoM7JbgwloOSOLryOEQvtbF1oFP9isGW53d5ss7qDHzCDwJVHW3XU7M+2nSDOGmm\nLViDPIwW+nGUOAXVLgrfS/y5aqWnfglhD0q12Z1paVIntzzo8uGN00foIb4hLY6P\nrwh0KM6QDQKBgQD0TcfB3wLGHwYkl3GMpZAfB3l41Yx2kiWCnaOhzo5P57PsZb4T\nhuzHZbResJtIU+gq1Gkg+DyRfXr5APnEvJ/JLtEK/i4OLJp276algOjt+atbdeTc\nuQoKMpTUpXUDAooIw+WDoTYOVVuhHDGJXcavq/MCQmqbie6XQbSCN6Rl6wKBgHIp\nCT0IaIpm6q5WtJxzhpVk61SVaRTGyyBbjhu8ALusxSfRFYyBKCtTuSVYV1CPh+MI\nFrck3UWhExPs/+59Luhn0QUdzccr1m7ivpTFkLHX5YFlsRxFLF51MmGDh5W3raH9\nLCuW4aTN1H1+yQeE8s5OjmrljGzeZ65G4pPHDnhZAoGAaLE85hv3Ed6c1trlFN0m\nmWI7EwL55U6ESNm0XnGxm8ZTs42YFT/BQBJ8vAUo4IwtRxS08PwvZwrKuu8buM3H\nupnTXi90MhWevHGM23v0QWBbibu1fPUnzcI11e4s1vkkhSfXUnsrds1PrXRogmhf\nsFAfeB2MZ27Tpb3nRdEC9eU=\n-----END PRIVATE KEY-----\n",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAst0OZkyWV8OY1X7PMg3p\nK3SK8FydpeGyp0KzKAzGE79gveRc/62IXOhnSVSabJ3qE8EQ8HqnxnP1ymnqeswr\nhDKfMr9jxhBjKt2dSVqbUpDO/c2kFw1dRxk8BZ5ztOYsNpkVvD9TMD+5Q5YO0mIP\n6TR4+CCiaZ1ZM4MdiZFWi3rpKmFlTG16P05pvvp/YYZBy1fmP/MQI5GC3+5t84fA\n17bS4FTUvRUwaaGhT6UyiE1YUJwNOd+IEdk5P2qqBEO4dgdCL5Rp6wSYDwkR4zSI\nocbeIlkSkr+9N0B9D2dsPuFuubOosdoOVJ9Qj3Ph5U5gE8IwFKJ07n4X9jfBgB2X\nbwIDAQAB\n-----END PUBLIC KEY-----\n",
   "publicKeyJWK": {
     "kty": "RSA",
     "use": "sig",
     "alg": "RS256",
-    "n": "xaGPYKec0aSgfi9qaygkIa87wJXEIXb4v88RFyklxGpiNu7qgNDdOzYtPKbdQHmRH5HEGQLk1r0eqdaVxnK46xW2Vz2HYpjNg3el1ticp96DRxvBval8EKNfcOh93nqeryU7BU45ftla9nNo90wKGda-n0W4ZfjqfZddfHkb5Lm1cu1A_yToDB0wExkEkP_5fLGW7PqrM7QvsVLzgAcr96_7w7qtgPICj-dNxsT-VTDiJt97vbN3waKp-cKmmtcob_o0mgKaSzfHlbmczUPtfxZwSeitRiY291nEFSt9yAOhyxQ_9_og83JPquv9UD_gawkzLiInWNdKjkP1wBjYWQ",
+    "n": "st0OZkyWV8OY1X7PMg3pK3SK8FydpeGyp0KzKAzGE79gveRc_62IXOhnSVSabJ3qE8EQ8HqnxnP1ymnqeswrhDKfMr9jxhBjKt2dSVqbUpDO_c2kFw1dRxk8BZ5ztOYsNpkVvD9TMD-5Q5YO0mIP6TR4-CCiaZ1ZM4MdiZFWi3rpKmFlTG16P05pvvp_YYZBy1fmP_MQI5GC3-5t84fA17bS4FTUvRUwaaGhT6UyiE1YUJwNOd-IEdk5P2qqBEO4dgdCL5Rp6wSYDwkR4zSIocbeIlkSkr-9N0B9D2dsPuFuubOosdoOVJ9Qj3Ph5U5gE8IwFKJ07n4X9jfBgB2Xbw",
     "e": "AQAB"
   },
   "registrationRequest": {
-    "requestTime": "2025-08-23T15:05:31.899Z",
+    "requestTime": "2025-09-03T18:54:39.291Z",
     "request": {
-      "clientId": "osDOeJmyvlt9yTXIgt0Y4gH7lLyRrnsDLRyIC07O-Qs",
+      "clientId": "HAvrWZPm0i-y34H1s5uDrQWcMBBGhX1aS5Jh2p3yc4E",
       "clientName": "React eSignet Demo App",
       "publicKey": {
         "kty": "RSA",
         "use": "sig",
         "alg": "RS256",
-        "n": "xaGPYKec0aSgfi9qaygkIa87wJXEIXb4v88RFyklxGpiNu7qgNDdOzYtPKbdQHmRH5HEGQLk1r0eqdaVxnK46xW2Vz2HYpjNg3el1ticp96DRxvBval8EKNfcOh93nqeryU7BU45ftla9nNo90wKGda-n0W4ZfjqfZddfHkb5Lm1cu1A_yToDB0wExkEkP_5fLGW7PqrM7QvsVLzgAcr96_7w7qtgPICj-dNxsT-VTDiJt97vbN3waKp-cKmmtcob_o0mgKaSzfHlbmczUPtfxZwSeitRiY291nEFSt9yAOhyxQ_9_og83JPquv9UD_gawkzLiInWNdKjkP1wBjYWQ",
+        "n": "st0OZkyWV8OY1X7PMg3pK3SK8FydpeGyp0KzKAzGE79gveRc_62IXOhnSVSabJ3qE8EQ8HqnxnP1ymnqeswrhDKfMr9jxhBjKt2dSVqbUpDO_c2kFw1dRxk8BZ5ztOYsNpkVvD9TMD-5Q5YO0mIP6TR4-CCiaZ1ZM4MdiZFWi3rpKmFlTG16P05pvvp_YYZBy1fmP_MQI5GC3-5t84fA17bS4FTUvRUwaaGhT6UyiE1YUJwNOd-IEdk5P2qqBEO4dgdCL5Rp6wSYDwkR4zSIocbeIlkSkr-9N0B9D2dsPuFuubOosdoOVJ9Qj3Ph5U5gE8IwFKJ07n4X9jfBgB2Xbw",
         "e": "AQAB"
       },
       "relyingPartyId": "mock-relying-party-id",
@@ -58,9 +58,9 @@
     }
   },
   "registrationResponse": {
-    "responseTime": "2025-08-23T15:05:39.128Z",
+    "responseTime": "2025-09-03T18:55:15.092Z",
     "response": {
-      "clientId": "osDOeJmyvlt9yTXIgt0Y4gH7lLyRrnsDLRyIC07O-Qs",
+      "clientId": "HAvrWZPm0i-y34H1s5uDrQWcMBBGhX1aS5Jh2p3yc4E",
       "status": "ACTIVE"
     },
     "errors": []

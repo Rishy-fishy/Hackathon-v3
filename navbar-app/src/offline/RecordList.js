@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { listChildRecords } from './db';
+import { syncPendingRecords } from './sync';
 
 export default function RecordList() {
   const [records, setRecords] = useState([]);
@@ -40,6 +41,7 @@ export default function RecordList() {
           <option value="failed">Failed</option>
           <option value="uploaded">Uploaded</option>
         </select>
+  <button type="button" className="upload-btn" disabled={!(sessionStorage.getItem('esignet_authenticated')==='true' || localStorage.getItem('is_authenticated')==='true')} onClick={async ()=> { const userStr = sessionStorage.getItem('esignet_user') || localStorage.getItem('user_info'); let uploaderName='manual_upload'; let uploaderEmail=null; if(userStr){ try{ const u=JSON.parse(userStr); uploaderName = u.name || uploaderName; uploaderEmail = u.email || null; }catch{} } await syncPendingRecords({ uploaderName, uploaderEmail, allowNoToken:false }); load(); }}>Upload</button>
         <span className="badge pending">P {records.filter(r=>r.status==='pending').length}</span>
         <span className="badge uploading">U {records.filter(r=>r.status==='uploading').length}</span>
         <span className="badge failed">F {records.filter(r=>r.status==='failed').length}</span>

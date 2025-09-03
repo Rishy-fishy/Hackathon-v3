@@ -1,16 +1,16 @@
 // Sync logic: upload pending/failed records to backend when online & authenticated
 import { pendingRecords, updateChildRecord, recordCounts, purgeOldUploaded } from './db';
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'http://localhost:3002';
 
 let lastSyncInfo = { time: null, result: null };
 
 export function getLastSyncInfo() { return lastSyncInfo; }
 
-export async function syncPendingRecords({ accessToken, uploaderName, retentionDays } = {}) {
+export async function syncPendingRecords({ accessToken, uploaderName, uploaderEmail, retentionDays, allowNoToken } = {}) {
   try {
-    const token = accessToken || sessionStorage.getItem('access_token') || localStorage.getItem('access_token');
-  if (!token) return { skipped: true, reason: 'no_token' };
+  const token = accessToken || sessionStorage.getItem('access_token') || localStorage.getItem('access_token');
+  if (!token && !allowNoToken) return { skipped: true, reason: 'no_token' };
     const list = await pendingRecords();
     if (!list.length) {
       const counts = await recordCounts();
@@ -23,10 +23,12 @@ export async function syncPendingRecords({ accessToken, uploaderName, retentionD
       await updateChildRecord(r.healthId, { status: 'uploading' });
     }
 
-  const res = await fetch(`${API_BASE}/api/child/batch`, {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${API_BASE}/api/child/batch`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ records: list, uploaderName })
+      headers,
+      body: JSON.stringify({ records: list, uploaderName, uploaderEmail })
     });
     if (!res.ok) {
       for (const r of list) await updateChildRecord(r.healthId, { status: 'failed' });
@@ -37,7 +39,7 @@ export async function syncPendingRecords({ accessToken, uploaderName, retentionD
   lastSyncInfo = { time: Date.now(), result: json.summary };
     // Update statuses
     for (const r of json.results) {
-      if (r.status === 'uploaded') await updateChildRecord(r.healthId, { status: 'uploaded', uploadedAt: Date.now() });
+      if (r.status === 'uploaded') await updateChildRecord(r.healthId, { status: 'uploaded', uploadedAt: new Date().toISOString() });
       else if (r.status === 'failed') await updateChildRecord(r.healthId, { status: 'failed' });
     }
   if (retentionDays) await purgeOldUploaded(retentionDays);

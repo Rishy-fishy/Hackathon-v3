@@ -387,7 +387,32 @@ const Header = ({ onActiveViewChange }) => {
 
       {showRecords && !showChildForm && (
         <div className="panel records" role="region" aria-label="Child Records List">
-          <h2>Records Overview</h2>
+          <div className="records-header-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'1rem'}}>
+            <h2 style={{margin:0}}>Records Overview</h2>
+            <button
+              type="button"
+              className="upload-btn"
+              disabled={!isAuthenticated}
+              onClick={async ()=>{
+                if (!isAuthenticated) return;
+                try {
+                  const { syncPendingRecords } = await import('../offline/sync');
+                  const userStr = sessionStorage.getItem('esignet_user') || localStorage.getItem('user_info');
+                  let uploaderName = 'manual_upload';
+                  let uploaderEmail = null;
+                  if (userStr) {
+                    try { const u = JSON.parse(userStr); uploaderName = u.name || uploaderName; uploaderEmail = u.email || null; } catch {}
+                  }
+                  const res = await syncPendingRecords({ uploaderName, uploaderEmail, allowNoToken: false });
+                  if (res && !res.error) {
+                    const updated = await listChildRecords();
+                    setRecords(updated);
+                  }
+                } catch (e) { console.warn('Upload failed', e); }
+              }}
+              title={isAuthenticated? 'Upload pending/failed records to server':'Login required to upload'}
+            >Upload</button>
+          </div>
           {records.length === 0 && <div className="empty">No records saved yet.</div>}
           {records.map(r => (
             <button
@@ -663,15 +688,16 @@ const Header = ({ onActiveViewChange }) => {
                   )}
                 </div>
                 <div className="detail-grid compact-after-layout">
+                  <div><strong>Height:</strong> {selectedRecord.heightCm??'—'} cm</div>
                   <div><strong>Weight:</strong> {selectedRecord.weightKg??'—'} kg</div>
                   <div><strong>Date of Birth:</strong> {formatDateOfBirth(selectedRecord)}</div>
-                  <div><strong>Height:</strong> {selectedRecord.heightCm??'—'} cm</div>
                   <div><strong>Aadhaar ID:</strong> {selectedRecord.idReference||'—'}</div>
                   <div><strong>Guardian:</strong> {selectedRecord.guardianName||'—'}</div>
                   <div><strong>Phone:</strong> {selectedRecord.guardianPhone||'—'}</div>
                   <div><strong>Relation:</strong> {selectedRecord.guardianRelation||'—'}</div>
                   <div><strong>Status:</strong> {selectedRecord.status}</div>
                   <div><strong>Created:</strong> {new Date(selectedRecord.createdAt).toLocaleString()}</div>
+                  {selectedRecord.uploadedAt && <div><strong>Uploaded:</strong> {new Date(selectedRecord.uploadedAt).toLocaleString()}</div>}
                   <div className="full"><strong>Malnutrition Signs:</strong> {selectedRecord.malnutritionSigns||'N/A'}</div>
                   <div className="full"><strong>Recent Illnesses:</strong> {selectedRecord.recentIllnesses||'N/A'}</div>
                 </div>
