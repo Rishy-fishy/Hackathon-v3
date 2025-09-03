@@ -91,6 +91,11 @@ export default function ChildForm({ onSaved, onClose }) {
         if (name === 'weight') {
           const numeric = parseFloat(processedValue);
           if (!isNaN(numeric) && numeric > 250) processedValue = '250';
+          if (!isNaN(numeric) && numeric <= 0) processedValue = ''; // disallow zero/negative weight
+        }
+        if (name === 'height') {
+          const h = parseFloat(processedValue);
+          if (!isNaN(h) && h <= 0) processedValue = ''; // disallow zero/negative height
         }
       } else if (name === 'phone') {
         // Phone: allow only digits, limit to 10 digits
@@ -301,6 +306,7 @@ export default function ChildForm({ onSaved, onClose }) {
       else if (parseFloat(form.weight) > 250) newErrors.weight = 'Max 250 kg';
       if (!form.height.trim()) newErrors.height = 'Fill the required field';
       else if (isNaN(parseFloat(form.height))) newErrors.height = 'Enter valid number';
+      else if (parseFloat(form.height) <= 0) newErrors.height = 'Must be > 0';
       if (!form.guardian.trim()) newErrors.guardian = 'Fill the required field';
       if (!form.phone.trim()) newErrors.phone = 'Fill the required field';
       else if (form.phone.length !== 10) newErrors.phone = 'Enter exactly 10 digits';

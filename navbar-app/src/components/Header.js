@@ -661,6 +661,12 @@ function RecordEditForm({ record, onSave }) {
               }
             }
         }
+        if (name === 'heightCm') {
+          const numH = parseFloat(processedValue);
+          if (!isNaN(numH) && numH <= 0) {
+            processedValue = '';
+          }
+        }
       } else if (name === 'guardianPhone') {
         // Phone: allow only digits, limit to 10 digits
         processedValue = value.replace(/\D/g, '').slice(0, 10);
@@ -712,6 +718,15 @@ function RecordEditForm({ record, onSave }) {
       if (!isNaN(w) && w <= 0) {
         alert('Weight must be greater than 0.');
         setForm(f=>({...f, weightKg: ''}));
+        return;
+      }
+    }
+    // Height validation (if provided)
+    if (form.heightCm) {
+      const h = parseFloat(form.heightCm);
+      if (!isNaN(h) && h <= 0) {
+        alert('Height must be greater than 0.');
+        setForm(f=>({...f, heightCm: ''}));
         return;
       }
     }
