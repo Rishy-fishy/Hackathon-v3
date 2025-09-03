@@ -25,8 +25,10 @@
   overflow: auto;
   animation: slideIn 0.3s ease-out;
   padding: 2rem;
-  min-width: 400px;
+  min-width: 320px; /* lowered for small phones */
 }
+
+.modal-content.with-detail-head { padding-top:3.2rem; }
 
 .modal-close {
   position: absolute;

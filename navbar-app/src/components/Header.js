@@ -21,6 +21,14 @@ const Header = ({ onActiveViewChange }) => {
   const [editMode, setEditMode] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 1024 : false);
+
+  useEffect(()=>{
+    const handler = () => setIsMobile(window.innerWidth <= 1024);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  },[]);
 
   // Format age for display with years, months, and days
   const formatAgeDisplay = (ageMonths) => {
@@ -114,19 +122,6 @@ const Header = ({ onActiveViewChange }) => {
     if (!ageStr) ageStr = 'Today';
     
     return ageStr.trim();
-  };
-
-  const getDateOfBirthForEdit = (record) => {
-    // For edit form, prioritize stored DOB, then calculate from age
-    if (record.dateOfBirth) {
-      return record.dateOfBirth;
-    } else if (record.ageMonths !== null && record.ageMonths !== undefined && record.ageMonths > 0) {
-      const today = new Date();
-      const birthDate = new Date(today);
-      birthDate.setMonth(birthDate.getMonth() - record.ageMonths);
-      return birthDate.toISOString().split('T')[0];
-    }
-    return '';
   };
 
   const handleProfileClick = () => {
@@ -300,6 +295,14 @@ const Header = ({ onActiveViewChange }) => {
     <header className="header minimal-header">
       <div className="bw-bar">
         <div className="brand-block">
+          <button
+            className="hamburger-btn"
+            aria-label={mobileMenuOpen? 'Close menu':'Open menu'}
+            aria-expanded={mobileMenuOpen}
+            onClick={()=> setMobileMenuOpen(o=>!o)}
+          >
+            <span></span><span></span><span></span>
+          </button>
           <h1 
             className="app-title" 
             onClick={() => {
@@ -309,6 +312,7 @@ const Header = ({ onActiveViewChange }) => {
               setSelectedRecord(null);
               setEditMode(false);
               onActiveViewChange && onActiveViewChange('home');
+              setMobileMenuOpen(false);
             }}
             style={{ cursor: 'pointer' }}
             title="Go to homepage"
@@ -319,7 +323,8 @@ const Header = ({ onActiveViewChange }) => {
             <div className="session-inline" title="Session time remaining">{formatRemaining()}</div>
           )}
         </div>
-        <nav className="nav-actions" aria-label="Primary">
+  {!isMobile && (
+  <nav className="nav-actions desktop-only" aria-label="Primary">
           <button
             className={`nav-btn ${activeNav==='add'?'active':''}`}
             onClick={()=>{
@@ -345,7 +350,34 @@ const Header = ({ onActiveViewChange }) => {
           >Admin</button>
           <button className="profile-btn" onClick={handleProfileClick} aria-label="Profile & Authentication">Profile</button>
         </nav>
+  )}
       </div>
+
+      {/* Mobile slide-out menu */}
+      {mobileMenuOpen && (
+        <div className="mobile-drawer" role="dialog" aria-label="Navigation Menu">
+          <button className="close-drawer" aria-label="Close menu" onClick={()=> setMobileMenuOpen(false)}>×</button>
+          <div className="drawer-links">
+            <button
+              className={`drawer-link ${activeNav==='add'?'active':''}`}
+              onClick={()=>{ setShowChildForm(true); setShowRecords(false); setActiveNav('add'); onActiveViewChange && onActiveViewChange('add'); setMobileMenuOpen(false); }}
+            >Add Child</button>
+            <button
+              className={`drawer-link ${activeNav==='view'?'active':''}`}
+              onClick={()=>{ setShowRecords(s=>{ const next=!s; setActiveNav(next?'view':null); onActiveViewChange && onActiveViewChange(next?'view':'home'); return next; }); if(!showRecords) listChildRecords().then(setRecords); setShowChildForm(false); setMobileMenuOpen(false); }}
+            >View Data</button>
+            <button
+              className={`drawer-link ${activeNav==='settings'?'active':''}`}
+              onClick={()=>{ setActiveNav('settings'); onActiveViewChange && onActiveViewChange('settings'); alert('Settings placeholder'); setMobileMenuOpen(false); }}
+            >Settings</button>
+            <button
+              className={`drawer-link ${activeNav==='admin'?'active':''}`}
+              onClick={()=>{ setActiveNav('admin'); onActiveViewChange && onActiveViewChange('admin'); alert('Admin placeholder'); setMobileMenuOpen(false); }}
+            >Admin</button>
+            <button className="drawer-link" onClick={()=>{ handleProfileClick(); setMobileMenuOpen(false); }}>Profile</button>
+          </div>
+        </div>
+      )}
 
   {showChildForm && (
         <div className="panel" role="region" aria-label="Add Child Form">
@@ -368,7 +400,7 @@ const Header = ({ onActiveViewChange }) => {
                 setShowDetailModal(true);
               }}
               role="listitem"
-              aria-pressed={selectedRecord?.healthId===r.healthId}
+              aria-pressed={undefined}
             >
                 <div className="id">{r.healthId}</div>
                 <div className="name">{r.name}</div>
@@ -596,41 +628,52 @@ const Header = ({ onActiveViewChange }) => {
         setShowDetailModal(false);
         setSelectedRecord(null);
         setEditMode(false);
-      }}>
+      }} extraClass="with-detail-head">
         {selectedRecord && (
           <>
             <div className="detail-head">
-              <h3>{selectedRecord.name || '—'} <span className="rid">({selectedRecord.healthId})</span></h3>
+              <h3><span className="rid">{selectedRecord.healthId}</span></h3>
               <div className="detail-actions">
                 {!editMode && <button className="mini-btn" onClick={()=> setEditMode(true)}>Modify</button>}
                 {editMode && <button className="mini-btn" onClick={()=> setEditMode(false)}>Cancel</button>}
               </div>
             </div>
             {!editMode && (
-              <div className="detail-content">
-                {selectedRecord.facePhoto && (
-                  <div className="detail-photo">
-                    <img src={selectedRecord.facePhoto} alt={selectedRecord.name} className="child-photo" />
+              <div className="detail-content redesigned-layout">
+                <div className="record-quick-layout">
+                  <div className="name-and-basic">
+                    <div className="name-pill" title="Child name">{selectedRecord.name||'—'}</div>
+                    <div className="two-box-row">
+                      <div className="mini-box" title="Age">
+                        <label>Age</label>
+                        <span>{selectedRecord.dateOfBirth 
+                          ? formatAgeFromDOB(selectedRecord.dateOfBirth)
+                          : formatAgeDisplay(selectedRecord.ageMonths)}</span>
+                      </div>
+                      <div className="mini-box" title="Gender">
+                        <label>Gender</label>
+                        <span>{selectedRecord.gender||'—'}</span>
+                      </div>
+                    </div>
                   </div>
-                )}
-                <div className="detail-grid">
-                  <div><strong>Gender:</strong> {selectedRecord.gender||'—'}</div>
-                  <div><strong>Date of Birth:</strong> {formatDateOfBirth(selectedRecord)}</div>
-                  <div><strong>Age:</strong> {
-                    selectedRecord.dateOfBirth 
-                      ? formatAgeFromDOB(selectedRecord.dateOfBirth)
-                      : formatAgeDisplay(selectedRecord.ageMonths)
-                  }</div>
+                  {selectedRecord.facePhoto && (
+                    <div className="photo-circle-wrap">
+                      <img src={selectedRecord.facePhoto} alt={selectedRecord.name} className="photo-circle" />
+                    </div>
+                  )}
+                </div>
+                <div className="detail-grid compact-after-layout">
                   <div><strong>Weight:</strong> {selectedRecord.weightKg??'—'} kg</div>
+                  <div><strong>Date of Birth:</strong> {formatDateOfBirth(selectedRecord)}</div>
                   <div><strong>Height:</strong> {selectedRecord.heightCm??'—'} cm</div>
                   <div><strong>Aadhaar ID:</strong> {selectedRecord.idReference||'—'}</div>
                   <div><strong>Guardian:</strong> {selectedRecord.guardianName||'—'}</div>
                   <div><strong>Phone:</strong> {selectedRecord.guardianPhone||'—'}</div>
                   <div><strong>Relation:</strong> {selectedRecord.guardianRelation||'—'}</div>
-                  <div className="full"><strong>Malnutrition Signs:</strong> {selectedRecord.malnutritionSigns||'N/A'}</div>
-                  <div className="full"><strong>Recent Illnesses:</strong> {selectedRecord.recentIllnesses||'N/A'}</div>
                   <div><strong>Status:</strong> {selectedRecord.status}</div>
                   <div><strong>Created:</strong> {new Date(selectedRecord.createdAt).toLocaleString()}</div>
+                  <div className="full"><strong>Malnutrition Signs:</strong> {selectedRecord.malnutritionSigns||'N/A'}</div>
+                  <div className="full"><strong>Recent Illnesses:</strong> {selectedRecord.recentIllnesses||'N/A'}</div>
                 </div>
               </div>
             )}
@@ -691,19 +734,6 @@ function RecordEditForm({ record, onSave }) {
     return { years, months, days, totalMonths };
   };
 
-  const getDateOfBirthForEdit = (record) => {
-    // For edit form, prioritize stored DOB, then calculate from age
-    if (record.dateOfBirth) {
-      return record.dateOfBirth;
-    } else if (record.ageMonths !== null && record.ageMonths !== undefined && record.ageMonths > 0) {
-      const today = new Date();
-      const birthDate = new Date(today);
-      birthDate.setMonth(birthDate.getMonth() - record.ageMonths);
-      return birthDate.toISOString().split('T')[0];
-    }
-    return '';
-  };
-
   // Malnutrition options (same as ChildForm)
   const malnutritionOptions = [
     "Stunting (low height for age)",
@@ -721,7 +751,7 @@ function RecordEditForm({ record, onSave }) {
   const [form,setForm] = useState({
     name: record.name||'',
     gender: record.gender||'',
-    dateOfBirth: getDateOfBirthForEdit(record),
+    dateOfBirth: record.dateOfBirth,
     idRef: record.idReference || '',
     weightKg: record.weightKg||'',
     heightCm: record.heightCm||'',

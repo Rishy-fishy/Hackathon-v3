@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { nanoid } from 'nanoid';
 import { addChildRecord } from './db';
+import { generateHealthId, peekNextHealthId } from '../utils/healthId';
 
 const initial = { name:'', dob:'', gender:'Male', idRef:'', weight:'', height:'', guardian:'', phone:'', relation:'', malnutrition:'N/A', illnesses:'N/A', consent:false, photo:null };
 
@@ -10,7 +11,6 @@ export default function ChildForm({ onSaved, onClose }) {
   const [healthId, setHealthId] = useState(null);
   const [step, setStep] = useState(1); // 1 identity, 2 health, 3 consent
   const [errors, setErrors] = useState({});
-  const [progressUpdate, setProgressUpdate] = useState(0); // Force re-render for progress
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -27,11 +27,6 @@ export default function ChildForm({ onSaved, onClose }) {
     "Frequent infections",
     "Loss of appetite"
   ];
-
-  // Trigger progress update when form or errors change
-  useEffect(() => {
-    setProgressUpdate(prev => prev + 1);
-  }, [form, errors]);
 
   // Handle clicking outside dropdown
   useEffect(() => {
@@ -117,21 +112,7 @@ export default function ChildForm({ onSaved, onClose }) {
   }
 };
 
-const generateHealthId = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const date = String(now.getDate()).padStart(2, '0');
-  
-  // Generate random text (5 characters)
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let randomText = '';
-  for (let i = 0; i < 5; i++) {
-    randomText += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  
-  return `CH${year}${month}${date}${randomText}`;
-};  // Malnutrition dropdown functions
+// Malnutrition dropdown functions
   const toggleMalnutritionOption = (option) => {
     if (form.malnutrition === 'N/A') {
       setForm(f => ({...f, malnutrition: [option]}));
@@ -147,17 +128,17 @@ const generateHealthId = () => {
       }
     }
   };
-
-  const getSelectedMalnutritionCount = () => {
-    if (form.malnutrition === 'N/A' || !Array.isArray(form.malnutrition)) return 0;
-    return form.malnutrition.length;
+  // Added back helpers removed earlier but still referenced by JSX
+  const formatDateForInput = (dateString) => {
+    if (!dateString || dateString.length !== 10) return '';
+    const [day, month, year] = dateString.split('/');
+    return `${year}-${month}-${day}`; // convert DD/MM/YYYY -> YYYY-MM-DD
   };
-
   const getMalnutritionDisplayText = () => {
     if (form.malnutrition === 'N/A') return 'N/A';
     if (!Array.isArray(form.malnutrition) || form.malnutrition.length === 0) return 'Select signs of malnutrition';
     if (form.malnutrition.length === 1) return form.malnutrition[0];
-    return `${form.malnutrition.length} signs selected`;
+    return `${form.malnutrition.length} selected`;
   };
 
   // Field completion tracking functions
@@ -230,17 +211,6 @@ const generateHealthId = () => {
   };
 
   // Date picker functions
-  const formatDateForInput = (dateString) => {
-    if (!dateString || dateString.length !== 10) return '';
-    const [day, month, year] = dateString.split('/');
-    return `${year}-${month}-${day}`;
-  };
-
-  const formatDateForDisplay = (dateString) => {
-    if (!dateString || dateString.length !== 10) return '';
-    return dateString; // Already in DD/MM/YYYY format
-  };
-
   const handleDateChange = (e) => {
     const { value } = e.target;
     if (value) {
@@ -345,6 +315,7 @@ const generateHealthId = () => {
     e.preventDefault();
     if (!form.consent) return alert('Parental consent required');
     setSaving(true);
+    // Generate offline-safe unique Health ID at save time
     const hId = generateHealthId();
     // Compute simple hash of photo (if exists)
     let photoHash = null;
@@ -380,7 +351,7 @@ const generateHealthId = () => {
       photoHash
     };
     await addChildRecord(record);
-    setHealthId(hId);
+  setHealthId(hId);
     setSaving(false);
   setForm(initial);
     onSaved && onSaved(record);
@@ -663,7 +634,7 @@ const generateHealthId = () => {
           {step===3 && <button disabled={saving || !form.consent} type="submit" className="submit-btn">{saving? 'Saving...' : 'Save Offline'}</button>}
         </div>
       </form>
-      {healthId && <div className="health-id-banner">Health ID: <strong>{healthId}</strong></div>}
+    <div className="health-id-banner">Health ID: <strong>{healthId ? healthId : peekNextHealthId()}</strong></div>
     </div>
   );
 }
