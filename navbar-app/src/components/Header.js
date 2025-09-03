@@ -277,7 +277,7 @@ const Header = ({ onActiveViewChange }) => {
           >View Data</button>
           <button
             className={`nav-btn ${activeNav==='settings'?'active':''}`}
-            onClick={()=>{ setActiveNav('settings'); onActiveViewChange && onActiveViewChange('settings'); alert('Settings placeholder'); }}
+            onClick={()=>{ setActiveNav('settings'); setShowRecords(false); onActiveViewChange && onActiveViewChange('settings'); }}
           >Settings</button>
           <button
             className={`nav-btn ${activeNav==='admin'?'active':''}`}
@@ -303,7 +303,7 @@ const Header = ({ onActiveViewChange }) => {
             >View Data</button>
             <button
               className={`drawer-link ${activeNav==='settings'?'active':''}`}
-              onClick={()=>{ setActiveNav('settings'); onActiveViewChange && onActiveViewChange('settings'); alert('Settings placeholder'); setMobileMenuOpen(false); }}
+              onClick={()=>{ setActiveNav('settings'); setShowRecords(false); onActiveViewChange && onActiveViewChange('settings'); setMobileMenuOpen(false); }}
             >Settings</button>
             <button
               className={`drawer-link ${activeNav==='admin'?'active':''}`}

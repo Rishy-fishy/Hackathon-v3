@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "./BottomNav.css";
 import ChildForm from "../offline/ChildForm";
 
-export default function BottomNav() {
+export default function BottomNav({ setActiveView }) {
   const [showChildForm, setShowChildForm] = useState(false);
 
   return (
@@ -10,7 +10,7 @@ export default function BottomNav() {
       {/* Taskbar */}
       <nav className="bottom-nav" aria-label="Bottom Navigation">
         {/* ✅ Home goes back to main screen */}
-        <div className="bn-item" onClick={() => setShowChildForm(false)}>
+  <div className="bn-item" onClick={() => { setShowChildForm(false); setActiveView && setActiveView('home'); }}>
           <span className="bn-icon">🏠</span>
           <span className="bn-label">Home</span>
         </div>
@@ -22,17 +22,17 @@ export default function BottomNav() {
           <span className="bn-label">Add Child</span>
         </div>
 
-        <div className="bn-item" onClick={() => window.location.hash = "#view-data"}>
+  <div className="bn-item" onClick={() => setActiveView && setActiveView('view')}>
           <span className="bn-icon">🗂</span>
           <span className="bn-label">Records</span>
         </div>
 
-        <div className="bn-item" onClick={() => window.location.hash = "#settings"}>
+  <div className="bn-item" onClick={() => setActiveView && setActiveView('settings')}>
           <span className="bn-icon">⚙️</span>
           <span className="bn-label">Settings</span>
         </div>
 
-        <div className="bn-item" onClick={() => window.location.hash = "#help"}>
+  <div className="bn-item" onClick={() => setActiveView && setActiveView('help')}>
           <span className="bn-icon">❓</span>
           <span className="bn-label">Help</span>
         </div>
