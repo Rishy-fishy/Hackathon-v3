@@ -32,8 +32,12 @@ app.use(cors({ origin: true, credentials: false }));
 app.use(express.json({ limit: '5mb' }));
 
 // ---------------- MongoDB Setup ----------------
-// Use provided env var or fallback to user's Atlas URI (NOTE: storing credentials in code is not recommended)
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://harshbontala188:8I52Oqeh3sWYTDJ7@cluster0.5lsiap2.mongodb.net/childBooklet?retryWrites=true&w=majority&appName=Cluster0';
+// Mongo URI must be supplied via environment (Secret). No hardcoded fallback in production.
+const MONGO_URI = process.env.MONGO_URI;
+if (!MONGO_URI) {
+  console.error('[startup] MONGO_URI not set. Exiting.');
+  process.exit(1);
+}
 // Database name (if not implicit in URI). For Atlas SRV with trailing /childBooklet it will pick that DB automatically
 const MONGO_DB = process.env.MONGO_DB || 'childBooklet';
 let mongoClient; // shared client

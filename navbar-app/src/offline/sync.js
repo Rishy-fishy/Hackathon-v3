@@ -1,7 +1,8 @@
 // Sync logic: upload pending/failed records to backend when online & authenticated
 import { pendingRecords, updateChildRecord, recordCounts, purgeOldUploaded } from './db';
 
-const API_BASE = 'http://localhost:3002';
+// Cloud Run backend base URL (override by setting window.__API_BASE before module load if needed)
+const API_BASE = (typeof window !== 'undefined' && window.__API_BASE) || 'https://navbar-backend-547765090011.us-central1.run.app';
 
 let lastSyncInfo = { time: null, result: null };
 
