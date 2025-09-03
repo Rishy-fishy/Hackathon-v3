@@ -546,7 +546,13 @@ function RecordEditForm({ record, onSave }) {
   const [form,setForm] = useState({
     name: record.name||'',
     gender: record.gender||'',
-    dateOfBirth: record.dateOfBirth,
+    // Preserve existing DOB; if absent, derive from ageMonths so it doesn't appear blank when modifying
+    dateOfBirth: record.dateOfBirth || (record.ageMonths != null ? (()=>{
+      const today = new Date();
+      const birth = new Date(today);
+      birth.setMonth(birth.getMonth() - record.ageMonths);
+      return birth.toISOString().split('T')[0];
+    })() : ''),
     idRef: record.idReference || '',
     weightKg: record.weightKg||'',
     heightCm: record.heightCm||'',
@@ -643,6 +649,18 @@ function RecordEditForm({ record, onSave }) {
         if (parts.length > 2) {
           processedValue = parts[0] + '.' + parts.slice(1).join('');
         }
+        // Clamp weight to maximum 250 kg (universal constraint)
+        if (name === 'weightKg') {
+          const num = parseFloat(processedValue);
+            if (!isNaN(num)) {
+              if (num > 250) {
+                processedValue = '250';
+              } else if (num <= 0) {
+                // Disallow zero or negative; clear input to force re-entry
+                processedValue = '';
+              }
+            }
+        }
       } else if (name === 'guardianPhone') {
         // Phone: allow only digits, limit to 10 digits
         processedValue = value.replace(/\D/g, '').slice(0, 10);
@@ -682,6 +700,20 @@ function RecordEditForm({ record, onSave }) {
     if (!form.name || form.name.trim() === '') {
       alert('Name is required');
       return;
+    }
+    // Enforce universal weight constraint (<= 250 kg)
+    if (form.weightKg) {
+      const w = parseFloat(form.weightKg);
+      if (!isNaN(w) && w > 250) {
+        alert('Maximum allowed weight is 250 kg. Value has been adjusted.');
+        setForm(f=>({...f, weightKg: '250'}));
+        return; // Require user to resubmit after seeing adjusted value
+      }
+      if (!isNaN(w) && w <= 0) {
+        alert('Weight must be greater than 0.');
+        setForm(f=>({...f, weightKg: ''}));
+        return;
+      }
     }
     
     onSave && onSave({
@@ -894,6 +926,7 @@ function RecordEditForm({ record, onSave }) {
         </div>
       </div>
       <div className="edit-actions">
+  <button type="button" className="mini-btn" onClick={()=> setForm(f=>({...f, dateOfBirth: ''}))} title="Clear Date of Birth">Reset DOB</button>
         <button type="submit" className="mini-btn primary">Save</button>
       </div>
     </form>

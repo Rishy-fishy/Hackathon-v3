@@ -87,6 +87,11 @@ export default function ChildForm({ onSaved, onClose }) {
         if (parts.length > 2) {
           processedValue = parts[0] + '.' + parts.slice(1).join('');
         }
+        // Enforce maximum weight of 250 kg
+        if (name === 'weight') {
+          const numeric = parseFloat(processedValue);
+          if (!isNaN(numeric) && numeric > 250) processedValue = '250';
+        }
       } else if (name === 'phone') {
         // Phone: allow only digits, limit to 10 digits
         processedValue = value.replace(/\D/g, '').slice(0, 10);
@@ -292,6 +297,8 @@ export default function ChildForm({ onSaved, onClose }) {
     if (currentStep === 2) {
       if (!form.weight.trim()) newErrors.weight = 'Fill the required field';
       else if (isNaN(parseFloat(form.weight))) newErrors.weight = 'Enter valid number';
+      else if (parseFloat(form.weight) <= 0) newErrors.weight = 'Must be > 0';
+      else if (parseFloat(form.weight) > 250) newErrors.weight = 'Max 250 kg';
       if (!form.height.trim()) newErrors.height = 'Fill the required field';
       else if (isNaN(parseFloat(form.height))) newErrors.height = 'Enter valid number';
       if (!form.guardian.trim()) newErrors.guardian = 'Fill the required field';
