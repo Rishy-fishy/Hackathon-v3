@@ -7,6 +7,7 @@ import AuthCallback from './components/AuthCallback';
 import AuthSuccess from './components/AuthSuccess';
 import useConnectivity from './offline/useConnectivity';
 import { startAutoSync } from './offline/sync';
+import AdminPage from './components/AdminPage';
 
 function App() {
   const [activeView, setActiveView] = useState('home'); // 'home' | 'add' | 'view' | 'settings' | 'admin'
@@ -39,6 +40,11 @@ function App() {
       {activeView === 'settings' && (
         <main className="main-content minimalist-main" aria-label="Settings">
           <Settings />
+        </main>
+      )}
+      {activeView === 'admin' && (
+        <main className="main-content minimalist-main" aria-label="Admin">
+          <AdminPage />
         </main>
       )}
     </div>
