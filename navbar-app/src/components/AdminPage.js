@@ -6,7 +6,8 @@ import './AdminPage.css';
 // GET  /api/admin/stats  (Authorization: Bearer <token>) -> { totalChildRecords, recentUploads }
 
 export default function AdminPage() {
-  const API_BASE = (process.env.REACT_APP_API_BASE || '').replace(/\/$/,'');
+  // Prefer build-time var; fallback to localhost backend during local dev.
+  const API_BASE = (process.env.REACT_APP_API_BASE || (window.location.hostname === 'localhost' ? 'http://localhost:3002' : '')).replace(/\/$/,'');
   const api = (path) => `${API_BASE}${path}`;
   const [username,setUsername] = useState('');
   const [password,setPassword] = useState('');
@@ -31,12 +32,20 @@ export default function AdminPage() {
     setError(null);
     setLoading(true);
     try {
-  const resp = await fetch(api('/api/admin/login'), {
+      const url = api('/api/admin/login');
+      const resp = await fetch(url, {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify({ username, password })
       });
-      const json = await resp.json();
+      let json;
+      const ct = resp.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        json = await resp.json();
+      } else {
+        const text = await resp.text();
+        throw new Error(`Non-JSON response (${resp.status}) from ${url}: ${text.substring(0,120)}`);
+      }
       if(!resp.ok){ setError(json.error||'Login failed'); return; }
       setToken(json.token);
       sessionStorage.setItem('admin_token', json.token);
@@ -50,8 +59,16 @@ export default function AdminPage() {
     setLoading(true);
     setError(null);
     try {
-  const resp = await fetch(api('/api/admin/stats'), { headers:{ Authorization: `Bearer ${token}` }});
-      const json = await resp.json();
+      const url = api('/api/admin/stats');
+      const resp = await fetch(url, { headers:{ Authorization: `Bearer ${token}` }});
+      let json;
+      const ct = resp.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        json = await resp.json();
+      } else {
+        const text = await resp.text();
+        throw new Error(`Non-JSON response (${resp.status}) from ${url}: ${text.substring(0,120)}`);
+      }
       if(!resp.ok){
         if (resp.status === 401){
           sessionStorage.removeItem('admin_token');
