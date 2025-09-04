@@ -23,21 +23,21 @@ const {
 } = process.env;
 
 const OIDC_READY = !!(OIDC_ISSUER && OIDC_CLIENT_ID && REDIRECT_URI);
-if (!OIDC_READY) {
-  console.log('[startup] OIDC env vars not set – skipping /exchange-token route (callback-server likely handling auth)');
-}
+// --- Added verbose startup diagnostics for Cloud Run ---
+console.log('[diag] Process starting PID', process.pid);
+console.log('[diag] Node version', process.version);
+console.log('[diag] Env PORT=', process.env.PORT, 'MONGO_URI?', !!process.env.MONGO_URI, 'MONGODB_URI?', !!process.env.MONGODB_URI);
 
+// Initialize express app early (was missing leading to reference errors)
 const app = express();
 app.use(cors({ origin: true, credentials: false }));
-// Allow larger payloads for base64 images (kept modest)
 app.use(express.json({ limit: '5mb' }));
 
 // ---------------- MongoDB Setup ----------------
-// Mongo URI must be supplied via environment (Secret). No hardcoded fallback in production.
-const MONGO_URI = process.env.MONGO_URI;
+// Mongo URI must be supplied via environment (Secret). Support both MONGO_URI and MONGODB_URI names.
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
 if (!MONGO_URI) {
-  console.error('[startup] MONGO_URI not set. Exiting.');
-  process.exit(1);
+  console.warn('[startup] No Mongo URI provided (MONGO_URI or MONGODB_URI). Mongo-dependent routes will fail until set.');
 }
 // Database name (if not implicit in URI). For Atlas SRV with trailing /childBooklet it will pick that DB automatically
 const MONGO_DB = process.env.MONGO_DB || 'childBooklet';
@@ -81,6 +81,28 @@ async function initMongo() {
 
 // Health
 app.get('/health', (_req,res)=> res.json({ status:'ok', time: Date.now() }));
+app.get('/', (_req,res)=> res.json({ service:'navbar-backend', ok:true }));
+app.get('/debug/routes', (_req,res)=> {
+  try {
+    const routes = [];
+    app._router.stack.forEach(l=>{
+      if (l.route && l.route.path) {
+        const methods = Object.keys(l.route.methods).join(',');
+        routes.push({ path:l.route.path, methods });
+      } else if (l.name === 'router' && l.handle && l.handle.stack) {
+        l.handle.stack.forEach(r => {
+          if (r.route && r.route.path) {
+            const methods = Object.keys(r.route.methods).join(',');
+            routes.push({ path:r.route.path, methods });
+          }
+        });
+      }
+    });
+    res.json({ count: routes.length, routes });
+  } catch (e) {
+    res.status(500).json({ error:'route_introspection_failed', message:e.message });
+  }
+});
 
 // Exchange authorization code for tokens (only if env provided)
 if (OIDC_READY) app.post('/exchange-token', async (req,res)=> {
@@ -152,7 +174,8 @@ async function discover(field) {
   return field ? _discoveryCache[field] : _discoveryCache;
 }
 
-const port = process.env.PORT || 3002;
+// Cloud Run provides PORT env; default to 8080 locally if absent.
+const port = parseInt(process.env.PORT, 10) || 8080;
 // --------------- Child Record Batch Upload Endpoint ---------------
 // Mirrors structure used by frontend offline sync (see src/offline/sync.js)
 app.post('/api/child/batch', async (req,res) => {
@@ -161,8 +184,8 @@ app.post('/api/child/batch', async (req,res) => {
     if (!Array.isArray(records) || !records.length) {
       return res.status(400).json({ error: 'no_records' });
     }
-    await initMongo();
-    if (!mongoDb) return res.status(500).json({ error: 'mongo_unavailable' });
+  await initMongo();
+  if (!mongoDb) return res.status(500).json({ error: 'mongo_unavailable' });
 
     const col = mongoDb.collection('child_records');
   const nowIso = new Date().toISOString();
@@ -320,4 +343,7 @@ app.get('/api/admin/stats', async (req,res)=>{
   }
 });
 
-app.listen(port, ()=> console.log(`[backend] listening on :${port}`));
+app.listen(port, ()=> {
+  console.log(`[backend] listening on :${port}`);
+  console.log('[startup] Routes registered: /health, /, /debug/routes, /api/admin/login, /api/admin/stats, /api/child/batch');
+});

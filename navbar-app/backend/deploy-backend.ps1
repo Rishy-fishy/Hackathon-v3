@@ -43,7 +43,8 @@ try {
 
 $image = "gcr.io/$ProjectId/$ServiceName:local-$(Get-Date -Format yyyyMMddHHmmss)"
 Write-Host "[deploy] Building image $image" -ForegroundColor Yellow
-docker build -t $image .\navbar-app\backend
+# Use script directory as build context so caller can invoke script from anywhere
+docker build -t $image $PSScriptRoot
 if ($LASTEXITCODE -ne 0) { Write-Error 'Docker build failed'; exit 1 }
 docker push $image
 if ($LASTEXITCODE -ne 0) { Write-Error 'Docker push failed'; exit 1 }
