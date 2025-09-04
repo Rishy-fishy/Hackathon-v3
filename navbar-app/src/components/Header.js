@@ -427,10 +427,7 @@ const Header = ({ onActiveViewChange }) => {
           <>
             <div className="detail-head">
               <h3><span className="rid">{selectedRecord.healthId}</span></h3>
-              <div className="detail-actions">
-                {!editMode && <button className="mini-btn" onClick={()=> setEditMode(true)}>Modify</button>}
-                {editMode && <button className="mini-btn" onClick={()=> setEditMode(false)}>Cancel</button>}
-              </div>
+              <div className="detail-actions"></div>
             </div>
             {!editMode && (
               <div className="detail-content redesigned-layout">
@@ -470,6 +467,9 @@ const Header = ({ onActiveViewChange }) => {
                   <div className="full"><strong>Malnutrition Signs:</strong> {selectedRecord.malnutritionSigns||'N/A'}</div>
                   <div className="full"><strong>Recent Illnesses:</strong> {selectedRecord.recentIllnesses||'N/A'}</div>
                 </div>
+                <div className="detail-bottom-actions flush">
+                  <button className="full-width-modify" type="button" onClick={()=> setEditMode(true)}>Modify</button>
+                </div>
               </div>
             )}
             {editMode && (
@@ -485,6 +485,7 @@ const Header = ({ onActiveViewChange }) => {
                   setShowDetailModal(false);
                   setSelectedRecord(null);
                 }}
+                onCancel={()=> setEditMode(false)}
               />
             )}
           </>
@@ -501,7 +502,7 @@ const Header = ({ onActiveViewChange }) => {
 export default Header;
 
 // Inline lightweight edit form component
-function RecordEditForm({ record, onSave }) {
+function RecordEditForm({ record, onSave, onCancel }) {
   // DOB utility functions for this component
   const calculateAgeFromDOB = (dobString) => {
     if (!dobString) return { years: 0, months: 0, days: 0, totalMonths: 0 };
@@ -663,8 +664,12 @@ function RecordEditForm({ record, onSave }) {
         }
         if (name === 'heightCm') {
           const numH = parseFloat(processedValue);
-          if (!isNaN(numH) && numH <= 0) {
-            processedValue = '';
+          if (!isNaN(numH)) {
+            if (numH > 250) {
+              processedValue = '250';
+            } else if (numH <= 0) {
+              processedValue = '';
+            }
           }
         }
       } else if (name === 'guardianPhone') {
@@ -724,10 +729,16 @@ function RecordEditForm({ record, onSave }) {
     // Height validation (if provided)
     if (form.heightCm) {
       const h = parseFloat(form.heightCm);
-      if (!isNaN(h) && h <= 0) {
-        alert('Height must be greater than 0.');
-        setForm(f=>({...f, heightCm: ''}));
-        return;
+      if (!isNaN(h)) {
+        if (h > 250) {
+          alert('Maximum allowed height is 250 cm. Value has been adjusted.');
+          setForm(f=>({...f, heightCm: '250'}));
+          return;
+        } else if (h <= 0) {
+          alert('Height must be greater than 0.');
+          setForm(f=>({...f, heightCm: ''}));
+          return;
+        }
       }
     }
     
@@ -941,7 +952,8 @@ function RecordEditForm({ record, onSave }) {
         </div>
       </div>
       <div className="edit-actions">
-        <button type="submit" className="mini-btn primary">Save</button>
+  <button type="button" className="mini-btn" onClick={()=> onCancel && onCancel()}>Cancel</button>
+  <button type="submit" className="mini-btn primary">Save</button>
       </div>
     </form>
   );

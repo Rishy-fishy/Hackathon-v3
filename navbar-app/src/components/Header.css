@@ -121,6 +121,20 @@ box-sizing: border-box;
   padding-right: 2rem;
   padding-bottom: 1rem;
 }
+/* Mobile: remove sticky so buttons only appear after user scrolls to bottom */
+@media (max-width:640px){
+  .edit-actions {
+    position: static;
+    bottom: auto;
+    margin-left:0;
+    margin-right:0;
+    padding-left:0;
+    padding-right:0;
+    background:transparent;
+    border-top:1px solid #000;
+  }
+  .edit-actions button { flex:1 1 auto; }
+}
 .detail-actions { right:3.2rem; }
 @media (max-width:600px){ .detail-actions { right:2.8rem; top:8px; transform:none; } }
 /* Photo editing styles */
@@ -397,6 +411,38 @@ margin: auto;
   zoom: 1 !important;
   transition: none !important;
 }
+
+/* Full-width Modify button bar for view mode */
+/* Refined bottom modify bar */
+.detail-bottom-actions.flush { 
+  margin-top:1.75rem; 
+  padding:0 0 1.25rem; 
+  display:block; 
+  width:100%;
+}
+.detail-bottom-actions.flush .full-width-modify {
+  display:block;
+  width:calc(100% - 3rem); /* inset pill */
+  margin:0 auto;
+  padding:1rem 1.25rem;
+  text-align:center;
+  cursor:pointer;
+  position:relative;
+  font-weight:600;
+  font-size:.8rem;
+  letter-spacing:.5px;
+  line-height:1;
+  text-transform:uppercase;
+  color:#fff;
+  border:2px solid #000;
+  border-radius:22px;
+  background:#000;
+  box-shadow:0 4px 22px rgba(0,0,0,0.18);
+  transition:background .25s ease, transform .25s ease, box-shadow .25s ease;
+}
+.detail-bottom-actions.flush .full-width-modify:hover { background:#111; box-shadow:0 6px 26px rgba(0,0,0,0.28); }
+.detail-bottom-actions.flush .full-width-modify:active { background:#222; transform:translateY(1px); box-shadow:0 3px 14px rgba(0,0,0,0.25); }
+.detail-bottom-actions.flush .full-width-modify:focus-visible { outline:2px solid #fff; outline-offset:3px; }
 .record-row.selectable > * { 
   overflow: hidden;
   text-overflow: ellipsis;
