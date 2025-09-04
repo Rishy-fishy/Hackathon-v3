@@ -276,7 +276,22 @@ app.post('/api/admin/login', async (req,res)=>{
     if (!username || !password) return res.status(400).json({ error: 'missing_credentials' });
     await initMongo();
     const col = mongoDb.collection('admin_users');
-    const user = await col.findOne({ username });
+    let user = await col.findOne({ username });
+    if(!user) {
+      // Legacy fallback: collection 'Admin_child' with fields userid & password (plaintext)
+      try {
+        const legacyCol = mongoDb.collection('Admin_child');
+        const legacy = await legacyCol.findOne({ userid: username });
+        if (legacy && legacy.password === password) {
+          const hash = await bcrypt.hash(password, 10);
+          user = { username, passwordHash: hash, createdAt: new Date(), roles: ['admin'], migratedFrom: 'Admin_child' };
+          await col.insertOne(user);
+          console.log('[backend] Migrated legacy admin user from Admin_child collection');
+        }
+      } catch (e) {
+        console.warn('[backend] legacy admin lookup failed', e.message);
+      }
+    }
     if(!user) return res.status(401).json({ error: 'invalid_credentials' });
     const ok = await bcrypt.compare(password, user.passwordHash);
     if(!ok) return res.status(401).json({ error: 'invalid_credentials' });
