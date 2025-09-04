@@ -941,7 +941,6 @@ function RecordEditForm({ record, onSave }) {
         </div>
       </div>
       <div className="edit-actions">
-  <button type="button" className="mini-btn" onClick={()=> setForm(f=>({...f, dateOfBirth: ''}))} title="Clear Date of Birth">Reset DOB</button>
         <button type="submit" className="mini-btn primary">Save</button>
       </div>
     </form>
