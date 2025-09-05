@@ -1,8 +1,73 @@
 .admin-page { padding: 2rem; max-width: 960px; margin: 0 auto; text-align: left; }
-.admin-login-form { display: flex; flex-direction: column; gap: 1rem; max-width: 320px; }
-.admin-login-form input { width: 100%; padding: .6rem .7rem; border:1px solid #ccc; border-radius:6px; }
-.admin-login-form button { padding:.7rem 1rem; background:#222; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; }
-.admin-login-form button[disabled]{ opacity:.6; cursor:default; }
+/* --- New Auth Card Layout --- */
+.admin-auth-shell { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem 1rem; position:relative; }
+.admin-login-heading { margin:0 0 1.8rem; font-size:2.2rem; font-weight:700; letter-spacing:1px; color:#0d2040; text-align:center; }
+.admin-card-title { text-align:center; width:100%; }
+.admin-page.login-center { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; }
+/* Fallback (old markup) force vertical centering */
+body:not(.admin-authed) .admin-page > h2 + form.admin-login-form { margin-top:0; }
+.admin-card { background:#f6f7f8; border:2px solid #0d2040; border-radius:28px; padding:2.2rem 2.4rem 2.3rem; width:100%; max-width:430px; box-shadow:0 6px 18px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08); position:relative; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+.admin-card:before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:28px;background:linear-gradient(145deg,rgba(255,255,255,0.55),rgba(255,255,255,0));mix-blend-mode:overlay;}
+.admin-card-title { margin:0 0 1.4rem; font-size:1.55rem; font-weight:600; color:#0d2040; letter-spacing:.5px; }
+.admin-card-form { display:flex; flex-direction:column; gap:1.15rem; }
+.field-group { display:flex; flex-direction:column; gap:.45rem; }
+.field-label { font-size:1.05rem; font-weight:600; color:#102c54; letter-spacing:.5px; }
+.field-input { background:#fff; border:2px solid #4d5f78; box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 1px rgba(13,32,64,.25); border-radius:40px; padding:.85rem 1.15rem; font-size:.95rem; outline:none; transition:border-color .25s, box-shadow .25s, background .25s; }
+.field-input:focus { border-color:#0d2040; box-shadow:0 0 0 2px rgba(13,32,64,.35),0 2px 6px rgba(0,0,0,.18); }
+.aux-row { display:flex; justify-content:space-between; align-items:center; font-size:.72rem; margin-top:.2rem; }
+.remember-line { display:inline-flex; align-items:center; gap:.4rem; font-size:.72rem; font-weight:500; color:#102c54; cursor:pointer; user-select:none; }
+.remember-line input { width:14px; height:14px; border:1px solid #102c54; }
+.link-btn { background:none; border:none; color:#102c54; cursor:pointer; font-size:.72rem; font-weight:500; text-decoration:none; padding:.2rem .3rem; }
+.link-btn:hover { text-decoration:underline; }
+.login-submit-btn { margin-top:.6rem; background:#0d2040; color:#fff; font-weight:600; font-size:1.05rem; letter-spacing:.5px; border:none; padding:.85rem 1.2rem; border-radius:40px; cursor:pointer; transition:background .25s, transform .18s, box-shadow .25s; box-shadow:0 4px 10px rgba(0,0,0,.18); }
+.login-submit-btn:hover { background:#102c54; box-shadow:0 6px 16px rgba(0,0,0,.22); }
+.login-submit-btn:active { transform:translateY(2px); }
+.login-submit-btn[disabled]{ opacity:.6; cursor:default; transform:none; }
+.no-autofill-color input:-webkit-autofill { -webkit-text-fill-color:#000; box-shadow:0 0 0 30px #fff inset !important; }
+.admin-card .admin-error { margin-top:.4rem; }
+.admin-card .admin-hint { margin-top:.7rem; text-align:center; }
+/* Force-hide legacy hint text if still present from cached bundle */
+.admin-card .admin-hint, .admin-login-form .admin-hint { display:none !important; }
+/* Hide any lingering Admin Dashboard heading (legacy markup). */
+.admin-page > .admin-bar > h2 { display:none !important; }
+@media (max-width:560px){
+  .admin-card { padding:1.9rem 1.6rem 1.8rem; border-radius:24px; }
+  .admin-card-title { font-size:1.4rem; margin-bottom:1.1rem; }
+  .field-label { font-size:.95rem; }
+  .field-input { padding:.75rem 1rem; font-size:.9rem; }
+  .aux-row { font-size:.66rem; }
+  .login-submit-btn { font-size:.95rem; }
+}
+
+/* ===== Fallback styling if old markup (h2 + form.admin-login-form) still renders ===== */
+.admin-page > h2 + form.admin-login-form {
+  background:#f6f7f8;
+  border:2px solid #0d2040;
+  border-radius:28px;
+  padding:2.1rem 2.2rem 2rem;
+  box-shadow:0 6px 18px rgba(0,0,0,.12),0 2px 4px rgba(0,0,0,.08);
+  width:100%;
+  max-width:430px;
+  margin:2.5rem auto 1rem;
+  display:flex;
+  flex-direction:column;
+  gap:1.15rem;
+}
+.admin-page > h2 { text-align:center; padding-left:0; }
+.admin-login-form label { display:flex; flex-direction:column; gap:.5rem; font-weight:600; font-size:1.02rem; color:#102c54; }
+.admin-login-form input { background:#fff; border:2px solid #4d5f78; box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 1px rgba(13,32,64,.25); border-radius:40px; padding:.85rem 1.15rem; font-size:.95rem; outline:none; transition:border-color .25s, box-shadow .25s, background .25s; }
+.admin-login-form input:focus { border-color:#0d2040; box-shadow:0 0 0 2px rgba(13,32,64,.35),0 2px 6px rgba(0,0,0,.18); }
+.admin-login-form button { align-self:center; background:#0d2040; color:#fff; font-weight:600; font-size:1.05rem; letter-spacing:.5px; border:none; padding:.85rem 1.6rem; border-radius:40px; cursor:pointer; transition:background .25s, transform .18s, box-shadow .25s; box-shadow:0 4px 10px rgba(0,0,0,.18); }
+.admin-login-form button:hover { background:#102c54; box-shadow:0 6px 16px rgba(0,0,0,.22); }
+.admin-login-form button:active { transform:translateY(2px); }
+.admin-login-form .admin-error { margin-top:.2rem; }
+.admin-login-form .admin-hint { text-align:center; margin-top:.4rem; }
+@media (max-width:560px){
+  .admin-page > h2 + form.admin-login-form { padding:1.8rem 1.5rem 1.6rem; border-radius:24px; }
+  .admin-login-form label { font-size:.95rem; }
+  .admin-login-form input { padding:.75rem 1rem; font-size:.9rem; }
+  .admin-login-form button { font-size:.95rem; }
+}
 .admin-error { background:#ffe5e5; color:#b30000; padding:.6rem .8rem; border-radius:6px; font-size:.9rem; }
 .admin-hint { font-size:.75rem; color:#666; }
 .admin-bar { display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; }

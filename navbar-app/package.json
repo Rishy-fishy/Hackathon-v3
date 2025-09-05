@@ -21,6 +21,7 @@
     "pdfkit": "^0.15.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-icons": "^5.5.0",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4",
     "workbox-precaching": "^7.1.0"
