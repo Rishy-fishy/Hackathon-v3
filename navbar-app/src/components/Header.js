@@ -126,7 +126,24 @@ const Header = ({ onActiveViewChange }) => {
             sessionStorage.setItem('esignet_authenticated','true');
             sessionStorage.setItem('esignet_user', JSON.stringify(payload.userInfo));
             sessionStorage.setItem('auth_timestamp', Date.now().toString());
-            if (payload.access_token) sessionStorage.setItem('access_token', payload.access_token);
+            if (payload.access_token) sessionStorage.setItem('raw_esignet_access_token', payload.access_token);
+            // Exchange token with backend for a local session token
+            (async ()=>{
+              try {
+                const API_BASE = (window.__API_BASE || process.env.REACT_APP_API_BASE || 'https://navbar-backend-clean-87485236346.us-central1.run.app').replace(/\/$/, '');
+                const resp = await fetch(`${API_BASE}/auth/esignet`, {
+                  method:'POST',
+                  headers:{ 'Content-Type':'application/json' },
+                  body: JSON.stringify({ id_token: payload.access_token || 'dummy', name: payload.userInfo.name, email: payload.userInfo.email })
+                });
+                if(resp.ok){
+                  const data = await resp.json();
+                  if(data.token) sessionStorage.setItem('access_token', data.token);
+                } else {
+                  console.warn('Backend token exchange failed', resp.status);
+                }
+              } catch (e){ console.warn('Token exchange error', e.message); }
+            })();
           }
           if (payload.userInfo) {
             setUserInfo(payload.userInfo);

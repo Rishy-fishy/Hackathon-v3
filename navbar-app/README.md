@@ -68,3 +68,38 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+---
+
+## Backend Runtime Configuration (Custom Additions)
+
+The frontend can dynamically point to a deployed Cloud Run backend without rebuilding:
+
+1. Copy `public/runtime-config.example.js` to `public/runtime-config.js`.
+2. Set `window.__API_BASE` to your backend base URL (no trailing slash), e.g.
+	```js
+	window.__API_BASE = 'https://navbar-backend-direct-xxxxxxxxxx-uc.a.run.app';
+	```
+3. Deploy / serve the static site. The `AdminPage` component will resolve the backend URL in this order:
+	- `window.__API_BASE`
+	- `REACT_APP_API_BASE` build-time variable
+	- `http://localhost:3002` (when running frontend dev server locally)
+	- Relative (same origin)
+
+## Health Endpoints
+
+Backend exposes:
+
+* `/health` – basic liveness.
+* `/health/db` – attempts Mongo connection and reports whether the seeded Admin user exists.
+
+If `/health` succeeds but `/health/db` returns `mongo_unavailable`:
+1. Ensure Cloud Run service has `MONGO_URI` (env var or secret) set.
+2. Service account has `roles/secretmanager.secretAccessor` on the secret (if using Secret Manager).
+3. MongoDB Atlas cluster allows access (network rules / IP access list). For public (no IP restriction) clusters this usually "just works".
+4. Check Cloud Run logs for `[backend] Mongo connection failed` messages.
+
+## Admin Credentials
+
+Default admin user is seeded with username `Admin` and password `Admin@123` (hash only stored). Change the password by updating the `admin_users` collection directly (replace `passwordHash` with a new bcrypt hash).
+

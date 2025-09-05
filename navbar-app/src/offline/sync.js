@@ -1,8 +1,15 @@
 // Sync logic: upload pending/failed records to backend when online & authenticated
 import { pendingRecords, updateChildRecord, recordCounts, purgeOldUploaded } from './db';
 
-// Cloud Run backend base URL (override by setting window.__API_BASE before module load if needed)
-const API_BASE = (typeof window !== 'undefined' && window.__API_BASE) || 'https://navbar-backend-547765090011.us-central1.run.app';
+// Cloud Run backend base URL resolution (first non-empty wins):
+// 1. window.__API_BASE (runtime-config.js)
+// 2. REACT_APP_API_BASE (build-time)
+// 3. Fallback to current deployed clean backend URL
+const API_BASE = (
+  (typeof window !== 'undefined' && window.__API_BASE) ||
+  process.env.REACT_APP_API_BASE ||
+  'https://navbar-backend-clean-87485236346.us-central1.run.app'
+).replace(/\/$/, '');
 
 let lastSyncInfo = { time: null, result: null };
 

@@ -6,8 +6,26 @@ import './AdminPage.css';
 // GET  /api/admin/stats  (Authorization: Bearer <token>) -> { totalChildRecords, recentUploads }
 
 export default function AdminPage() {
-  // Prefer build-time var; fallback to localhost backend during local dev.
-  const API_BASE = (process.env.REACT_APP_API_BASE || (window.location.hostname === 'localhost' ? 'http://localhost:3002' : '')).replace(/\/$/,'');
+  // Resolution order for backend base URL (first non-empty wins):
+  // 1. window.__API_BASE (runtime injected script) e.g. placed in public/runtime-config.js
+  // 2. REACT_APP_API_BASE (build-time)
+  // 3. If running on localhost frontend dev server -> http://localhost:3002
+  // 4. Empty string => same-origin relative calls
+  const runtimeBase = typeof window !== 'undefined' && window.__API_BASE ? window.__API_BASE : '';
+  const CLOUD_RUN_FALLBACK = 'https://navbar-backend-clean-87485236346.us-central1.run.app';
+  const API_BASE = (
+    runtimeBase ||
+    process.env.REACT_APP_API_BASE ||
+    // If developing locally and no override, still use remote backend instead of failing
+    (window.location.hostname === 'localhost' ? CLOUD_RUN_FALLBACK : CLOUD_RUN_FALLBACK)
+  ).replace(/\/$/,'');
+  if (typeof window !== 'undefined') {
+    // One-time debug to confirm which backend URL AdminPage is using
+    if (!window.__ADMIN_API_BASE_LOGGED) {
+      console.log('[AdminPage] Using backend base:', API_BASE);
+      window.__ADMIN_API_BASE_LOGGED = true;
+    }
+  }
   const api = (path) => `${API_BASE}${path}`;
   const [username,setUsername] = useState('');
   const [password,setPassword] = useState('');
