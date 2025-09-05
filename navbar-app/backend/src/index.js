@@ -150,6 +150,29 @@ app.get('/api/child/stats', requireAuth, async (req,res)=>{
   } catch (e){ res.status(500).json({ error:'stats_failed', message:e.message }); }
 });
 
+// Lightweight search endpoint used by Settings export PDF feature.
+// Query param q matches exact healthId first; if not found tries name prefix (case-insensitive).
+// (Currently unauthenticated for convenience; tighten later if needed.)
+app.get('/api/child/search', async (req,res)=>{
+  try {
+    const raw = (req.query.q||'').toString().trim();
+    if(!raw) return res.status(400).json({ error:'missing_query' });
+    const database = await getDb();
+    const col = database.collection('child_records');
+    let record = await col.findOne({ healthId: raw });
+    if(!record){
+      // Escape regex special chars for prefix match
+      const escaped = raw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      record = await col.findOne({ name: { $regex: `^${escaped}`, $options:'i' } });
+    }
+    if(record){
+      delete record._id; // remove internal id
+      return res.json({ found:true, record });
+    }
+    return res.json({ found:false });
+  } catch (e){ res.status(500).json({ error:'search_failed', message:e.message }); }
+});
+
 app.get('/health', (req,res)=> res.json({ status:'ok', time: Date.now() }));
 
 // Debug route to inspect received headers (remove in production)

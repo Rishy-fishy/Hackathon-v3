@@ -31,7 +31,11 @@ const Settings = ({ onClose }) => {
   const [searchTerm,setSearchTerm] = useState('');
   const [searching,setSearching] = useState(false);
   const [mergedRecord,setMergedRecord] = useState(null);
-  const API_BASE = (process.env.REACT_APP_API_BASE || (window.location.hostname==='localhost'?'http://localhost:3002':''));
+  const API_BASE = (
+    (typeof window!=='undefined' && window.__API_BASE) ||
+    process.env.REACT_APP_API_BASE ||
+    'https://navbar-backend-clean-87485236346.us-central1.run.app'
+  ).replace(/\/$/,'');
 
   const openExport = () => { setShowExportModal(true); setSearchTerm(''); setMergedRecord(null); };
 
