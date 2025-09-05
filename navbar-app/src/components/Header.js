@@ -893,107 +893,119 @@ function RecordEditForm({ record, onSave, onCancel }) {
             placeholder="e.g. Father, Mother, Uncle"
           />
         </label>
-        <div className="full field-container">
-          <div className="field-head">
-            <label>Malnutrition Signs</label>
-            <button 
-              type="button" 
-              className="pill-toggle" 
-              aria-pressed={form.malnutritionSigns==='N/A'} 
-              onClick={()=>setForm(f=>({...f, malnutritionSigns: f.malnutritionSigns==='N/A'?[]: 'N/A'}))}
-            >
-              N/A
-            </button>
-          </div>
-          <div className="custom-dropdown" onClick={() => form.malnutritionSigns !== 'N/A' && setIsDropdownOpen(!isDropdownOpen)}>
-            <div className={`dropdown-display ${form.malnutritionSigns === 'N/A' ? 'disabled' : ''}`}>
-              <span>
-                {form.malnutritionSigns === 'N/A' 
-                  ? 'N/A'
-                  : (() => {
-                      if (Array.isArray(form.malnutritionSigns) && form.malnutritionSigns.length > 0) {
-                        return `${form.malnutritionSigns.length} selected`;
-                      } else if (typeof form.malnutritionSigns === 'string' && form.malnutritionSigns !== 'N/A' && form.malnutritionSigns !== '') {
-                        const selections = form.malnutritionSigns.includes(',') 
-                          ? form.malnutritionSigns.split(',').map(s => s.trim())
-                          : [form.malnutritionSigns];
-                        return `${selections.length} selected`;
-                      } else {
-                        return 'Select signs of malnutrition';
+        <div className="full">
+          <div className="health-group-frame">
+            {/* Malnutrition Row */}
+            <div className="health-item-row">
+              <div className="health-text-block">
+                <div className="health-title">Malnutrition Signs</div>
+                <div 
+                  className={`custom-dropdown ${form.malnutritionSigns==='N/A'?'disabled':''}`} 
+                  onClick={() => form.malnutritionSigns !== 'N/A' && setIsDropdownOpen(!isDropdownOpen)}
+                >
+                  <div className={`dropdown-display large ${form.malnutritionSigns === 'N/A' ? 'disabled' : ''}`}>
+                    <span>
+                      {form.malnutritionSigns === 'N/A' 
+                        ? 'N/A'
+                        : (() => {
+                            if (Array.isArray(form.malnutritionSigns) && form.malnutritionSigns.length > 0) {
+                              return `${form.malnutritionSigns.length} selected`;
+                            } else if (typeof form.malnutritionSigns === 'string' && form.malnutritionSigns !== 'N/A' && form.malnutritionSigns !== '') {
+                              const selections = form.malnutritionSigns.includes(',') 
+                                ? form.malnutritionSigns.split(',').map(s => s.trim())
+                                : [form.malnutritionSigns];
+                              return `${selections.length} selected`;
+                            } else {
+                              return 'Select signs of malnutrition';
+                            }
+                          })()
                       }
-                    })()
-                }
-              </span>
-              <svg 
-                className={`dropdown-arrow ${isDropdownOpen && form.malnutritionSigns !== 'N/A' ? 'open' : ''}`}
-                width="12" 
-                height="12" 
-                viewBox="0 0 12 12" 
-                fill="none"
-              >
-                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            {isDropdownOpen && form.malnutritionSigns !== 'N/A' && (
-              <div className="dropdown-menu" role="listbox" onClick={(e) => e.stopPropagation()}>
-                  {malnutritionOptions.map((option, index) => {
-                    // Handle both array and string formats for checking selection
-                    let isSelected = false;
-                    if (Array.isArray(form.malnutritionSigns)) {
-                      isSelected = form.malnutritionSigns.includes(option);
-                    } else if (typeof form.malnutritionSigns === 'string' && form.malnutritionSigns !== 'N/A') {
-                      const selections = form.malnutritionSigns.includes(',') 
-                        ? form.malnutritionSigns.split(',').map(s => s.trim())
-                        : [form.malnutritionSigns];
-                      isSelected = selections.includes(option);
-                    }
-                    
-                    return (
-                      <div
-                        key={index}
-                        className={`dropdown-option ${isSelected ? 'selected' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleMalnutritionOption(option);
-                        }}
-                        role="option"
-                        aria-selected={isSelected}
-                      >
-                        <div className="option-checkbox">
-                          {isSelected && (
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                              <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          )}
-                        </div>
-                        <span className="option-text">{option}</span>
+                    </span>
+                    <svg 
+                      className={`dropdown-arrow ${isDropdownOpen && form.malnutritionSigns !== 'N/A' ? 'open' : ''}`}
+                      width="12" 
+                      height="12" 
+                      viewBox="0 0 12 12" 
+                      fill="none"
+                    >
+                      <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  {isDropdownOpen && form.malnutritionSigns !== 'N/A' && (
+                    <div className="dropdown-menu wide" role="listbox" onClick={(e) => e.stopPropagation()}>
+                        {malnutritionOptions.map((option, index) => {
+                          let isSelected = false;
+                          if (Array.isArray(form.malnutritionSigns)) {
+                            isSelected = form.malnutritionSigns.includes(option);
+                          } else if (typeof form.malnutritionSigns === 'string' && form.malnutritionSigns !== 'N/A') {
+                            const selections = form.malnutritionSigns.includes(',') 
+                              ? form.malnutritionSigns.split(',').map(s => s.trim())
+                              : [form.malnutritionSigns];
+                            isSelected = selections.includes(option);
+                          }
+                          return (
+                            <div
+                              key={index}
+                              className={`dropdown-option ${isSelected ? 'selected' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleMalnutritionOption(option);
+                              }}
+                              role="option"
+                              aria-selected={isSelected}
+                            >
+                              <div className="option-checkbox">
+                                {isSelected && (
+                                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                )}
+                              </div>
+                              <span className="option-text">{option}</span>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    )}
                 </div>
-              )}
+              </div>
+              <div className="health-toggle-wrap">
+                <button
+                  type="button"
+                  className={`switch-btn ${form.malnutritionSigns!=='N/A'?'on':''}`}
+                  aria-pressed={form.malnutritionSigns!=='N/A'}
+                  onClick={()=>setForm(f=>({...f, malnutritionSigns: f.malnutritionSigns==='N/A'?[]: 'N/A'}))}
+                >
+                  <span className="knob" />
+                </button>
+              </div>
+            </div>
+            {/* Recent Illnesses Row */}
+            <div className="health-item-row">
+              <div className="health-text-block illnesses-block">
+                <div className="health-title alt">Recent Illnesses</div>
+                <textarea 
+                  name="recentIllnesses" 
+                  className="illness-box"
+                  value={form.recentIllnesses} 
+                  onChange={handleChange}
+                  placeholder="Describe recent illnesses or conditions"
+                  disabled={form.recentIllnesses==='N/A'}
+                  aria-disabled={form.recentIllnesses==='N/A'}
+                />
+              </div>
+              <div className="health-toggle-wrap">
+                <button
+                  type="button"
+                  className={`switch-btn ${form.recentIllnesses!=='N/A'?'on':''}`}
+                  aria-pressed={form.recentIllnesses!=='N/A'}
+                  onClick={()=>setForm(f=>({...f, recentIllnesses: f.recentIllnesses==='N/A'?'': 'N/A'}))}
+                >
+                  <span className="knob" />
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="full field-container">
-          <div className="field-head">
-            <label>Recent Illnesses</label>
-            <button 
-              type="button" 
-              className="pill-toggle" 
-              aria-pressed={form.recentIllnesses==='N/A'} 
-              onClick={()=>setForm(f=>({...f, recentIllnesses: f.recentIllnesses==='N/A'?'': 'N/A'}))}
-            >
-              N/A
-            </button>
-          </div>
-          <textarea 
-            name="recentIllnesses" 
-            value={form.recentIllnesses} 
-            onChange={handleChange}
-            placeholder="Describe recent illnesses or conditions"
-            disabled={form.recentIllnesses==='N/A'}
-            aria-disabled={form.recentIllnesses==='N/A'}
-          />
         </div>
       </div>
       <div className="edit-actions">
