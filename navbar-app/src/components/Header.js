@@ -333,7 +333,11 @@ const Header = ({ onActiveViewChange }) => {
           >Settings</button>
           <button
             className={`nav-btn ${activeNav==='admin'?'active':''}`}
-            onClick={()=>{ setActiveNav('admin'); onActiveViewChange && onActiveViewChange('admin'); }}
+            onClick={()=>{
+              // Navigate to standalone admin page route
+              window.location.href = '/admin';
+            }}
+            title="Open Admin Dashboard in full page"
           >Admin</button>
           <button className="profile-btn" onClick={handleProfileClick} aria-label="Profile & Authentication">Profile</button>
         </nav>
@@ -359,7 +363,7 @@ const Header = ({ onActiveViewChange }) => {
             >Settings</button>
             <button
               className={`drawer-link ${activeNav==='admin'?'active':''}`}
-              onClick={()=>{ setActiveNav('admin'); onActiveViewChange && onActiveViewChange('admin'); setMobileMenuOpen(false); }}
+              onClick={()=>{ setMobileMenuOpen(false); window.location.href='/admin'; }}
             >Admin</button>
             <button className="drawer-link" onClick={()=>{ handleProfileClick(); setMobileMenuOpen(false); }}>Profile</button>
           </div>

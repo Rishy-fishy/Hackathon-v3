@@ -10,13 +10,15 @@ import { startAutoSync } from './offline/sync';
 import AdminPage from './components/AdminPage';
 
 function App() {
-  const [activeView, setActiveView] = useState('home'); // 'home' | 'add' | 'view' | 'settings' | 'admin'
+  const [activeView, setActiveView] = useState('home'); // 'home' | 'add' | 'view' | 'settings'
   // Connectivity hook retained for potential future UI; currently unused.
   // eslint-disable-next-line no-unused-vars
   const online = useConnectivity();
   // Check if we're on the callback route
-  const isCallbackRoute = window.location.pathname === '/callback';
-  const isAuthSuccessRoute = window.location.pathname === '/auth-success';
+  const pathname = window.location.pathname;
+  const isCallbackRoute = pathname === '/callback';
+  const isAuthSuccessRoute = pathname === '/auth-success';
+  const isAdminRoute = pathname === '/admin';
 
   // Start background sync once
   useEffect(()=>{ startAutoSync(); },[]);
@@ -27,6 +29,20 @@ function App() {
 
   if (isAuthSuccessRoute) {
     return <AuthSuccess />;
+  }
+
+  if (isAdminRoute) {
+    return (
+      <div className="admin-standalone-page">
+        <div className="admin-standalone-bar">
+          <a href="/" className="back-home" aria-label="Back to home">← Back</a>
+          <h1>Admin Dashboard</h1>
+        </div>
+        <main className="admin-standalone-main" aria-label="Admin">
+          <AdminPage />
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -40,11 +56,6 @@ function App() {
       {activeView === 'settings' && (
         <main className="main-content minimalist-main" aria-label="Settings">
           <Settings />
-        </main>
-      )}
-      {activeView === 'admin' && (
-        <main className="main-content minimalist-main" aria-label="Admin">
-          <AdminPage />
         </main>
       )}
     </div>
