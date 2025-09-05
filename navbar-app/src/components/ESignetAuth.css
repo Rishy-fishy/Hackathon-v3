@@ -1,31 +1,63 @@
 /* e-Signet Authentication Styles */
+/* Container now fluid + centered with adaptive spacing */
 .esignet-auth-container {
   text-align: center;
-  padding: 1rem 0;
+  padding: clamp(1rem, 2.5vw, 2.75rem) clamp(1rem, 3vw, 3rem);
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
+/* When rendered inside auth-modal full-screen on very small devices tighten spacing */
+.modal-content.auth-modal .esignet-auth-container{ max-width:100%; }
+@media (max-width:520px){
+  .modal-content.auth-modal .esignet-auth-container{ padding:1rem .4rem .9rem; }
+}
+@media (max-width:420px){
+  .modal-content.auth-modal .esignet-auth-container{ padding:.9rem .55rem .85rem; }
+  .modal-content.auth-modal .auth-header h2{ font-size:1.25rem; }
+}
+@media (max-width:380px){
+  .modal-content.auth-modal .auth-header h2{ font-size:1.18rem; }
+  .modal-content.auth-modal .auth-header p{ font-size:.78rem; }
+}
+@media (max-width:350px){
+  .modal-content.auth-modal .auth-header h2{ font-size:1.1rem; }
+  .modal-content.auth-modal .auth-header p{ font-size:.74rem; }
+}
+
+/* Host modal wrapper overrides (defensive if parent sets fixed width) */
+.esignet-auth-container:where(.full-width){ max-width:100% !important; }
 
 .auth-header {
   margin-bottom: 2rem;
 }
 
 .auth-header h2 {
-  color: #333;
-  font-size: 1.8rem;
+  color: var(--text, #333);
+  font-size: clamp(1.55rem, 4vw, 2.15rem);
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  margin-bottom: .55rem;
+  line-height: 1.15;
+  word-break: break-word;
 }
 
 .auth-header p {
-  color: #666;
-  font-size: 1rem;
+  color: var(--text-muted, #666);
+  font-size: clamp(.85rem, 1.9vw, 1.05rem);
   margin: 0;
+  line-height: 1.4;
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .auth-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  gap: clamp(1.25rem, 3.2vw, 2.4rem);
+  width: 100%;
 }
 
 .esignet-button-container {
@@ -33,6 +65,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
 }
 
 .esignet-button-wrapper {
@@ -40,6 +73,7 @@
   justify-content: center;
   align-items: center;
   min-height: 60px;
+  width: 100%;
 }
 
 /* Fallback button styles */
@@ -104,21 +138,7 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Auth info section */
-.auth-info {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 1.5rem;
-  max-width: 400px;
-  border-left: 4px solid #28a745;
-}
-
-.info-text {
-  color: #555;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  margin: 0;
-}
+/* (auth-info removed) */
 
 /* Error handling styles */
 .error-container {
@@ -186,53 +206,70 @@
   margin: 0;
 }
 
+/* OR separator + admin button */
+.auth-alt-separator{display:flex;align-items:center;gap:.9rem;margin:.75rem 0 0;font-size:.8rem;font-weight:600;color:#222;letter-spacing:2px;}
+.auth-alt-separator .line{flex:1 1 auto;height:1px;background:#222;position:relative;}
+.auth-alt-separator .or-text{flex:0 0 auto;}
+.admin-login-alt{margin-top:.55rem;display:flex;justify-content:center;}
+.admin-sign-btn{background:#16a34a;color:#fff;border:1px solid #12803b;padding:.7rem 1.4rem;font-weight:600;border-radius:8px;cursor:pointer;font-size:1.05rem;letter-spacing:.5px;transition:.18s ease;box-shadow:0 2px 4px rgba(0,0,0,.15);} 
+.admin-sign-btn:hover{background:#15803d;border-color:#116b32;box-shadow:0 4px 10px rgba(0,0,0,.22);} 
+.admin-sign-btn:active{transform:scale(.97);background:#116b32;} 
+.admin-sign-btn:focus-visible{outline:3px solid #34d399; outline-offset:2px;} 
+@media (max-width:480px){
+  .auth-alt-separator{margin-top:.6rem;font-size:.7rem;}
+  .admin-sign-btn{width:100%;font-size:.95rem;}
+}
+
 /* e-Signet button customizations (when loaded) */
 .esignet-button-container > * {
   margin: 0 auto;
+  width: auto !important; /* shrink to content for centered look */
+  max-width: 360px;
+  min-width: 240px;
+  display: inline-flex !important;
+  justify-content: center;
+}
+/* Keep full-width behavior only on very narrow phones */
+@media (max-width: 420px) {
+  .esignet-button-container > * { width:100% !important; max-width:100%; }
 }
 
 /* Override any conflicting styles from the plugin */
 .esignet-button-container button,
 .esignet-button-container a {
   font-family: system-ui, -apple-system, sans-serif !important;
+  color: #b9f7c2 !important; /* light green text */
+  text-shadow: 0 1px 1px rgba(0,0,0,0.25);
 }
 
 /* Responsive design */
-@media (max-width: 768px) {
-  .esignet-auth-container {
-    padding: 0.5rem 0;
-  }
-  
-  .auth-header h2 {
-    font-size: 1.5rem;
-  }
-  
-  .auth-header p {
-    font-size: 0.9rem;
-  }
-  
-  .auth-info {
-    padding: 1rem;
-    max-width: 100%;
-  }
+@media (max-width: 820px) {
+  .esignet-auth-container { max-width: 100%; padding: clamp(1rem, 4vw, 2rem) clamp(.9rem, 4vw, 2rem); }
+  .auth-info { max-width: 100%; }
+}
+@media (max-width: 640px) {
+  .auth-header h2 { font-size: clamp(1.4rem, 6vw, 1.75rem); }
+  .auth-content { gap: 1.6rem; }
+  .esignet-button-container > * { max-width: 100%; }
+  .auth-info { border-left-width: 3px; }
 }
 
 @media (max-width: 480px) {
-  .auth-header h2 {
-    font-size: 1.3rem;
-  }
-  
-  .auth-content {
-    gap: 1.5rem;
-  }
-  
-  .auth-info {
-    padding: 0.75rem;
-  }
-  
-  .esignet-fallback-btn {
-    min-width: 180px;
-    padding: 10px 20px;
-    font-size: 14px;
-  }
+  .auth-header h2 { font-size: clamp(1.25rem, 6.5vw, 1.45rem); }
+  .auth-content { gap: 1.25rem; }
+  .auth-info { padding: .85rem .85rem .9rem; border-radius: 12px; }
+  .esignet-fallback-btn { min-width: 100%; padding: 11px 16px; font-size: .9rem; }
+  .esignet-auth-container { padding: 1rem .9rem 1.4rem; }
+  .esignet-button-container > * { font-size:.9rem !important; }
 }
+@media (max-width: 360px) {
+  .auth-header h2 { font-size: 1.15rem; }
+  .auth-info { padding: .75rem .75rem .85rem; }
+  .info-text { font-size: .78rem; }
+  .esignet-auth-container { padding:.85rem .65rem 1.1rem; }
+  .auth-header p { font-size:.78rem; }
+}
+
+/* Dark theme adjustments */
+body.theme-dark .auth-header h2 { color:var(--text, #f5f7fa); }
+body.theme-dark .auth-header p { color:var(--text-muted,#b5bcc5); }

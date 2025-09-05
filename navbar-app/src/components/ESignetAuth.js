@@ -195,13 +195,23 @@ const ESignetAuth = () => {
 
         {/* Fallback removed per request; using official eSignet plugin only */}
 
-        <div className="auth-info">
-          <p className="info-text">
-            <strong>About e-Signet:</strong> e-Signet is a secure digital identity platform 
-            that allows you to authenticate using various methods including biometrics, 
-            generated codes, and static codes. Your privacy and security are our top priorities.
-          </p>
+        {/* OR separator + Admin Sign-in */}
+        <div className="auth-alt-separator" role="separator" aria-label="or sign in as admin">
+          <span className="line" aria-hidden="true"></span>
+          <span className="or-text"> ---------- OR ----------</span>
+          <span className="line" aria-hidden="true"></span>
         </div>
+        <div className="admin-login-alt">
+          <button
+            type="button"
+            className="admin-sign-btn"
+            onClick={()=>{ window.location.href='/admin'; }}
+            aria-label="Sign in as Admin"
+          >
+            Sign As Admin
+          </button>
+        </div>
+        {/* Info box removed */}
       </div>
     </div>
   );

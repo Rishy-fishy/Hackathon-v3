@@ -433,8 +433,12 @@ const Header = ({ onActiveViewChange }) => {
         </div>
       )}
 
-      {/* Profile / Auth Modal */}
-  <Modal isOpen={isModalOpen} onClose={handleCloseModal} extraClass="profile-square">
+  {/* Profile / Auth Modal */}
+  <Modal
+    isOpen={isModalOpen}
+    onClose={handleCloseModal}
+    extraClass={isAuthenticated && userInfo ? 'profile-square' : 'auth-modal'}
+  >
         {isLoading ? (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
             <div className="loading-spinner" style={{ margin: '0 auto 1rem' }}></div>

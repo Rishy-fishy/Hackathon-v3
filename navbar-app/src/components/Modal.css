@@ -30,6 +30,35 @@
 
 .modal-content.with-detail-head { padding-top:3.2rem; }
 
+/* Auth modal variant (non-square, fluid) */
+.modal-content.auth-modal{
+  width:min(92vw, 700px);
+  max-width:700px;
+  aspect-ratio:auto !important;
+  padding:2rem 2rem 1.75rem;
+}
+@media (max-width:680px){
+  .modal-content.auth-modal{ width:94vw; padding:1.6rem 1.4rem 1.4rem; }
+}
+@media (max-width:520px){
+  .modal-content.auth-modal{ width:96vw; padding:1.25rem 1rem 1.15rem; border-radius:10px; }
+}
+@media (max-width:420px){
+  .modal-content.auth-modal{ 
+    width:96vw; 
+    max-width:96vw; 
+    height:auto; 
+    max-height:calc(100vh - 1.2rem); 
+    margin:.6rem auto; 
+    padding:1rem .9rem .85rem; 
+    border-radius:12px; 
+  }
+  .modal-content.auth-modal .modal-close{ top:.55rem; right:.55rem; }
+}
+@media (max-width:360px){
+  .modal-content.auth-modal{ padding:.8rem .65rem .7rem; margin:.5rem auto; max-height:calc(100vh - 1rem); }
+}
+
 .modal-close {
   position: absolute;
   top: 1rem;
