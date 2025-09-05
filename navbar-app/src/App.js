@@ -35,10 +35,7 @@ function App() {
   if (isAdminRoute) {
     return (
       <div className="admin-standalone-page">
-        <div className="admin-standalone-bar">
-          <a href="/" className="back-home" aria-label="Back to home">← Back</a>
-          <h1>Admin Dashboard</h1>
-        </div>
+        
         <main className="admin-standalone-main" aria-label="Admin">
           <AdminPage />
         </main>
