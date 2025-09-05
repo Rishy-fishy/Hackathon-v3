@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../offline/db';
 import jsPDF from 'jspdf';
+import { IoSettingsOutline, IoNotificationsOutline, IoInformationCircleOutline, IoMoonOutline, IoSunnyOutline } from 'react-icons/io5';
 import './settings.css';
 
 const Settings = ({ onClose }) => {
@@ -191,10 +192,13 @@ const Settings = ({ onClose }) => {
     <div className="settings-container">
       <div className="settings-panel">
         <div className="settings-content">
-          {/* Appearance & Language Section */}
-          <div className="settings-section">
+          
+            {/* Appearance & Language Section */}
+            <div className="settings-section">
             <div className="section-header">
-              <div className="section-icon">⚙️</div>
+              <div className="section-icon">
+                <IoSettingsOutline />
+              </div>
               <div>
                 <h3>Appearance & Language</h3>
                 <p>Personalize your interface</p>
@@ -211,13 +215,13 @@ const Settings = ({ onClose }) => {
                   className={`theme-btn ${settings.theme === 'light' ? 'active' : ''}`}
                   onClick={() => handleSettingChange('theme', 'light')}
                 >
-                  ☀️ Light
+                  <IoSunnyOutline /> Light
                 </button>
                 <button 
                   className={`theme-btn ${settings.theme === 'dark' ? 'active' : ''}`}
                   onClick={() => handleSettingChange('theme', 'dark')}
                 >
-                  🌙 Dark
+                  <IoMoonOutline /> Dark
                 </button>
               </div>
             </div>
@@ -244,7 +248,9 @@ const Settings = ({ onClose }) => {
           {/* Notifications Section */}
           <div className="settings-section">
             <div className="section-header">
-              <div className="section-icon">🔔</div>
+              <div className="section-icon">
+                <IoNotificationsOutline />
+              </div>
               <div>
                 <h3>Notifications</h3>
                 <p>Manage your alert preferences</p>
@@ -301,7 +307,9 @@ const Settings = ({ onClose }) => {
           {/* About & Support Section */}
           <div className="settings-section">
             <div className="section-header">
-              <div className="section-icon">ℹ️</div>
+              <div className="section-icon">
+                <IoInformationCircleOutline />
+              </div>
               <div>
                 <h3>About & Support</h3>
                 <p>App information and help resources</p>
@@ -345,8 +353,9 @@ const Settings = ({ onClose }) => {
               </div>
             </div>
           </div>
+          </div>
         </div>
-      </div>
+     
     {showExportModal && (
       <div className="export-modal">
         <div className="export-dialog">

@@ -315,8 +315,11 @@ const Header = ({ onActiveViewChange }) => {
           <button
             className={`nav-btn ${activeNav==='add'?'active':''}`}
             onClick={()=>{
-              setShowChildForm(true); setShowRecords(false); setActiveNav('add');
-              onActiveViewChange && onActiveViewChange('add');
+              const nextAdd = activeNav === 'add' ? null : 'add';
+              setActiveNav(nextAdd);
+              setShowChildForm(nextAdd === 'add');
+              setShowRecords(false);
+              onActiveViewChange && onActiveViewChange(nextAdd ? 'add' : 'home');
             }}
           >Add Child</button>
           <button
@@ -329,7 +332,13 @@ const Header = ({ onActiveViewChange }) => {
           >View Data</button>
           <button
             className={`nav-btn ${activeNav==='settings'?'active':''}`}
-            onClick={()=>{ setActiveNav('settings'); setShowRecords(false); onActiveViewChange && onActiveViewChange('settings'); }}
+            onClick={()=>{ 
+              const nextSettings = activeNav === 'settings' ? null : 'settings';
+              setActiveNav(nextSettings); 
+              setShowRecords(false); 
+              setShowChildForm(false);
+              onActiveViewChange && onActiveViewChange(nextSettings ? 'settings' : 'home'); 
+            }}
           >Settings</button>
           {/* Admin button removed per request */}
           <button className="profile-btn" onClick={handleProfileClick} aria-label="Profile & Authentication">Profile</button>
@@ -344,7 +353,14 @@ const Header = ({ onActiveViewChange }) => {
           <div className="drawer-links">
             <button
               className={`drawer-link ${activeNav==='add'?'active':''}`}
-              onClick={()=>{ setShowChildForm(true); setShowRecords(false); setActiveNav('add'); onActiveViewChange && onActiveViewChange('add'); setMobileMenuOpen(false); }}
+              onClick={()=>{ 
+                const nextAdd = activeNav === 'add' ? null : 'add';
+                setActiveNav(nextAdd);
+                setShowChildForm(nextAdd === 'add');
+                setShowRecords(false); 
+                onActiveViewChange && onActiveViewChange(nextAdd ? 'add' : 'home');
+                setMobileMenuOpen(false); 
+              }}
             >Add Child</button>
             <button
               className={`drawer-link ${activeNav==='view'?'active':''}`}
@@ -352,7 +368,14 @@ const Header = ({ onActiveViewChange }) => {
             >View Data</button>
             <button
               className={`drawer-link ${activeNav==='settings'?'active':''}`}
-              onClick={()=>{ setActiveNav('settings'); setShowRecords(false); onActiveViewChange && onActiveViewChange('settings'); setMobileMenuOpen(false); }}
+              onClick={()=>{ 
+                const nextSettings = activeNav === 'settings' ? null : 'settings';
+                setActiveNav(nextSettings); 
+                setShowRecords(false); 
+                setShowChildForm(false);
+                onActiveViewChange && onActiveViewChange(nextSettings ? 'settings' : 'home'); 
+                setMobileMenuOpen(false); 
+              }}
             >Settings</button>
             {/* Admin drawer link removed per request */}
             <button className="drawer-link" onClick={()=>{ handleProfileClick(); setMobileMenuOpen(false); }}>Profile</button>

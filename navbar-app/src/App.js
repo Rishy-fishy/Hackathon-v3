@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 import  './glass.css';
 import Header from './components/Header';
+import Homepage from './components/Homepage';
 import Settings from './components/settings';
 import AuthCallback from './components/AuthCallback';
 import AuthSuccess from './components/AuthSuccess';
@@ -49,8 +50,8 @@ function App() {
     <div className="App">
       <Header onActiveViewChange={setActiveView} />
       {activeView === 'home' && (
-        <main className="main-content minimalist-main" aria-label="Main content">
-          <div className="placeholder-message">Select an option from the navigation bar to begin.</div>
+        <main className="main-content" aria-label="Main content">
+          <Homepage />
         </main>
       )}
       {activeView === 'settings' && (

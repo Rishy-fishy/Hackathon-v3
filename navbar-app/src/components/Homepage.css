@@ -1,0 +1,272 @@
+.homepage-container {
+  min-height: 100vh;
+  background: white;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+  font-family: system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+}
+
+.homepage-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Welcome Section */
+.welcome-section {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #000;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.user-profile-section {
+  flex-shrink: 0;
+}
+
+.profile-picture {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f0f0;
+}
+
+.profile-picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-initials {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  text-transform: uppercase;
+}
+
+.welcome-message {
+  flex: 1;
+  min-width: 300px;
+}
+
+.welcome-message h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #000;
+  margin: 0 0 0.5rem 0;
+}
+
+.welcome-message p {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0;
+}
+
+/* Statistics Section */
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #000;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+  color: #007bff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-content h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0 0 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #007bff;
+  margin: 0.25rem 0;
+}
+
+.stat-message {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #6c757d;
+  margin: 0.25rem 0;
+  font-style: italic;
+  letter-spacing: 0.5px;
+}
+
+.stat-content p {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+/* Instructions Section */
+.instructions-section {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #000;
+}
+
+.instructions-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.instruction-points {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.instruction-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  background: #000;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+.step-content h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: 0.5px;
+}
+
+.step-content p {
+  font-size: 0.95rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+  letter-spacing: 0.3px;
+}
+
+.overview-note {
+  margin-top: 1rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #222;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .homepage-container {
+    padding: 1rem 0.5rem;
+  }
+  
+  .welcome-section {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .welcome-message h1 {
+    font-size: 1.5rem;
+  }
+  
+  .stats-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .instruction-item {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .step-content {
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .homepage-container {
+    padding: 0.5rem;
+  }
+  
+  .welcome-section {
+    padding: 1.5rem;
+  }
+  
+  .instructions-section {
+    padding: 1.5rem;
+  }
+  
+  .profile-picture {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .profile-initials {
+    font-size: 1.2rem;
+  }
+}
