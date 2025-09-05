@@ -331,14 +331,7 @@ const Header = ({ onActiveViewChange }) => {
             className={`nav-btn ${activeNav==='settings'?'active':''}`}
             onClick={()=>{ setActiveNav('settings'); setShowRecords(false); onActiveViewChange && onActiveViewChange('settings'); }}
           >Settings</button>
-          <button
-            className={`nav-btn ${activeNav==='admin'?'active':''}`}
-            onClick={()=>{
-              // Navigate to standalone admin page route
-              window.location.href = '/admin';
-            }}
-            title="Open Admin Dashboard in full page"
-          >Admin</button>
+          {/* Admin button removed per request */}
           <button className="profile-btn" onClick={handleProfileClick} aria-label="Profile & Authentication">Profile</button>
         </nav>
   )}
@@ -361,10 +354,7 @@ const Header = ({ onActiveViewChange }) => {
               className={`drawer-link ${activeNav==='settings'?'active':''}`}
               onClick={()=>{ setActiveNav('settings'); setShowRecords(false); onActiveViewChange && onActiveViewChange('settings'); setMobileMenuOpen(false); }}
             >Settings</button>
-            <button
-              className={`drawer-link ${activeNav==='admin'?'active':''}`}
-              onClick={()=>{ setMobileMenuOpen(false); window.location.href='/admin'; }}
-            >Admin</button>
+            {/* Admin drawer link removed per request */}
             <button className="drawer-link" onClick={()=>{ handleProfileClick(); setMobileMenuOpen(false); }}>Profile</button>
           </div>
         </div>
