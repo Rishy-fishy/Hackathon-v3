@@ -5,6 +5,7 @@ import ESignetAuth from './ESignetAuth';
 import ErrorBoundary from './ErrorBoundary';
 import ChildForm from '../offline/ChildForm';
 import { listChildRecords, updateChildRecord } from '../offline/db';
+import jsPDF from 'jspdf';
 
 const Header = ({ onActiveViewChange }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,6 +69,40 @@ const Header = ({ onActiveViewChange }) => {
   const formatDateOfBirth = (record) => {
     let dobString=''; if (record.dateOfBirth) dobString=record.dateOfBirth; else if (record.ageMonths!=null){ const today=new Date(); const birth=new Date(today); birth.setMonth(birth.getMonth()-record.ageMonths); dobString=birth.toISOString().split('T')[0]; }
     if(!dobString) return '—'; return new Date(dobString).toLocaleDateString();
+  };
+  const downloadRecordPDF = () => {
+    if(!selectedRecord) return;
+    const rec = selectedRecord;
+    const doc = new jsPDF({ unit:'pt', format:'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 50;
+    const headingTitle = rec.healthId || 'Record';
+    doc.setFontSize(18); doc.setFont('helvetica','bold');
+    doc.text(headingTitle, pageWidth/2, y, { align:'center' });
+    y += 30; doc.setFont('helvetica','normal');
+    const photoW = 110, photoH = 140; const margin = 40; const photoX = pageWidth - margin - photoW; const photoY = 60;
+    doc.rect(photoX, photoY, photoW, photoH);
+    if (rec.facePhoto){
+      try {
+        let src = rec.facePhoto; const format = /png/i.test(src)?'PNG':'JPEG';
+        if(!src.startsWith('data:image')) src = `data:image/jpeg;base64,${src}`;
+        doc.addImage(src, format, photoX+1, photoY+1, photoW-2, photoH-2);
+      } catch { doc.setFontSize(9); doc.text('Photo error', photoX+photoW/2, photoY+photoH/2, {align:'center'}); }
+    } else { doc.setFontSize(9); doc.text('No Photo', photoX+photoW/2, photoY+photoH/2, {align:'center'}); }
+    doc.setFontSize(11);
+    const lineGap = 20; const labelWidth = 150; const contentWidth = pageWidth - margin*2 - photoW - 40; const valueMaxWidth = contentWidth - labelWidth;
+    const drawField = (label,value)=>{ if(y>770){ doc.addPage(); y=50; } const baseY=y; const labelText= /:$/.test(label)?label:label+':'; const val=(value&& value.toString().trim())? value.toString():'—'; doc.setFont('helvetica','bold'); doc.text(labelText, margin, baseY); doc.setFont('helvetica','normal'); const wrapped = doc.splitTextToSize(val, valueMaxWidth); doc.text(wrapped, margin + labelWidth, baseY); const lastY = baseY + (wrapped.length-1)*12; doc.setDrawColor(120); doc.setLineDash([1,2],0); doc.setLineWidth(.25); doc.line(margin, lastY+4, margin+contentWidth, lastY+4); doc.setLineDash(); y = lastY + lineGap; };
+    drawField('1. Name', rec.name);
+    drawField("2. Father's Name", rec.guardianName||rec.fatherName);
+    drawField('3. Date of Birth', formatDateOfBirth(rec));
+    drawField('4. Mobile', rec.guardianPhone||rec.mobile);
+    drawField('5. Aadhaar No.', rec.idReference||rec.aadhaar||rec.idRef);
+    drawField('6. Gender', rec.gender);
+    drawField('7. Weight (kg)', rec.weightKg!=null? rec.weightKg : (rec.weight||''));
+    drawField('8. Height (cm)', rec.heightCm!=null? rec.heightCm : (rec.height||''));
+    drawField('9. Malnutrition Signs', rec.malnutritionSigns);
+    drawField('10. Recent Illnesses', rec.recentIllnesses);
+    doc.save(`record-${rec.healthId||'data'}.pdf`);
   };
   
   // Auth check + URL payload processing
@@ -430,45 +465,34 @@ const Header = ({ onActiveViewChange }) => {
               <div className="detail-actions"></div>
             </div>
             {!editMode && (
-              <div className="detail-content redesigned-layout">
-                <div className="record-quick-layout">
-                  <div className="name-and-basic">
-                    <div className="name-pill" title="Child name">{selectedRecord.name||'—'}</div>
-                    <div className="two-box-row">
-                      <div className="mini-box" title="Age">
-                        <label>Age</label>
-                        <span>{selectedRecord.dateOfBirth 
-                          ? formatAgeFromDOB(selectedRecord.dateOfBirth)
-                          : formatAgeDisplay(selectedRecord.ageMonths)}</span>
-                      </div>
-                      <div className="mini-box" title="Gender">
-                        <label>Gender</label>
-                        <span>{selectedRecord.gender||'—'}</span>
-                      </div>
+              <div className="detail-content record-frame-mode">
+                <div className="record-biodata-frame">
+                  <div className="biodata-heading-inline">{selectedRecord.healthId}</div>
+                  <div className="record-biodata-body">
+                    <div className="biodata-photo-rect">
+                      {selectedRecord.facePhoto ? (
+                        <img src={selectedRecord.facePhoto} alt={selectedRecord.name} />
+                      ) : (
+                        <span>No Photo</span>
+                      )}
+                    </div>
+                    <div className="biodata-lines">
+                      <div><span>1. Name:</span><b>{selectedRecord.name||'—'}</b></div>
+                      <div><span>2. Father's Name:</span>{selectedRecord.guardianName||selectedRecord.fatherName||'—'}</div>
+                      <div><span>3. Date of Birth:</span>{formatDateOfBirth(selectedRecord)}</div>
+                      <div><span>4. Mobile:</span>{selectedRecord.guardianPhone||selectedRecord.mobile||'—'}</div>
+                      <div><span>5. Aadhaar No.:</span>{selectedRecord.idReference||selectedRecord.aadhaar||'—'}</div>
+                      <div><span>6. Gender:</span>{selectedRecord.gender||'—'}</div>
+                      <div><span>7. Weight (kg):</span>{selectedRecord.weightKg??selectedRecord.weight??'—'}</div>
+                      <div><span>8. Height (cm):</span>{selectedRecord.heightCm??selectedRecord.height??'—'}</div>
+                      <div><span>9. Malnutrition Signs:</span>{selectedRecord.malnutritionSigns||'—'}</div>
+                      <div><span>10. Recent Illnesses:</span>{selectedRecord.recentIllnesses||'—'}</div>
                     </div>
                   </div>
-                  {selectedRecord.facePhoto && (
-                    <div className="photo-circle-wrap">
-                      <img src={selectedRecord.facePhoto} alt={selectedRecord.name} className="photo-circle" />
-                    </div>
-                  )}
-                </div>
-                <div className="detail-grid compact-after-layout">
-                  <div><strong>Height:</strong> {selectedRecord.heightCm??'—'} cm</div>
-                  <div><strong>Weight:</strong> {selectedRecord.weightKg??'—'} kg</div>
-                  <div><strong>Date of Birth:</strong> {formatDateOfBirth(selectedRecord)}</div>
-                  <div><strong>Aadhaar ID:</strong> {selectedRecord.idReference||'—'}</div>
-                  <div><strong>Guardian:</strong> {selectedRecord.guardianName||'—'}</div>
-                  <div><strong>Phone:</strong> {selectedRecord.guardianPhone||'—'}</div>
-                  <div><strong>Relation:</strong> {selectedRecord.guardianRelation||'—'}</div>
-                  <div><strong>Status:</strong> {selectedRecord.status}</div>
-                  <div><strong>Created:</strong> {new Date(selectedRecord.createdAt).toLocaleString()}</div>
-                  {selectedRecord.uploadedAt && <div><strong>Uploaded:</strong> {new Date(selectedRecord.uploadedAt).toLocaleString()}</div>}
-                  <div className="full"><strong>Malnutrition Signs:</strong> {selectedRecord.malnutritionSigns||'N/A'}</div>
-                  <div className="full"><strong>Recent Illnesses:</strong> {selectedRecord.recentIllnesses||'N/A'}</div>
-                </div>
-                <div className="detail-bottom-actions flush">
-                  <button className="full-width-modify" type="button" onClick={()=> setEditMode(true)}>Modify</button>
+                  <div className="record-btm-actions">
+                    <button type="button" className="record-action-btn" onClick={downloadRecordPDF}>Download PDF</button>
+                    <button type="button" className="record-action-btn" onClick={()=> setEditMode(true)}>Modify</button>
+                  </div>
                 </div>
               </div>
             )}

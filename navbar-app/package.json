@@ -13,17 +13,19 @@
     "dexie": "^4.2.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^3.0.2",
     "mongodb": "^6.18.0",
     "nanoid": "^5.1.5",
-  "pdfkit": "^0.15.0",
-  "workbox-precaching": "^7.1.0",
     "node-fetch": "^2.7.0",
     "node-rsa": "^1.1.1",
+    "pdfkit": "^0.15.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "workbox-precaching": "^7.1.0"
   },
+  "jspdf": "^2.5.1",
   "scripts": {
     "start": "set PORT=3001 && react-scripts start",
     "start:windows": "set PORT=3001 && react-scripts start",

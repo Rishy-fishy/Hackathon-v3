@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { db } from '../offline/db';
+import jsPDF from 'jspdf';
 import './settings.css';
 
 const Settings = ({ onClose }) => {
@@ -25,43 +27,161 @@ const Settings = ({ onClose }) => {
     localStorage.setItem('appSettings', JSON.stringify(newSettings));
   };
 
-  const handleExportPDF = () => {
-    const records = JSON.parse(localStorage.getItem('childRecords') || '[]');
-    if (records.length === 0) {
-      alert('No records available to export');
-      return;
+  const [showExportModal,setShowExportModal] = useState(false);
+  const [searchTerm,setSearchTerm] = useState('');
+  const [searching,setSearching] = useState(false);
+  const [mergedRecord,setMergedRecord] = useState(null);
+  const API_BASE = (process.env.REACT_APP_API_BASE || (window.location.hostname==='localhost'?'http://localhost:3002':''));
+
+  const openExport = () => { setShowExportModal(true); setSearchTerm(''); setMergedRecord(null); };
+
+  async function handleSearch(e){
+    e.preventDefault();
+    if(!searchTerm.trim()) return;
+    setSearching(true); setMergedRecord(null);
+    try {
+      // Local lookup (IndexedDB)
+      let local = await db.childRecords.get(searchTerm.trim());
+      if(!local) {
+        // Try name match first in local (simple scan)
+        const all = await db.childRecords.toArray();
+        local = all.find(r => r.name && r.name.toLowerCase().startsWith(searchTerm.toLowerCase()));
+      }
+      // Remote fetch
+      let remote = null;
+      try {
+        const resp = await fetch(`${API_BASE}/api/child/search?q=${encodeURIComponent(searchTerm.trim())}`);
+        if (resp.ok) {
+          const j = await resp.json();
+            if (j.found) remote = j.record;
+        }
+      } catch {}
+      // Merge (remote wins for conflicting fields, include local-only fields)
+      const merged = remote ? { ...local, ...remote } : local;
+      // Normalize Aadhaar field naming
+      if (merged) {
+        if (!merged.aadhaar) merged.aadhaar = merged.idReference || merged.idRef || merged.id_reference || merged.aadhar || merged.aadharNumber;
+        // Also keep a normalized idReference for consistency
+        if (!merged.idReference) merged.idReference = merged.aadhaar;
+      }
+      setMergedRecord(merged||null);
+      if(!merged) alert('No matching record found locally or remotely');
+    } finally { setSearching(false); }
+  }
+
+  // Helper to extract DOB string from different possible field names and compute age
+  function getDobAndAge(rec){
+    if(!rec) return { dobDisplay:'—', ageYears:'' };
+    const candidateKeys = ['dateOfBirth','dob','DOB','birthDate','birthdate','date_of_birth','DateOfBirth'];
+    let dobStr = '';
+    for (const k of candidateKeys){ if(rec[k]) { dobStr = rec[k]; break; } }
+    // Derive from ageMonths if still missing
+    if(!dobStr && rec.ageMonths!=null){
+      const today = new Date();
+      const birth = new Date(today);
+      birth.setMonth(birth.getMonth() - Number(rec.ageMonths));
+      dobStr = birth.toISOString().split('T')[0];
     }
-    
-    // Create PDF content
-    let pdfContent = 'Child Health Records\n\n';
-    records.forEach((record, index) => {
-      pdfContent += `Record ${index + 1}:\n`;
-      pdfContent += `Name: ${record.name || 'N/A'}\n`;
-      pdfContent += `Health ID: ${record.healthId || 'N/A'}\n`;
-      pdfContent += `Gender: ${record.gender || 'N/A'}\n`;
-      pdfContent += `Date of Birth: ${record.dateOfBirth || 'N/A'}\n`;
-      pdfContent += `Weight: ${record.weightKg || 'N/A'} kg\n`;
-      pdfContent += `Height: ${record.heightCm || 'N/A'} cm\n`;
-      pdfContent += `Guardian: ${record.guardianName || 'N/A'}\n`;
-      pdfContent += `Phone: ${record.guardianPhone || 'N/A'}\n`;
-      pdfContent += `Relation: ${record.guardianRelation || 'N/A'}\n`;
-      pdfContent += `Malnutrition Signs: ${record.malnutritionSigns || 'N/A'}\n`;
-      pdfContent += `Recent Illnesses: ${record.recentIllnesses || 'N/A'}\n`;
-      pdfContent += '\n---\n\n';
-    });
-    
-    // Create and download as text file (PDF libraries would require additional setup)
-    const blob = new Blob([pdfContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `child-health-records-${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    alert('Records exported successfully!');
-  };
+    // Derive from ageYears if provided
+    if(!dobStr && rec.ageYears!=null){
+      const today = new Date();
+      const birth = new Date(today);
+      birth.setFullYear(birth.getFullYear() - Number(rec.ageYears));
+      dobStr = birth.toISOString().split('T')[0];
+    }
+    // Normalize: if in dd/mm/yyyy convert to yyyy-mm-dd for parsing
+    let isoForParse = dobStr;
+    if(/^\d{2}\/\d{2}\/\d{4}$/.test(dobStr)){
+      const [dd,mm,yyyy] = dobStr.split('/');
+      isoForParse = `${yyyy}-${mm}-${dd}`;
+    }
+    let ageYears = '';
+    if(isoForParse){
+      const d = new Date(isoForParse);
+      if(!isNaN(d.getTime())){
+        const now = new Date();
+        ageYears = Math.floor((now - d)/(365.25*24*3600*1000));
+      }
+    }
+    return { dobDisplay: dobStr || '—', ageYears };
+  }
+
+  function exportSinglePDF(){
+    if(!mergedRecord) return;
+    const doc = new jsPDF({ unit:'pt', format:'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 50;
+
+  // Title now uses Health ID (fallback to BIO-DATA FORM)
+  const headingTitle = mergedRecord.healthId || 'BIO-DATA FORM';
+  doc.setFontSize(18); doc.setFont('helvetica','bold');
+  doc.text(headingTitle, pageWidth/2, y, { align:'center' });
+    doc.setFont('helvetica','normal');
+    y += 30;
+
+    // Photo placeholder (top-right)
+    const photoW = 110, photoH = 140;
+    const margin = 40;
+    const photoX = pageWidth - margin - photoW;
+    const photoY = 60;
+    doc.rect(photoX, photoY, photoW, photoH);
+    if (mergedRecord.facePhoto) {
+      try {
+        let src = mergedRecord.facePhoto;
+        const format = /png/i.test(src) ? 'PNG' : 'JPEG';
+        if (!src.startsWith('data:image')) {
+          // assume jpeg base64 without header
+          src = `data:image/jpeg;base64,${src}`;
+        }
+        // Fit image (cover) inside box
+        doc.addImage(src, format, photoX+1, photoY+1, photoW-2, photoH-2);
+      } catch(err){
+        doc.setFontSize(9); doc.text('Photo error', photoX + photoW/2, photoY + photoH/2, {align:'center'});
+      }
+    } else {
+      doc.setFontSize(9); doc.text('No Photo', photoX + photoW/2, photoY + photoH/2, {align:'center'});
+    }
+
+    doc.setFontSize(11);
+    const lineGap = 20;
+    const labelWidth = 150;
+    const contentWidth = pageWidth - margin*2 - photoW - 40;
+    const valueMaxWidth = contentWidth - labelWidth;
+    const drawField = (label, value) => {
+      if (y > 770) { doc.addPage(); y = 50; }
+      const baseY = y;
+      const labelText = /:$/.test(label)? label : label + ':';
+      const val = (value && value.toString().trim()) ? value.toString() : '—';
+      doc.setFont('helvetica','bold'); doc.text(labelText, margin, baseY);
+      doc.setFont('helvetica','normal');
+      const wrapped = doc.splitTextToSize(val, valueMaxWidth);
+      doc.text(wrapped, margin + labelWidth, baseY);
+      const lastY = baseY + (wrapped.length-1)*12;
+      doc.setDrawColor(120); doc.setLineDash([1,2],0); doc.setLineWidth(.25);
+      doc.line(margin, lastY+4, margin + contentWidth, lastY+4);
+      doc.setLineDash();
+      y = lastY + lineGap;
+    };
+
+  // Unified numbered list including health items (Aadhaar & Health ID separated)
+  drawField('1. Name', mergedRecord.name);
+  const father = mergedRecord.fatherName || mergedRecord.guardianName;
+  drawField("2. Father's Name", father);
+  const { dobDisplay, ageYears } = getDobAndAge(mergedRecord);
+  drawField('3. Date of Birth', dobDisplay !== '—' ? `${dobDisplay}${ageYears?` (Age ${ageYears} yrs)`:''}` : null);
+  drawField('4. Mobile', mergedRecord.mobile || mergedRecord.guardianPhone);
+  drawField('5. Aadhaar No.', mergedRecord.aadhaar || mergedRecord.idReference || mergedRecord.idRef || mergedRecord.aadhar || mergedRecord.aadharNumber);
+  drawField('6. Health ID', mergedRecord.healthId);
+  drawField('7. Gender', mergedRecord.gender);
+  drawField('8. Weight (kg)', mergedRecord.weightKg!=null? mergedRecord.weightKg : (mergedRecord.weight || ''));
+  drawField('9. Height (cm)', mergedRecord.heightCm!=null? mergedRecord.heightCm : (mergedRecord.height || ''));
+  drawField('10. Malnutrition Signs', Array.isArray(mergedRecord.malnutritionSigns)? mergedRecord.malnutritionSigns.join(', ') : mergedRecord.malnutritionSigns);
+  drawField('11. Recent Illnesses', mergedRecord.recentIllnesses);
+
+    doc.save(`biodata-${mergedRecord.healthId||'record'}.pdf`);
+  }
+
+  const handleExportPDF = () => openExport();
 
   return (
     <div className="settings-container">
@@ -223,6 +343,46 @@ const Settings = ({ onClose }) => {
           </div>
         </div>
       </div>
+    {showExportModal && (
+      <div className="export-modal">
+        <div className="export-dialog">
+          <h3>Export Record</h3>
+          <form onSubmit={handleSearch} className="export-search-form">
+            <input placeholder="Enter Health ID or Name" value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} />
+            <button type="submit" disabled={searching}>{searching?'Searching...':'Search'}</button>
+            <button type="button" onClick={()=>{ setShowExportModal(false); }}>Close</button>
+          </form>
+          {mergedRecord && (
+            <div className="export-preview">
+              <h4>Preview</h4>
+              <div className="biodata-preview">
+                <div className="biodata-header">{mergedRecord.healthId || 'BIO-DATA FORM'}</div>
+                <div className="biodata-photo-box">
+                  {mergedRecord.facePhoto ? (
+                    <img src={mergedRecord.facePhoto.startsWith('data:image')? mergedRecord.facePhoto : `data:image/jpeg;base64,${mergedRecord.facePhoto}`} alt="Child" />
+                  ) : (
+                    <span>No Photo</span>
+                  )}
+                </div>
+                <div className="biodata-grid">
+                  <div><span>1. Name:</span><b>{mergedRecord.name||'—'}</b></div>
+                  <div><span>2. Father's Name:</span>{mergedRecord.fatherName || mergedRecord.guardianName || '—'}</div>
+                  <div><span>3. Date of Birth:</span>{getDobAndAge(mergedRecord).dobDisplay}</div>
+                  <div><span>4. Mobile:</span>{mergedRecord.mobile || mergedRecord.guardianPhone || '—'}</div>
+                  <div><span>5. Aadhaar No.:</span>{mergedRecord.aadhaar || mergedRecord.idReference || mergedRecord.idRef || mergedRecord.aadhar || mergedRecord.aadharNumber || '—'}</div>
+                  <div><span>6. Gender:</span>{mergedRecord.gender||'—'}</div>
+                  <div><span>7. Weight (kg):</span>{mergedRecord.weightKg??mergedRecord.weight??'—'}</div>
+                  <div><span>8. Height (cm):</span>{mergedRecord.heightCm??mergedRecord.height??'—'}</div>
+                  <div><span>9. Malnutrition Signs:</span>{Array.isArray(mergedRecord.malnutritionSigns)? mergedRecord.malnutritionSigns.join(', '):(mergedRecord.malnutritionSigns||'—')}</div>
+                  <div><span>10. Recent Illnesses:</span>{mergedRecord.recentIllnesses||'—'}</div>
+                </div>
+              </div>
+              <button onClick={exportSinglePDF}>Download PDF</button>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
     </div>
   );
 };
