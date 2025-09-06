@@ -3,6 +3,7 @@
   min-height: 100vh;
   width: 100vw;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: #f8f9fa;
@@ -21,9 +22,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  flex: 1;
   padding: clamp(1rem, 3vw, 2rem) clamp(0.5rem, 2vw, 1rem);
   box-sizing: border-box;
+}
+
+/* Admin page footer */
+.admin-standalone-page .app-footer {
+  width: 100%;
+  margin-top: auto;
+  position: relative;
+  background: rgba(255, 255, 255, 0.9);
 }
 
 /* Responsive Admin Page */
@@ -53,11 +62,31 @@
   padding: 0;
   min-height: 100vh;
   background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Footer styling */
+.app-footer {
+  margin-top: auto;
+  padding: 1rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.8);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.app-footer p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-weight: 300;
+  letter-spacing: 0.5px;
 }
 
 .main-content {
   padding: 2rem 0;
-  min-height: calc(100vh - 80px);
+  min-height: calc(100vh - 30px);
 }
 
 .content-container {
@@ -2179,6 +2208,297 @@ button:not([class*="transparent"]),
 /* Add consistent spacing between the two optional blocks */
 .child-form.wizard .step-2 .field-span-2.optional-block:first-of-type {
   margin-bottom: 2.5rem;
+}
+
+/* ================ DARK MODE BUTTON STYLES ================ */
+/* Global dark mode styles for all buttons across the app */
+
+/* Admin page buttons */
+html[data-darkreader-mode="dynamic"] .admin-login-form button,
+html[data-darkreader-mode="filter"] .admin-login-form button,
+[data-darkreader-scheme="dark"] .admin-login-form button {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .admin-login-form button:hover,
+html[data-darkreader-mode="filter"] .admin-login-form button:hover,
+[data-darkreader-scheme="dark"] .admin-login-form button:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+/* Header navigation buttons */
+html[data-darkreader-mode="dynamic"] .nav-btn,
+html[data-darkreader-mode="filter"] .nav-btn,
+[data-darkreader-scheme="dark"] .nav-btn,
+html[data-darkreader-mode="dynamic"] .profile-btn,
+html[data-darkreader-mode="filter"] .profile-btn,
+[data-darkreader-scheme="dark"] .profile-btn {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .nav-btn:hover,
+html[data-darkreader-mode="filter"] .nav-btn:hover,
+[data-darkreader-scheme="dark"] .nav-btn:hover,
+html[data-darkreader-mode="dynamic"] .profile-btn:hover,
+html[data-darkreader-mode="filter"] .profile-btn:hover,
+[data-darkreader-scheme="dark"] .profile-btn:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .nav-btn.active,
+html[data-darkreader-mode="filter"] .nav-btn.active,
+[data-darkreader-scheme="dark"] .nav-btn.active {
+  background: #4a5568 !important;
+  color: #ffffff !important;
+  border-color: #718096 !important;
+}
+
+/* Form buttons (Save, Cancel, Submit, etc.) */
+html[data-darkreader-mode="dynamic"] .save-btn,
+html[data-darkreader-mode="filter"] .save-btn,
+[data-darkreader-scheme="dark"] .save-btn,
+html[data-darkreader-mode="dynamic"] .cancel-btn,
+html[data-darkreader-mode="filter"] .cancel-btn,
+[data-darkreader-scheme="dark"] .cancel-btn,
+html[data-darkreader-mode="dynamic"] .add-actions button,
+html[data-darkreader-mode="filter"] .add-actions button,
+[data-darkreader-scheme="dark"] .add-actions button,
+html[data-darkreader-mode="dynamic"] .edit-actions button,
+html[data-darkreader-mode="filter"] .edit-actions button,
+[data-darkreader-scheme="dark"] .edit-actions button {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .save-btn:hover,
+html[data-darkreader-mode="filter"] .save-btn:hover,
+[data-darkreader-scheme="dark"] .save-btn:hover,
+html[data-darkreader-mode="dynamic"] .cancel-btn:hover,
+html[data-darkreader-mode="filter"] .cancel-btn:hover,
+[data-darkreader-scheme="dark"] .cancel-btn:hover,
+html[data-darkreader-mode="dynamic"] .add-actions button:hover,
+html[data-darkreader-mode="filter"] .add-actions button:hover,
+[data-darkreader-scheme="dark"] .add-actions button:hover,
+html[data-darkreader-mode="dynamic"] .edit-actions button:hover,
+html[data-darkreader-mode="filter"] .edit-actions button:hover,
+[data-darkreader-scheme="dark"] .edit-actions button:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+/* Mini buttons and action buttons */
+html[data-darkreader-mode="dynamic"] .mini-btn,
+html[data-darkreader-mode="filter"] .mini-btn,
+[data-darkreader-scheme="dark"] .mini-btn {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .mini-btn:hover,
+html[data-darkreader-mode="filter"] .mini-btn:hover,
+[data-darkreader-scheme="dark"] .mini-btn:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .mini-btn.primary,
+html[data-darkreader-mode="filter"] .mini-btn.primary,
+[data-darkreader-scheme="dark"] .mini-btn.primary {
+  background: #4a5568 !important;
+  color: #ffffff !important;
+  border-color: #718096 !important;
+}
+
+/* Upload and file buttons */
+html[data-darkreader-mode="dynamic"] .upload-btn,
+html[data-darkreader-mode="filter"] .upload-btn,
+[data-darkreader-scheme="dark"] .upload-btn {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .upload-btn:hover,
+html[data-darkreader-mode="filter"] .upload-btn:hover,
+[data-darkreader-scheme="dark"] .upload-btn:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+/* Generic buttons (catch-all for any missed buttons) */
+html[data-darkreader-mode="dynamic"] button:not(.theme-btn):not(.close-btn),
+html[data-darkreader-mode="filter"] button:not(.theme-btn):not(.close-btn),
+[data-darkreader-scheme="dark"] button:not(.theme-btn):not(.close-btn) {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] button:not(.theme-btn):not(.close-btn):hover,
+html[data-darkreader-mode="filter"] button:not(.theme-btn):not(.close-btn):hover,
+[data-darkreader-scheme="dark"] button:not(.theme-btn):not(.close-btn):hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+/* ================ DARK MODE FORM ELEMENTS ================ */
+/* Input fields, textareas, and form controls */
+
+/* Text inputs and textareas */
+html[data-darkreader-mode="dynamic"] input[type="text"],
+html[data-darkreader-mode="filter"] input[type="text"],
+[data-darkreader-scheme="dark"] input[type="text"],
+html[data-darkreader-mode="dynamic"] input[type="email"],
+html[data-darkreader-mode="filter"] input[type="email"],
+[data-darkreader-scheme="dark"] input[type="email"],
+html[data-darkreader-mode="dynamic"] input[type="password"],
+html[data-darkreader-mode="filter"] input[type="password"],
+[data-darkreader-scheme="dark"] input[type="password"],
+html[data-darkreader-mode="dynamic"] input[type="tel"],
+html[data-darkreader-mode="filter"] input[type="tel"],
+[data-darkreader-scheme="dark"] input[type="tel"],
+html[data-darkreader-mode="dynamic"] input[type="number"],
+html[data-darkreader-mode="filter"] input[type="number"],
+[data-darkreader-scheme="dark"] input[type="number"],
+html[data-darkreader-mode="dynamic"] textarea,
+html[data-darkreader-mode="filter"] textarea,
+[data-darkreader-scheme="dark"] textarea {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+  border-radius: 6px !important;
+}
+
+html[data-darkreader-mode="dynamic"] input[type="text"]:focus,
+html[data-darkreader-mode="filter"] input[type="text"]:focus,
+[data-darkreader-scheme="dark"] input[type="text"]:focus,
+html[data-darkreader-mode="dynamic"] input[type="email"]:focus,
+html[data-darkreader-mode="filter"] input[type="email"]:focus,
+[data-darkreader-scheme="dark"] input[type="email"]:focus,
+html[data-darkreader-mode="dynamic"] input[type="password"]:focus,
+html[data-darkreader-mode="filter"] input[type="password"]:focus,
+[data-darkreader-scheme="dark"] input[type="password"]:focus,
+html[data-darkreader-mode="dynamic"] input[type="tel"]:focus,
+html[data-darkreader-mode="filter"] input[type="tel"]:focus,
+[data-darkreader-scheme="dark"] input[type="tel"]:focus,
+html[data-darkreader-mode="dynamic"] input[type="number"]:focus,
+html[data-darkreader-mode="filter"] input[type="number"]:focus,
+[data-darkreader-scheme="dark"] input[type="number"]:focus,
+html[data-darkreader-mode="dynamic"] textarea:focus,
+html[data-darkreader-mode="filter"] textarea:focus,
+[data-darkreader-scheme="dark"] textarea:focus {
+  border-color: #718096 !important;
+  box-shadow: 0 0 0 2px rgba(113, 128, 150, 0.2) !important;
+}
+
+/* Select dropdowns */
+html[data-darkreader-mode="dynamic"] select,
+html[data-darkreader-mode="filter"] select,
+[data-darkreader-scheme="dark"] select {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+  border-radius: 6px !important;
+}
+
+html[data-darkreader-mode="dynamic"] select:focus,
+html[data-darkreader-mode="filter"] select:focus,
+[data-darkreader-scheme="dark"] select:focus {
+  border-color: #718096 !important;
+  box-shadow: 0 0 0 2px rgba(113, 128, 150, 0.2) !important;
+}
+
+/* Custom dropdown displays */
+html[data-darkreader-mode="dynamic"] .dropdown-display,
+html[data-darkreader-mode="filter"] .dropdown-display,
+[data-darkreader-scheme="dark"] .dropdown-display,
+html[data-darkreader-mode="dynamic"] .dropdown-display.large,
+html[data-darkreader-mode="filter"] .dropdown-display.large,
+[data-darkreader-scheme="dark"] .dropdown-display.large {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .dropdown-display:hover,
+html[data-darkreader-mode="filter"] .dropdown-display:hover,
+[data-darkreader-scheme="dark"] .dropdown-display:hover,
+html[data-darkreader-mode="dynamic"] .dropdown-display.large:hover,
+html[data-darkreader-mode="filter"] .dropdown-display.large:hover,
+[data-darkreader-scheme="dark"] .dropdown-display.large:hover {
+  border-color: #718096 !important;
+}
+
+/* Custom dropdown menus */
+html[data-darkreader-mode="dynamic"] .dropdown-menu,
+html[data-darkreader-mode="filter"] .dropdown-menu,
+[data-darkreader-scheme="dark"] .dropdown-menu,
+html[data-darkreader-mode="dynamic"] .dropdown-menu.wide,
+html[data-darkreader-mode="filter"] .dropdown-menu.wide,
+[data-darkreader-scheme="dark"] .dropdown-menu.wide {
+  background: #2d3748 !important;
+  border: 1px solid #4a5568 !important;
+  border-radius: 6px !important;
+}
+
+html[data-darkreader-mode="dynamic"] .dropdown-menu .dropdown-option,
+html[data-darkreader-mode="filter"] .dropdown-menu .dropdown-option,
+[data-darkreader-scheme="dark"] .dropdown-menu .dropdown-option {
+  color: #e2e8f0 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .dropdown-menu .dropdown-option:hover,
+html[data-darkreader-mode="filter"] .dropdown-menu .dropdown-option:hover,
+[data-darkreader-scheme="dark"] .dropdown-menu .dropdown-option:hover {
+  background: #4a5568 !important;
+}
+
+/* Form field containers and labels */
+html[data-darkreader-mode="dynamic"] .form-field,
+html[data-darkreader-mode="filter"] .form-field,
+[data-darkreader-scheme="dark"] .form-field {
+  background: transparent !important;
+}
+
+html[data-darkreader-mode="dynamic"] .form-field label,
+html[data-darkreader-mode="filter"] .form-field label,
+[data-darkreader-scheme="dark"] .form-field label {
+  color: #e2e8f0 !important;
+}
+
+/* Specific form controls like illness text box */
+html[data-darkreader-mode="dynamic"] .illness-box,
+html[data-darkreader-mode="filter"] .illness-box,
+[data-darkreader-scheme="dark"] .illness-box {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .illness-box:focus,
+html[data-darkreader-mode="filter"] .illness-box:focus,
+[data-darkreader-scheme="dark"] .illness-box:focus {
+  border-color: #718096 !important;
+  box-shadow: 0 0 0 2px rgba(113, 128, 150, 0.2) !important;
+}
+
+/* Placeholders */
+html[data-darkreader-mode="dynamic"] input::placeholder,
+html[data-darkreader-mode="filter"] input::placeholder,
+[data-darkreader-scheme="dark"] input::placeholder,
+html[data-darkreader-mode="dynamic"] textarea::placeholder,
+html[data-darkreader-mode="filter"] textarea::placeholder,
+[data-darkreader-scheme="dark"] textarea::placeholder {
+  color: #a0aec0 !important;
+  opacity: 1 !important;
 }
 
 

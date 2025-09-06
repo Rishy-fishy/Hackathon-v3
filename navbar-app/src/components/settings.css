@@ -215,16 +215,22 @@
   gap: 8px;
 }
 
+.theme-controls {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
 .theme-btn {
   flex: 1 1 0;
-  min-width: 120px;
-  max-width: 200px;
-  padding: 8px 0;
+  min-width: 100px;
+  max-width: 160px;
+  padding: 8px 12px;
   border: 2px solid #000;
   border-radius: 6px;
   background: white;
   color: #333;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -246,10 +252,18 @@
   border-color: #007bff;
 }
 
+/* Dark theme button */
 .theme-btn.active:nth-child(2) {
-  background: #ffc107;
-  border-color: #ffc107;
-  color: #333;
+  background: #343a40;
+  border-color: #343a40;
+  color: white;
+}
+
+/* Auto theme button */
+.theme-btn.active:nth-child(3) {
+  background: #6f42c1;
+  border-color: #6f42c1;
+  color: white;
 }
 
 .language-select {
@@ -460,9 +474,17 @@ input:checked + .toggle-slider:before {
     justify-content: flex-end;
   }
   
+  .theme-controls {
+    width: 100%;
+    flex-direction: row;
+  }
+  
   .theme-btn {
     flex: 1;
     justify-content: center;
+    min-width: 0;
+    font-size: 12px;
+    padding: 6px 8px;
   }
   
   .language-select {
@@ -492,4 +514,202 @@ input:checked + .toggle-slider:before {
     height: 36px;
     font-size: 20px;
   }
+}
+
+/* ================ DARK MODE BUTTON STYLES ================ */
+/* These styles will be applied when Dark Reader is active */
+
+/* Global button dark mode styles */
+html[data-darkreader-mode="dynamic"] .action-btn,
+html[data-darkreader-mode="filter"] .action-btn,
+[data-darkreader-scheme="dark"] .action-btn {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+  border-radius: 6px !important;
+}
+
+html[data-darkreader-mode="dynamic"] .action-btn:hover,
+html[data-darkreader-mode="filter"] .action-btn:hover,
+[data-darkreader-scheme="dark"] .action-btn:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+  transform: translateY(-1px);
+}
+
+/* Theme buttons dark mode styles */
+html[data-darkreader-mode="dynamic"] .theme-btn,
+html[data-darkreader-mode="filter"] .theme-btn,
+[data-darkreader-scheme="dark"] .theme-btn {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+  border-radius: 6px !important;
+}
+
+html[data-darkreader-mode="dynamic"] .theme-btn:hover,
+html[data-darkreader-mode="filter"] .theme-btn:hover,
+[data-darkreader-scheme="dark"] .theme-btn:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+  transform: translateY(-1px);
+}
+
+/* Active theme buttons in dark mode */
+html[data-darkreader-mode="dynamic"] .theme-btn.active,
+html[data-darkreader-mode="filter"] .theme-btn.active,
+[data-darkreader-scheme="dark"] .theme-btn.active {
+  background: #4299e1 !important;
+  color: #ffffff !important;
+  border-color: #4299e1 !important;
+}
+
+/* Export/Download buttons in dark mode */
+html[data-darkreader-mode="dynamic"] .export-btn,
+html[data-darkreader-mode="filter"] .export-btn,
+[data-darkreader-scheme="dark"] .export-btn {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .export-btn:hover,
+html[data-darkreader-mode="filter"] .export-btn:hover,
+[data-darkreader-scheme="dark"] .export-btn:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+/* Help and Contact buttons in dark mode */
+html[data-darkreader-mode="dynamic"] .help-btn,
+html[data-darkreader-mode="filter"] .help-btn,
+[data-darkreader-scheme="dark"] .help-btn,
+html[data-darkreader-mode="dynamic"] .contact-btn,
+html[data-darkreader-mode="filter"] .contact-btn,
+[data-darkreader-scheme="dark"] .contact-btn {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .help-btn:hover,
+html[data-darkreader-mode="filter"] .help-btn:hover,
+[data-darkreader-scheme="dark"] .help-btn:hover,
+html[data-darkreader-mode="dynamic"] .contact-btn:hover,
+html[data-darkreader-mode="filter"] .contact-btn:hover,
+[data-darkreader-scheme="dark"] .contact-btn:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+/* Navigation buttons (like "View Data", "Upload", etc.) */
+html[data-darkreader-mode="dynamic"] .nav-btn,
+html[data-darkreader-mode="filter"] .nav-btn,
+[data-darkreader-scheme="dark"] .nav-btn {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .nav-btn:hover,
+html[data-darkreader-mode="filter"] .nav-btn:hover,
+[data-darkreader-scheme="dark"] .nav-btn:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .nav-btn.active,
+html[data-darkreader-mode="filter"] .nav-btn.active,
+[data-darkreader-scheme="dark"] .nav-btn.active {
+  background: #4a5568 !important;
+  color: #ffffff !important;
+  border-color: #718096 !important;
+}
+
+/* Generic buttons and form buttons */
+html[data-darkreader-mode="dynamic"] button:not(.theme-btn),
+html[data-darkreader-mode="filter"] button:not(.theme-btn),
+[data-darkreader-scheme="dark"] button:not(.theme-btn) {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+  border-radius: 6px;
+}
+
+html[data-darkreader-mode="dynamic"] button:not(.theme-btn):hover,
+html[data-darkreader-mode="filter"] button:not(.theme-btn):hover,
+[data-darkreader-scheme="dark"] button:not(.theme-btn):hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+/* Modal and dialog buttons */
+html[data-darkreader-mode="dynamic"] .export-search-form button,
+html[data-darkreader-mode="filter"] .export-search-form button,
+[data-darkreader-scheme="dark"] .export-search-form button {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .export-search-form button:hover,
+html[data-darkreader-mode="filter"] .export-search-form button:hover,
+[data-darkreader-scheme="dark"] .export-search-form button:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+/* ================ DARK MODE FORM ELEMENTS ================ */
+/* Settings-specific form elements */
+
+/* Language select dropdown */
+html[data-darkreader-mode="dynamic"] .language-select,
+html[data-darkreader-mode="filter"] .language-select,
+[data-darkreader-scheme="dark"] .language-select {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .language-select:focus,
+html[data-darkreader-mode="filter"] .language-select:focus,
+[data-darkreader-scheme="dark"] .language-select:focus {
+  border-color: #718096 !important;
+  box-shadow: 0 0 0 2px rgba(113, 128, 150, 0.2) !important;
+}
+
+/* Export search form input */
+html[data-darkreader-mode="dynamic"] .export-search-form input,
+html[data-darkreader-mode="filter"] .export-search-form input,
+[data-darkreader-scheme="dark"] .export-search-form input {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .export-search-form input:focus,
+html[data-darkreader-mode="filter"] .export-search-form input:focus,
+[data-darkreader-scheme="dark"] .export-search-form input:focus {
+  border-color: #718096 !important;
+  box-shadow: 0 0 0 2px rgba(113, 128, 150, 0.2) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .export-search-form input::placeholder,
+html[data-darkreader-mode="filter"] .export-search-form input::placeholder,
+[data-darkreader-scheme="dark"] .export-search-form input::placeholder {
+  color: #a0aec0 !important;
+}
+
+/* Toggle switches (keep their original functionality but adjust colors if needed) */
+html[data-darkreader-mode="dynamic"] .toggle-switch input:checked + .toggle-slider,
+html[data-darkreader-mode="filter"] .toggle-switch input:checked + .toggle-slider,
+[data-darkreader-scheme="dark"] .toggle-switch input:checked + .toggle-slider {
+  background: #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .toggle-slider,
+html[data-darkreader-mode="filter"] .toggle-slider,
+[data-darkreader-scheme="dark"] .toggle-slider {
+  background: #2d3748 !important;
+  border: 1px solid #4a5568 !important;
 }

@@ -9,6 +9,7 @@ import AuthSuccess from './components/AuthSuccess';
 import useConnectivity from './offline/useConnectivity';
 import { startAutoSync } from './offline/sync';
 import AdminPage from './components/AdminPage';
+import { themeManager } from './utils/themeManager';
 
 function App() {
   const [activeView, setActiveView] = useState('home'); // 'home' | 'add' | 'view' | 'settings'
@@ -39,6 +40,9 @@ function App() {
         <main className="admin-standalone-main" aria-label="Admin">
           <AdminPage />
         </main>
+        <footer className="app-footer">
+          <p>Thank you for your efforts, they make a change</p>
+        </footer>
       </div>
     );
   }
@@ -56,6 +60,9 @@ function App() {
           <Settings />
         </main>
       )}
+      <footer className="app-footer">
+        <p>Thank you for your efforts, they make a change</p>
+      </footer>
     </div>
   );
 }

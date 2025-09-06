@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../offline/db';
 import jsPDF from 'jspdf';
 import { IoSettingsOutline, IoNotificationsOutline, IoInformationCircleOutline, IoMoonOutline, IoSunnyOutline } from 'react-icons/io5';
+import { themeManager } from '../utils/themeManager';
 import './settings.css';
 
 const Settings = ({ onClose }) => {
@@ -17,15 +18,80 @@ const Settings = ({ onClose }) => {
   useEffect(() => {
     const savedSettings = localStorage.getItem('appSettings');
     if (savedSettings) {
-      setSettings(prev => ({ ...prev, ...JSON.parse(savedSettings) }));
+      const parsed = JSON.parse(savedSettings);
+      console.log('Loaded settings:', parsed);
+      setSettings(prev => ({ ...prev, ...parsed }));
     }
+    
+    // Debug DarkReader availability
+    console.log('Settings component mounted, DarkReader available:', !!window.DarkReader);
   }, []);
+
+  // Apply theme changes using Dark Reader via theme manager
+  useEffect(() => {
+    themeManager.setTheme(settings.theme);
+  }, [settings.theme]);
 
   // Save settings to localStorage when settings change
   const handleSettingChange = (key, value) => {
+    console.log(`Setting ${key} to:`, value);
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
     localStorage.setItem('appSettings', JSON.stringify(newSettings));
+    
+    // Apply theme immediately if it's a theme change
+    if (key === 'theme') {
+      console.log('Applying theme:', value);
+      console.log('DarkReader available:', !!window.DarkReader);
+      
+      // Direct application as fallback if theme manager fails
+      if (window.DarkReader) {
+        try {
+          switch (value) {
+            case 'dark':
+              window.DarkReader.enable({
+                brightness: 100,
+                contrast: 90,
+                sepia: 10
+              });
+              console.log('Dark theme enabled');
+              break;
+            case 'light':
+              window.DarkReader.disable();
+              console.log('Light theme enabled');
+              break;
+            case 'auto':
+              window.DarkReader.auto({
+                brightness: 100,
+                contrast: 90,
+                sepia: 10
+              });
+              console.log('Auto theme enabled');
+              break;
+            default:
+              window.DarkReader.disable();
+          }
+        } catch (error) {
+          console.error('Error applying theme:', error);
+        }
+      } else {
+        console.warn('DarkReader not available, retrying in 1 second...');
+        setTimeout(() => {
+          if (window.DarkReader) {
+            handleSettingChange(key, value);
+          } else {
+            console.error('DarkReader still not available after retry');
+          }
+        }, 1000);
+      }
+      
+      // Also try theme manager
+      try {
+        themeManager.setTheme(value);
+      } catch (error) {
+        console.error('Theme manager error:', error);
+      }
+    }
   };
 
   const [showExportModal,setShowExportModal] = useState(false);
@@ -208,21 +274,41 @@ const Settings = ({ onClose }) => {
             <div className="setting-row">
               <div className="setting-info">
                 <h4>Theme</h4>
-                <p>Switch between light and dark mode</p>
+                <p>Switch between light, dark, or auto mode</p>
+                <small style={{color: '#666', fontSize: '0.75rem'}}>
+                  Current: {settings.theme} 
+                </small>
               </div>
               <div className="setting-controls">
-                <button 
-                  className={`theme-btn ${settings.theme === 'light' ? 'active' : ''}`}
-                  onClick={() => handleSettingChange('theme', 'light')}
-                >
-                  <IoSunnyOutline /> Light
-                </button>
-                <button 
-                  className={`theme-btn ${settings.theme === 'dark' ? 'active' : ''}`}
-                  onClick={() => handleSettingChange('theme', 'dark')}
-                >
-                  <IoMoonOutline /> Dark
-                </button>
+                <div className="theme-controls">
+                  <button 
+                    className={`theme-btn ${settings.theme === 'light' ? 'active' : ''}`}
+                    onClick={() => {
+                      console.log('Light theme clicked');
+                      handleSettingChange('theme', 'light');
+                    }}
+                  >
+                    <IoSunnyOutline /> Light
+                  </button>
+                  <button 
+                    className={`theme-btn ${settings.theme === 'dark' ? 'active' : ''}`}
+                    onClick={() => {
+                      console.log('Dark theme clicked');
+                      handleSettingChange('theme', 'dark');
+                    }}
+                  >
+                    <IoMoonOutline /> Dark
+                  </button>
+                  <button 
+                    className={`theme-btn ${settings.theme === 'auto' ? 'active' : ''}`}
+                    onClick={() => {
+                      console.log('Auto theme clicked');
+                      handleSettingChange('theme', 'auto');
+                    }}
+                  >
+                    <IoSettingsOutline /> Auto
+                  </button>
+                </div>
               </div>
             </div>
 

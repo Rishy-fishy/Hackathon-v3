@@ -11,7 +11,7 @@
   overflow-x: hidden; 
   box-sizing: border-box; 
 }
-.bw-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; padding:.75rem 1rem; max-width:100%; overflow:hidden; box-sizing:border-box; }
+.bw-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; padding:.25rem 1rem; max-width:100%; overflow:hidden; box-sizing:border-box; }
 .brand-block { display:flex; align-items:baseline; gap:1rem; }
 .app-title { margin:0; font-size:1.15rem; font-weight:700; letter-spacing:.5px; color:#000; cursor:pointer; user-select:none; }
 .app-title:active { opacity:0.8; }
@@ -823,4 +823,191 @@ margin: auto;
 @media (max-width:480px){
   .bw-bar { flex-direction:column; align-items:stretch; }
   .brand-block { width:100%; justify-content:space-between; }
+}
+
+/* ================ DARK MODE BUTTON STYLES ================ */
+/* Header-specific dark mode button styles */
+
+html[data-darkreader-mode="dynamic"] .nav-btn,
+html[data-darkreader-mode="filter"] .nav-btn,
+[data-darkreader-scheme="dark"] .nav-btn,
+html[data-darkreader-mode="dynamic"] .profile-btn,
+html[data-darkreader-mode="filter"] .profile-btn,
+[data-darkreader-scheme="dark"] .profile-btn {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .nav-btn:hover,
+html[data-darkreader-mode="filter"] .nav-btn:hover,
+[data-darkreader-scheme="dark"] .nav-btn:hover,
+html[data-darkreader-mode="dynamic"] .profile-btn:hover,
+html[data-darkreader-mode="filter"] .profile-btn:hover,
+[data-darkreader-scheme="dark"] .profile-btn:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .nav-btn.active,
+html[data-darkreader-mode="filter"] .nav-btn.active,
+[data-darkreader-scheme="dark"] .nav-btn.active {
+  background: #4a5568 !important;
+  color: #ffffff !important;
+  border-color: #718096 !important;
+}
+
+/* Upload button dark mode */
+html[data-darkreader-mode="dynamic"] .upload-btn,
+html[data-darkreader-mode="filter"] .upload-btn,
+[data-darkreader-scheme="dark"] .upload-btn {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .upload-btn:hover,
+html[data-darkreader-mode="filter"] .upload-btn:hover,
+[data-darkreader-scheme="dark"] .upload-btn:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .upload-btn:active,
+html[data-darkreader-mode="filter"] .upload-btn:active,
+[data-darkreader-scheme="dark"] .upload-btn:active {
+  background: #4a5568 !important;
+  color: #ffffff !important;
+}
+
+/* Mini buttons in dark mode */
+html[data-darkreader-mode="dynamic"] .mini-btn,
+html[data-darkreader-mode="filter"] .mini-btn,
+[data-darkreader-scheme="dark"] .mini-btn {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .mini-btn:hover,
+html[data-darkreader-mode="filter"] .mini-btn:hover,
+[data-darkreader-scheme="dark"] .mini-btn:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .mini-btn.primary,
+html[data-darkreader-mode="filter"] .mini-btn.primary,
+[data-darkreader-scheme="dark"] .mini-btn.primary {
+  background: #4a5568 !important;
+  color: #ffffff !important;
+  border-color: #718096 !important;
+}
+
+/* Logout button dark mode */
+html[data-darkreader-mode="dynamic"] .logout-btn,
+html[data-darkreader-mode="filter"] .logout-btn,
+[data-darkreader-scheme="dark"] .logout-btn,
+html[data-darkreader-mode="dynamic"] .logout-btn.button,
+html[data-darkreader-mode="filter"] .logout-btn.button,
+[data-darkreader-scheme="dark"] .logout-btn.button,
+html[data-darkreader-mode="dynamic"] .logout-btn.sketch,
+html[data-darkreader-mode="filter"] .logout-btn.sketch,
+[data-darkreader-scheme="dark"] .logout-btn.sketch {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .logout-btn:hover,
+html[data-darkreader-mode="filter"] .logout-btn:hover,
+[data-darkreader-scheme="dark"] .logout-btn:hover,
+html[data-darkreader-mode="dynamic"] .logout-btn.button:hover,
+html[data-darkreader-mode="filter"] .logout-btn.button:hover,
+[data-darkreader-scheme="dark"] .logout-btn.button:hover,
+html[data-darkreader-mode="dynamic"] .logout-btn.sketch:hover,
+html[data-darkreader-mode="filter"] .logout-btn.sketch:hover,
+[data-darkreader-scheme="dark"] .logout-btn.sketch:hover {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+/* ================ DARK MODE FORM ELEMENTS ================ */
+/* Header/Modal-specific form elements */
+
+/* Record form inputs */
+html[data-darkreader-mode="dynamic"] .record-form input,
+html[data-darkreader-mode="filter"] .record-form input,
+[data-darkreader-scheme="dark"] .record-form input,
+html[data-darkreader-mode="dynamic"] .record-form select,
+html[data-darkreader-mode="filter"] .record-form select,
+[data-darkreader-scheme="dark"] .record-form select,
+html[data-darkreader-mode="dynamic"] .record-form textarea,
+html[data-darkreader-mode="filter"] .record-form textarea,
+[data-darkreader-scheme="dark"] .record-form textarea,
+html[data-darkreader-mode="dynamic"] .record-edit-form input,
+html[data-darkreader-mode="filter"] .record-edit-form input,
+[data-darkreader-scheme="dark"] .record-edit-form input,
+html[data-darkreader-mode="dynamic"] .record-edit-form select,
+html[data-darkreader-mode="filter"] .record-edit-form select,
+[data-darkreader-scheme="dark"] .record-edit-form select,
+html[data-darkreader-mode="dynamic"] .record-edit-form textarea,
+html[data-darkreader-mode="filter"] .record-edit-form textarea,
+[data-darkreader-scheme="dark"] .record-edit-form textarea {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .record-form input:focus,
+html[data-darkreader-mode="filter"] .record-form input:focus,
+[data-darkreader-scheme="dark"] .record-form input:focus,
+html[data-darkreader-mode="dynamic"] .record-form select:focus,
+html[data-darkreader-mode="filter"] .record-form select:focus,
+[data-darkreader-scheme="dark"] .record-form select:focus,
+html[data-darkreader-mode="dynamic"] .record-form textarea:focus,
+html[data-darkreader-mode="filter"] .record-form textarea:focus,
+[data-darkreader-scheme="dark"] .record-form textarea:focus,
+html[data-darkreader-mode="dynamic"] .record-edit-form input:focus,
+html[data-darkreader-mode="filter"] .record-edit-form input:focus,
+[data-darkreader-scheme="dark"] .record-edit-form input:focus,
+html[data-darkreader-mode="dynamic"] .record-edit-form select:focus,
+html[data-darkreader-mode="filter"] .record-edit-form select:focus,
+[data-darkreader-scheme="dark"] .record-edit-form select:focus,
+html[data-darkreader-mode="dynamic"] .record-edit-form textarea:focus,
+html[data-darkreader-mode="filter"] .record-edit-form textarea:focus,
+[data-darkreader-scheme="dark"] .record-edit-form textarea:focus {
+  border-color: #718096 !important;
+  box-shadow: 0 0 0 2px rgba(113, 128, 150, 0.2) !important;
+}
+
+/* Form labels */
+html[data-darkreader-mode="dynamic"] .record-form label,
+html[data-darkreader-mode="filter"] .record-form label,
+[data-darkreader-scheme="dark"] .record-form label,
+html[data-darkreader-mode="dynamic"] .record-edit-form label,
+html[data-darkreader-mode="filter"] .record-edit-form label,
+[data-darkreader-scheme="dark"] .record-edit-form label {
+  color: #e2e8f0 !important;
+}
+
+/* Switch buttons (toggle controls) */
+html[data-darkreader-mode="dynamic"] .switch-btn,
+html[data-darkreader-mode="filter"] .switch-btn,
+[data-darkreader-scheme="dark"] .switch-btn {
+  background: #2d3748 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .switch-btn.on,
+html[data-darkreader-mode="filter"] .switch-btn.on,
+[data-darkreader-scheme="dark"] .switch-btn.on {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .switch-btn .knob,
+html[data-darkreader-mode="filter"] .switch-btn .knob,
+[data-darkreader-scheme="dark"] .switch-btn .knob {
+  background: #e2e8f0 !important;
 }
