@@ -74,12 +74,14 @@ async function registerClient() {
     const clientConfig = JSON.parse(fs.readFileSync('./client-config.json', 'utf8'));
     console.log('📋 Client ID:', clientConfig.clientId);
 
-    // Rebuild registration request if missing / empty
-    const registrationRequest = buildRegistrationRequest(clientConfig);
+  // Rebuild registration request if missing / empty
+  const registrationRequest = buildRegistrationRequest(clientConfig);
+  // Always refresh requestTime to current ISO time to satisfy server validation
+  registrationRequest.requestTime = new Date().toISOString();
 
     // Persist rebuilt request (so future runs reuse)
     clientConfig.registrationRequest = registrationRequest;
-    fs.writeFileSync('./client-config.json', JSON.stringify(clientConfig, null, 2));
+  fs.writeFileSync('./client-config.json', JSON.stringify(clientConfig, null, 2));
 
     // Obtain CSRF token (although /client-mgmt/** is configured to ignore CSRF, keeping for completeness)
     console.log('�  Getting CSRF token...');

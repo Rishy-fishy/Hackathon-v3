@@ -10,6 +10,55 @@ const Homepage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
+    // Helper: decode base64url string
+    const base64UrlDecode = (str) => {
+      try {
+        return atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+      } catch {
+        return null;
+      }
+    };
+
+    // Process auth payload from URL hash or query and persist to sessionStorage
+    const processAuthFromURL = () => {
+      try {
+        let params = new URLSearchParams(window.location.search);
+        let authPayloadB64 = params.get('auth_payload');
+        if (!authPayloadB64 && window.location.hash.startsWith('#')) {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          authPayloadB64 = hashParams.get('auth_payload');
+          if (authPayloadB64) params = hashParams; // operate on hash params if present
+        }
+        if (authPayloadB64) {
+          const jsonStr = base64UrlDecode(authPayloadB64);
+          if (jsonStr) {
+            try {
+              const payload = JSON.parse(jsonStr);
+              if (payload.userInfo) {
+                sessionStorage.setItem('esignet_authenticated', 'true');
+                sessionStorage.setItem('esignet_user', JSON.stringify(payload.userInfo));
+                sessionStorage.setItem('auth_timestamp', Date.now().toString());
+                if (payload.access_token) sessionStorage.setItem('raw_esignet_access_token', payload.access_token);
+                setUserInfo(payload.userInfo);
+                setIsAuthenticated(true);
+              }
+            } catch {}
+          }
+          // Clean URL fragment/query
+          params.delete('auth_payload');
+          if (window.location.hash && window.location.hash.includes('auth_payload')) {
+            const newHashParams = new URLSearchParams(params.toString());
+            window.history.replaceState({}, document.title, window.location.pathname + (newHashParams.toString() ? ('#' + newHashParams.toString()) : ''));
+          } else {
+            window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? ('?' + params.toString()) : ''));
+          }
+        }
+      } catch {}
+    };
+
+    // Handle auth payload if present
+    processAuthFromURL();
+
     // Get user info from session/local storage
     const esignetUser = sessionStorage.getItem('esignet_user');
     const legacyUser = localStorage.getItem('user_info');
@@ -50,6 +99,37 @@ const Homepage = () => {
 
     // Always load stats regardless of authentication status
     loadStats();
+
+    // Re-check shortly after mount in case another component (Header) stores auth a tick later
+    const t = setTimeout(() => {
+      try {
+        const esignetUser2 = sessionStorage.getItem('esignet_user');
+        const esignetAuth2 = sessionStorage.getItem('esignet_authenticated') === 'true';
+        if (esignetUser2 && esignetAuth2) {
+          setUserInfo(JSON.parse(esignetUser2));
+          setIsAuthenticated(true);
+        }
+      } catch {}
+    }, 300);
+
+    // Update if hash changes (e.g., when returning from callback)
+    const onHashChange = () => {
+      processAuthFromURL();
+      try {
+        const esignetUser3 = sessionStorage.getItem('esignet_user');
+        const esignetAuth3 = sessionStorage.getItem('esignet_authenticated') === 'true';
+        if (esignetUser3 && esignetAuth3) {
+          setUserInfo(JSON.parse(esignetUser3));
+          setIsAuthenticated(true);
+        }
+      } catch {}
+    };
+    window.addEventListener('hashchange', onHashChange);
+
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('hashchange', onHashChange);
+    };
   }, []);
 
   const getWelcomeMessage = () => {

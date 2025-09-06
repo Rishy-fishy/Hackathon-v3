@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+Dockerfile*
+build
+src
+public
+scripts
+README.md
+.eslintrc*
+.git
+.gitignore
+**/*.map
+**/*.test.*
+*.md
