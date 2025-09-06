@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './ESignetAuth.css';
 
 const ESignetAuth = () => {
@@ -13,11 +13,14 @@ const ESignetAuth = () => {
   // what the backend callback server listens on for performing the code -> token exchange.
   // We standardize on http://localhost:5000/callback (node callback-server.js) then it
   // forwards the browser back to the React app at /?authenticated=true after storing tokens.
+  // Build OIDC config dynamically using backend metadata for client_id
+  const [clientId, setClientId] = useState(null);
+  const [authorizeUri, setAuthorizeUri] = useState('http://34.58.198.143:3000/authorize');
   const oidcConfig = {
     acr_values: 'mosip:idp:acr:generated-code',
-    authorizeUri: 'http://localhost:3000/authorize',
+    authorizeUri,
     claims_locales: 'en',
-    client_id: 'JsiOipZtz8v0Q6JWzlQUuloVeWJF2hH_hUKKzSAp6j8',
+    client_id: clientId || '',
     display: 'page',
     max_age: 600,
     prompt: 'consent',
@@ -59,7 +62,7 @@ const ESignetAuth = () => {
   };
 
   // Initialize the eSignet button
-  const initializeESignetButton = async () => {
+  const initializeESignetButton = useCallback(async () => {
     // Prevent multiple initializations
     if (initializationRef.current) {
       return;
@@ -90,7 +93,7 @@ const ESignetAuth = () => {
       });
 
       // Wrap the anchor click to inject state + nonce BEFORE redirect if plugin does not manage them.
-      const anchor = container.querySelector('a[href]');
+  const anchor = container.querySelector('a[href]');
       if (anchor) {
         anchor.addEventListener('click', (e) => {
           try {
@@ -102,13 +105,14 @@ const ESignetAuth = () => {
 
             const original = anchor.getAttribute('href');
             if (original) {
-              const url = new URL(original);
+      // Accept relative or absolute URLs
+      const url = new URL(original, window.location.origin);
               // Only add if absent (avoid double appending on retries)
               if (!url.searchParams.get('state')) url.searchParams.set('state', state);
               if (!url.searchParams.get('nonce')) url.searchParams.set('nonce', nonce);
               // If dynamic client_id differs from existing param (e.g., placeholder), replace it
               // Ensure correct client_id present
-              if (url.searchParams.get('client_id') !== oidcConfig.client_id) {
+      if (oidcConfig.client_id && url.searchParams.get('client_id') !== oidcConfig.client_id) {
                 url.searchParams.set('client_id', oidcConfig.client_id);
               }
               anchor.setAttribute('href', url.toString());
@@ -141,7 +145,7 @@ const ESignetAuth = () => {
       setError(err.message);
       setIsLoading(false);
     }
-  };
+  }, [authorizeUri, clientId]);
 
   // Generate random string for state/nonce
   const generateRandomString = (length = 32) => {
@@ -151,10 +155,33 @@ const ESignetAuth = () => {
   };
 
   // Initialize on component mount
+  // Fetch client metadata; only initialize after clientId is available
   useEffect(() => {
-    const t = setTimeout(() => initializeESignetButton(), 50);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch('http://localhost:5000/client-meta');
+        if (!r.ok) throw new Error('client-meta fetch failed');
+        const meta = await r.json();
+        if (!cancelled) {
+          if (meta?.clientId) setClientId(meta.clientId);
+          if (meta?.authorizeUri) setAuthorizeUri(meta.authorizeUri);
+        }
+      } catch (e) {
+        // Leave clientId null; the button will not activate
+        console.warn('client-meta unavailable, deferring init');
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
+
+  // Initialize when we have a clientId
+  useEffect(() => {
+    if (clientId) {
+      const t = setTimeout(() => initializeESignetButton(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [clientId, initializeESignetButton]);
 
   // Retry initialization if it failed
   const handleRetry = () => {
@@ -172,7 +199,15 @@ const ESignetAuth = () => {
 
       <div className="auth-content">
         <div className="esignet-button-wrapper">
-          <div className="esignet-button-container" ref={buttonContainerRef}></div>
+          {/* Render the plugin container only when clientId is available */}
+          {clientId ? (
+            <div className="esignet-button-container" ref={buttonContainerRef}></div>
+          ) : (
+            <div className="loading-placeholder">
+              <div className="loading-spinner"></div>
+              <p>Preparing e-Signet…</p>
+            </div>
+          )}
         </div>
 
         {isLoading && (

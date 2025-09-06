@@ -146,8 +146,8 @@ app.get('/callback', async (req, res) => {
     // Exchange authorization code for tokens
     console.log('🔄 Exchanging authorization code for tokens...');
     
-    const clientId = clientConfig.clientId;
-    const tokenEndpoint = 'http://localhost:8088/v1/esignet/oauth/v2/token';
+  const clientId = clientConfig.clientId;
+  const tokenEndpoint = `${clientConfig.baseURL}/v1/esignet/oauth/v2/token`;
     
     // Generate JWT client assertion
     const clientAssertion = generateClientAssertion(clientId, tokenEndpoint);
@@ -241,9 +241,9 @@ app.get('/callback', async (req, res) => {
 
     // Get user info (may be raw JSON or signed JWS per additionalConfig.userinfo_response_type)
     let userInfo = null;
-    if (tokens.access_token) {
+  if (tokens.access_token) {
       try {
-        const userResponse = await fetch('http://localhost:8088/v1/esignet/oidc/userinfo', {
+    const userResponse = await fetch(`${clientConfig.baseURL}/v1/esignet/oidc/userinfo`, {
           headers: { 'Authorization': `Bearer ${tokens.access_token}` }
         });
         if (userResponse.ok) {
@@ -456,7 +456,7 @@ app.get('/health', (req, res) => {
 app.get('/client-meta', (req, res) => {
   res.json({
     clientId: clientConfig.clientId,
-    authorizeUri: 'http://localhost:3000/authorize',
+  authorizeUri: 'http://34.58.198.143:3000/authorize',
     redirect_uri: clientConfig.redirectUri
   });
 });
