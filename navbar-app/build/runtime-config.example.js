@@ -3,7 +3,3 @@
 // Example deployment URL: https://navbar-backend-direct-xxxxxxxxxx-uc.a.run.app
 // IMPORTANT: no trailing slash.
 window.__API_BASE = 'https://YOUR-CLOUD-RUN-BACKEND-URL';
-// Callback server base (used by ESignetAuth to query /client-meta)
-window.RUNTIME_CONFIG = Object.assign({}, window.RUNTIME_CONFIG || {}, {
-	CALLBACK_BASE: 'http://localhost:5000'
-});

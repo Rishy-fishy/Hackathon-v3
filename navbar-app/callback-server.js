@@ -146,8 +146,8 @@ app.get('/callback', async (req, res) => {
     // Exchange authorization code for tokens
     console.log('🔄 Exchanging authorization code for tokens...');
     
-  const clientId = clientConfig.clientId;
-  const tokenEndpoint = `${clientConfig.baseURL}/v1/esignet/oauth/v2/token`;
+    const clientId = clientConfig.clientId;
+    const tokenEndpoint = 'http://localhost:8088/v1/esignet/oauth/v2/token';
     
     // Generate JWT client assertion
     const clientAssertion = generateClientAssertion(clientId, tokenEndpoint);
@@ -241,9 +241,9 @@ app.get('/callback', async (req, res) => {
 
     // Get user info (may be raw JSON or signed JWS per additionalConfig.userinfo_response_type)
     let userInfo = null;
-  if (tokens.access_token) {
+    if (tokens.access_token) {
       try {
-    const userResponse = await fetch(`${clientConfig.baseURL}/v1/esignet/oidc/userinfo`, {
+        const userResponse = await fetch('http://localhost:8088/v1/esignet/oidc/userinfo', {
           headers: { 'Authorization': `Bearer ${tokens.access_token}` }
         });
         if (userResponse.ok) {
@@ -278,15 +278,82 @@ app.get('/callback', async (req, res) => {
     };
     const forwardB64 = Buffer.from(JSON.stringify(forwardPayload)).toString('base64url');
 
-  // Prefer an immediate 302 redirect to the SPA with payload in hash
-  const target = `http://localhost:3001/#auth_payload=${forwardB64}&authenticated=true`;
-  return res.redirect(302, target);
+    // Create success HTML page that immediately redirects with base64 payload (auth_payload) to React app
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <title>Authentication Success</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; }
+            .success { color: #28a745; }
+            .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          </style>
+      </head>
+      <body>
+          <div class="spinner"></div>
+          <h2 class="success">✅ Authentication Successful!</h2>
+          <p>Storing your profile information...</p>
+          <script>
+            try {
+              console.log('Preparing redirect with encoded auth payload...');
+              // Use hash fragment instead of query params to avoid very long request lines causing 431 errors
+              const target = 'http://localhost:3001/#auth_payload=${forwardB64}&authenticated=true';
+              // small delay so user sees success state briefly
+              setTimeout(()=>{ window.location.replace(target); }, 600);
+              
+            } catch (error) {
+              console.error('❌ Error storing authentication data:', error);
+              // Fallback redirect with code for React app to handle
+              window.location.href = 'http://localhost:3001/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || '')}';
+            }
+          </script>
+      </body>
+      </html>
+    `;
+
+    res.send(html);
 
   } catch (error) {
     console.error('❌ Callback processing error:', error);
     
-  // Redirect directly back to SPA home on error
-  return res.redirect(302, 'http://localhost:3001/?auth_error=1');
+    // Create error HTML page
+    const errorHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <title>Authentication Error</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; }
+            .error { color: #dc3545; }
+            .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #dc3545; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          </style>
+      </head>
+      <body>
+          <div class="spinner"></div>
+          <h2 class="error">❌ Login Failed</h2>
+          <p>Authentication error occurred. Please try again.</p>
+          <script>
+            // Clean up any stored data
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('id_token');
+            localStorage.removeItem('user_info');
+            localStorage.removeItem('is_authenticated');
+            localStorage.removeItem('auth_timestamp');
+            localStorage.removeItem('auth_method');
+            
+            // Redirect back to app
+            setTimeout(() => {
+              window.location.href = 'http://localhost:3001/';
+            }, 2000);
+          </script>
+      </body>
+      </html>
+    `;
+    
+    res.send(errorHtml);
   }
 });
 
@@ -389,7 +456,7 @@ app.get('/health', (req, res) => {
 app.get('/client-meta', (req, res) => {
   res.json({
     clientId: clientConfig.clientId,
-  authorizeUri: 'http://34.58.198.143:3000/authorize',
+    authorizeUri: 'http://localhost:3000/authorize',
     redirect_uri: clientConfig.redirectUri
   });
 });

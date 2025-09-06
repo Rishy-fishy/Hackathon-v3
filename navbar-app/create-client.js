@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const fetch = require('node-fetch');
 
 // Generate RSA key pair
 console.log('🔑 Generating RSA key pair...');
@@ -43,11 +44,6 @@ console.log('📝 Generated Client ID:', clientId);
 console.log('🔧 Public Key JWK:', JSON.stringify(publicKeyJWK, null, 2));
 
 // Create OIDC client registration request
-const CLOUD_CALLBACK_BASE = process.env.CLOUD_CALLBACK_BASE || null;
-const redirectUris = [ 'http://localhost:5000/callback' ];
-if (CLOUD_CALLBACK_BASE) redirectUris.push(`${CLOUD_CALLBACK_BASE.replace(/\/$/, '')}/callback`);
-// de-duplicate
-const uniqueRedirects = Array.from(new Set(redirectUris));
 const registrationRequest = {
   requestTime: new Date().toISOString(),
   request: {
@@ -68,8 +64,11 @@ const registrationRequest = {
       'mosip:idp:acr:password',
       'mosip:idp:acr:linked-wallet'
     ],
-  logoUri: 'https://via.placeholder.com/150',
-  redirectUris: uniqueRedirects,
+    logoUri: 'https://via.placeholder.com/150',
+    redirectUris: [
+      'http://localhost:5000/callback',
+  'http://localhost:5000/callback'
+    ],
     grantTypes: ['authorization_code'],
     clientAuthMethods: ['private_key_jwt'],
     additionalConfig: {
