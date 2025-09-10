@@ -151,25 +151,17 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
-        
-        <div className="page-title">
-          <h1>Child Records Management</h1>
-          <p>Manage and View Child Health Records</p>
-        </div>
       </div>
 
       <div className="admin-content">
         <div className="content-header">
-          <h2>Dashboard Overview</h2>
+          <h2> Overview</h2>
           <div className="refresh-section">
             <button onClick={fetchStats} disabled={loading} className="refresh-btn">
               {loading ? 'Loading...' : '🔄 Refresh'}
             </button>
           </div>
         </div>
-
-        {loading && <div className="loading-spinner">Loading...</div>}
-        {error && <div className="error-message" role="alert">{error}</div>}
 
         {stats && (
           <div className="dashboard-stats">
