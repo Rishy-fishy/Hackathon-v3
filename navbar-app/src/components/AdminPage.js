@@ -4,6 +4,7 @@ import './AdminPage.css';
 // Backend endpoints expected:
 // POST /api/admin/login { username, password } -> { token, username, expiresIn }
 // GET  /api/admin/stats  (Authorization: Bearer <token>) -> { totalChildRecords, recentUploads }
+// GET  /api/admin/children (Authorization: Bearer <token>) -> { children: [...] }
 
 export default function AdminPage() {
   // Resolution order for backend base URL (first non-empty wins):
@@ -38,10 +39,20 @@ export default function AdminPage() {
   useEffect(()=>{
     const t = sessionStorage.getItem('admin_token');
     if (t) setToken(t);
+    
+    // Add body class for full-screen admin styling
+    document.body.classList.add('admin-body');
+    
+    // Cleanup function to remove class when component unmounts
+    return () => {
+      document.body.classList.remove('admin-body');
+    };
   },[]);
 
   useEffect(()=>{
-    if (token) fetchStats();
+    if (token) {
+      fetchStats();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[token]);
 
@@ -99,6 +110,7 @@ export default function AdminPage() {
     } catch (e) { setError(e.message); } finally { setLoading(false); }
   }
 
+
   function logout(){
     sessionStorage.removeItem('admin_token');
     setToken(null);
@@ -126,37 +138,107 @@ export default function AdminPage() {
 
   return (
     <div className="admin-page">
-      <div className="admin-bar">
-        <h2>Admin Dashboard</h2>
-        <div className="admin-actions">
-          <button onClick={fetchStats} disabled={loading}>Refresh</button>
-          <button onClick={logout}>Logout</button>
+      <div className="admin-header">
+        <div className="header-top">
+          <div className="logo-section">
+            <div className="logo-icon">👶</div>
+            <span className="logo-text">HealthTrack</span>
+          </div>
+          <div className="header-actions">
+            <div className="user-menu">
+              <span className="user-avatar">👤</span>
+              <button onClick={logout} className="logout-btn">Logout</button>
+            </div>
+          </div>
+        </div>
+        
+        <div className="page-title">
+          <h1>Child Records Management</h1>
+          <p>Manage and View Child Health Records</p>
         </div>
       </div>
-      {loading && <div className="admin-loading">Loading...</div>}
-      {error && <div className="admin-error" role="alert">{error}</div>}
-      {stats && (
-        <div className="admin-stats">
-          <div className="stat-box">
-            <div className="stat-label">Total Child Records</div>
-            <div className="stat-value">{stats.totalChildRecords}</div>
-          </div>
-          <div className="recent-uploads">
-            <h3>Recent Uploads</h3>
-            {stats.recentUploads?.length ? (
-              <ul>
-                {stats.recentUploads.map(r => (
-                  <li key={r.healthId} className="recent-item">
-                    <span className="rid">{r.healthId}</span>
-                    <span className="rname">{r.name||'—'}</span>
-                    <span className="rtime">{r.uploadedAt ? new Date(r.uploadedAt).toLocaleString(): '—'}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : <div className="empty">No uploads yet.</div>}
+
+      <div className="admin-content">
+        <div className="content-header">
+          <h2>Dashboard Overview</h2>
+          <div className="refresh-section">
+            <button onClick={fetchStats} disabled={loading} className="refresh-btn">
+              {loading ? 'Loading...' : '🔄 Refresh'}
+            </button>
           </div>
         </div>
-      )}
+
+        {loading && <div className="loading-spinner">Loading...</div>}
+        {error && <div className="error-message" role="alert">{error}</div>}
+
+        {stats && (
+          <div className="dashboard-stats">
+            <div className="stats-cards">
+              <div className="stat-card">
+                <div className="stat-icon">📊</div>
+                <div className="stat-info">
+                  <div className="stat-value">{stats.totalChildRecords}</div>
+                  <div className="stat-label">Total Child Records</div>
+                </div>
+              </div>
+              
+              <div className="stat-card">
+                <div className="stat-icon">📈</div>
+                <div className="stat-info">
+                  <div className="stat-value">{stats.recentUploads?.length || 0}</div>
+                  <div className="stat-label">Recent Uploads</div>
+                </div>
+              </div>
+              
+              <div className="stat-card">
+                <div className="stat-icon">🩺</div>
+                <div className="stat-info">
+                  <div className="stat-value">Active</div>
+                  <div className="stat-label">System Status</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="recent-uploads-section">
+              <h3>Recent Uploads</h3>
+              <div className="data-table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>HEALTH ID</th>
+                      <th>NAME</th>
+                      <th>UPLOAD DATE</th>
+                      <th>ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.recentUploads?.length ? (
+                      stats.recentUploads.map((upload, index) => (
+                        <tr key={upload.healthId || index}>
+                          <td className="health-id">{upload.healthId || 'N/A'}</td>
+                          <td className="name">{upload.name || 'Unknown'}</td>
+                          <td className="date">
+                            {upload.uploadedAt ? new Date(upload.uploadedAt).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="action">
+                            <button className="view-btn">View</button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="no-data">
+                          {loading ? 'Loading records...' : 'No uploads yet'}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

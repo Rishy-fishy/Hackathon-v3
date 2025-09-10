@@ -1,59 +1,59 @@
 /* Admin Standalone Page Styles */
 .admin-standalone-page {
   min-height: 100vh;
+  height: 100vh;
   width: 100vw;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
   background: #f8f9fa;
-  padding: clamp(0.5rem, 2vw, 1rem);
+  padding: 0;
+  margin: 0;
   box-sizing: border-box;
   position: fixed;
   top: 0;
   left: 0;
   z-index: 1000;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .admin-standalone-main {
   width: 100%;
-  max-width: min(500px, calc(100vw - 1rem));
+  height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex: 1;
-  padding: clamp(1rem, 3vw, 2rem) clamp(0.5rem, 2vw, 1rem);
+  padding: 0;
+  margin: 0;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
-/* Admin page footer */
+/* Admin page footer - hidden */
 .admin-standalone-page .app-footer {
-  width: 100%;
-  margin-top: auto;
-  position: relative;
-  background: rgba(255, 255, 255, 0.9);
+  display: none;
 }
 
 /* Responsive Admin Page */
 @media (max-width: 768px) {
   .admin-standalone-page {
-    padding: 0.5rem;
+    padding: 0;
   }
   
   .admin-standalone-main {
-    max-width: 100%;
-    padding: 1rem 0.5rem;
+    width: 100%;
+    height: 100%;
+    padding: 0;
   }
 }
 
 @media (max-width: 480px) {
   .admin-standalone-page {
-    padding: 0.25rem;
+    padding: 0;
   }
   
   .admin-standalone-main {
-    padding: 0.5rem 0.25rem;
+    width: 100%;
+    height: 100%;
+    padding: 0;
   }
 }
 

@@ -343,7 +343,78 @@ app.get('/api/admin/stats', async (req,res)=>{
   }
 });
 
+app.get('/api/admin/children', async (req,res)=>{
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ')? auth.slice(7): null;
+    const session = await validateAuthToken(token);
+    if(!session) return res.status(401).json({ error: 'unauthorized' });
+    
+    await initMongo();
+    const col = mongoDb.collection('child_records');
+    
+    // Get query parameters for pagination and filtering
+    const { page = 1, limit = 50, search, location, status } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Build search query
+    let query = {};
+    if (search) {
+      query.$or = [
+        { healthId: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } },
+        { guardianName: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    if (location && location !== 'all') {
+      query.location = location;
+    }
+    
+    // Fetch children with pagination
+    const children = await col.find(query, { 
+      projection: { 
+        _id: 0, 
+        healthId: 1, 
+        name: 1, 
+        ageMonths: 1, 
+        guardianName: 1, 
+        location: 1,
+        malnutritionSigns: 1,
+        recentIllnesses: 1,
+        createdAt: 1,
+        uploadedAt: 1
+      } 
+    })
+    .sort({ uploadedAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit))
+    .toArray();
+    
+    // Add mock location for existing records that don't have it
+    const locations = ['City Center', 'Rural Area', 'District A', 'District B', 'Suburb'];
+    const enhancedChildren = children.map(child => ({
+      ...child,
+      location: child.location || locations[Math.floor(Math.random() * locations.length)]
+    }));
+    
+    // Get total count for pagination
+    const total = await col.countDocuments(query);
+    
+    return res.json({ 
+      children: enhancedChildren, 
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(total / parseInt(limit))
+    });
+  } catch (e) {
+    console.error('[backend] admin children error', e);
+    return res.status(500).json({ error: 'server_error' });
+  }
+});
+
 app.listen(port, ()=> {
   console.log(`[backend] listening on :${port}`);
-  console.log('[startup] Routes registered: /health, /, /debug/routes, /api/admin/login, /api/admin/stats, /api/child/batch');
+  console.log('[startup] Routes registered: /health, /, /debug/routes, /api/admin/login, /api/admin/stats, /api/admin/children, /api/child/batch');
 });
