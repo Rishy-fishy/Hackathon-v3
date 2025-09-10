@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './AdminPage.css';
+import CircularWithValueLabel from './CircularWithValueLabel';
 
 // Backend endpoints expected:
 // POST /api/admin/login { username, password } -> { token, username, expiresIn }
@@ -158,7 +159,7 @@ export default function AdminPage() {
           <h2> Overview</h2>
           <div className="refresh-section">
             <button onClick={fetchStats} disabled={loading} className="refresh-btn">
-              {loading ? 'Loading...' : '🔄 Refresh'}
+              {loading ? <CircularWithValueLabel /> : '🔄 Refresh'}
             </button>
           </div>
         </div>
