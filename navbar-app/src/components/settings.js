@@ -24,7 +24,7 @@ const Settings = ({ onClose }) => {
     }
     
     // Debug DarkReader availability
-    console.log('Settings component mounted, DarkReader available:', !!window.DarkReader);
+  console.log('Settings component mounted');
   }, []);
 
   // Apply theme changes using Dark Reader via theme manager
@@ -41,56 +41,7 @@ const Settings = ({ onClose }) => {
     
     // Apply theme immediately if it's a theme change
     if (key === 'theme') {
-      console.log('Applying theme:', value);
-      console.log('DarkReader available:', !!window.DarkReader);
-      
-      // Direct application as fallback if theme manager fails
-      if (window.DarkReader) {
-        try {
-          switch (value) {
-            case 'dark':
-              window.DarkReader.enable({
-                brightness: 100,
-                contrast: 90,
-                sepia: 10
-              });
-              console.log('Dark theme enabled');
-              break;
-            case 'light':
-              window.DarkReader.disable();
-              console.log('Light theme enabled');
-              break;
-            case 'auto':
-              window.DarkReader.auto({
-                brightness: 100,
-                contrast: 90,
-                sepia: 10
-              });
-              console.log('Auto theme enabled');
-              break;
-            default:
-              window.DarkReader.disable();
-          }
-        } catch (error) {
-          console.error('Error applying theme:', error);
-        }
-      } else {
-        console.warn('DarkReader not available, retrying in 1 second...');
-        setTimeout(() => {
-          if (window.DarkReader) {
-            handleSettingChange(key, value);
-          } else {
-            console.error('DarkReader still not available after retry');
-          }
-        }, 1000);
-      }
-      
-      // Also try theme manager
-      try {
-        themeManager.setTheme(value);
-      } catch (error) {
-        console.error('Theme manager error:', error);
-      }
+      try { themeManager.setTheme(value); } catch(e){ console.error('Theme apply error', e); }
     }
   };
 
