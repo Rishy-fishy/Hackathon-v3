@@ -8,6 +8,7 @@ export default function RecordList() {
   const [search, setSearch] = useState('');
   const [retryTimers, setRetryTimers] = useState({});
   const [retryingRecords, setRetryingRecords] = useState(new Set());
+  const [reuploadingRecords, setReuploadingRecords] = useState(new Set());
 
   const load = async () => {
     const all = await listChildRecords();
@@ -112,6 +113,66 @@ export default function RecordList() {
     }
   };
 
+  const reuploadRecord = async (record) => {
+    setReuploadingRecords(prev => new Set([...prev, record.healthId]));
+    
+    try {
+      // Mark record as pending for reupload
+      await updateChildRecord(record.healthId, { 
+        status: 'pending',
+        lastModified: new Date().toISOString(),
+        isReupload: true 
+      });
+      
+      // Get uploader info
+      const userStr = sessionStorage.getItem('esignet_user') || localStorage.getItem('user_info');
+      let uploaderName = 'manual_reupload';
+      let uploaderEmail = null;
+      if (userStr) {
+        try {
+          const u = JSON.parse(userStr);
+          uploaderName = u.name || uploaderName;
+          uploaderEmail = u.email || null;
+        } catch {}
+      }
+      
+      // Attempt sync for this specific record
+      const result = await syncPendingRecords({ uploaderName, uploaderEmail, allowNoToken: false });
+      
+      if (result && !result.error) {
+        // Clear the modification flag after successful reupload
+        await updateChildRecord(record.healthId, { 
+          status: 'uploaded',
+          lastModified: null,
+          isReupload: null
+        });
+        
+        window.dispatchEvent(new CustomEvent('toast', { 
+          detail: { type: 'success', message: `Successfully re-uploaded modifications for ${record.name || record.healthId}` } 
+        }));
+      } else {
+        await updateChildRecord(record.healthId, { status: 'uploaded' }); // Revert status
+        window.dispatchEvent(new CustomEvent('toast', { 
+          detail: { type: 'error', message: `Re-upload failed for ${record.name || record.healthId}` } 
+        }));
+      }
+      
+      load(); // Refresh the list
+    } catch (error) {
+      console.error('Reupload error:', error);
+      await updateChildRecord(record.healthId, { status: 'uploaded' }); // Revert status
+      window.dispatchEvent(new CustomEvent('toast', { 
+        detail: { type: 'error', message: `Re-upload error: ${error.message}` } 
+      }));
+    } finally {
+      setReuploadingRecords(prev => {
+        const updated = new Set(prev);
+        updated.delete(record.healthId);
+        return updated;
+      });
+    }
+  };
+
   useEffect(()=>{ 
     load(); 
     const id = setInterval(load, 5000); // periodic refresh to reflect sync status changes
@@ -120,7 +181,14 @@ export default function RecordList() {
 
   const filtered = useMemo(()=> {
     return records.filter(r => {
-      if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'modified') {
+          // Show records that are uploaded but have been modified
+          return r.status === 'uploaded' && r.lastModified;
+        } else if (r.status !== statusFilter) {
+          return false;
+        }
+      }
       if (search) {
         const q = search.toLowerCase();
         return (r.healthId||'').toLowerCase().includes(q) || (r.name||'').toLowerCase().includes(q);
@@ -140,13 +208,15 @@ export default function RecordList() {
           <option value="uploading">Uploading</option>
           <option value="failed">Failed</option>
           <option value="uploaded">Uploaded</option>
+          <option value="modified">Modified</option>
         </select>
   <button type="button" className="upload-btn" disabled={!(sessionStorage.getItem('esignet_authenticated')==='true' || localStorage.getItem('is_authenticated')==='true')} onClick={async ()=> { const userStr = sessionStorage.getItem('esignet_user') || localStorage.getItem('user_info'); let uploaderName='manual_upload'; let uploaderEmail=null; if(userStr){ try{ const u=JSON.parse(userStr); uploaderName = u.name || uploaderName; uploaderEmail = u.email || null; }catch{} } await syncPendingRecords({ uploaderName, uploaderEmail, allowNoToken:false }); load(); }}>Upload</button>
         
         <span className="badge pending">P {records.filter(r=>r.status==='pending').length}</span>
         <span className="badge uploading">U {records.filter(r=>r.status==='uploading').length}</span>
         <span className="badge failed">F {records.filter(r=>r.status==='failed').length}</span>
-        <span className="badge uploaded">OK {records.filter(r=>r.status==='uploaded').length}</span>
+        <span className="badge uploaded">OK {records.filter(r=>r.status==='uploaded' && !r.lastModified).length}</span>
+        <span className="badge modified">M {records.filter(r=>r.status==='uploaded' && r.lastModified).length}</span>
       </div>
       <table className="records-table">
         <thead>
@@ -161,7 +231,9 @@ export default function RecordList() {
               <td>{r.name}</td>
               <td>{r.ageMonths ?? '-'}</td>
               <td>
-                <span className={`status-badge ${r.status}`}>{r.status}</span>
+                <span className={`status-badge ${r.status === 'uploaded' && r.lastModified ? 'modified' : r.status}`}>
+                  {r.status === 'uploaded' && r.lastModified ? 'modified' : r.status}
+                </span>
                 {r.status === 'failed' && retryTimers[r.healthId] === 'waiting' && (
                   <span className="retry-countdown" title="Retry available in 10 seconds">⏳</span>
                 )}
@@ -183,6 +255,17 @@ export default function RecordList() {
                   <span className="retry-waiting" title="Retry will be available after 10 seconds">
                     Wait 10s
                   </span>
+                )}
+                {r.status === 'uploaded' && r.lastModified && (
+                  <button
+                    type="button"
+                    className="reupload-btn"
+                    onClick={() => reuploadRecord(r)}
+                    disabled={reuploadingRecords.has(r.healthId)}
+                    title="Re-upload modifications to MongoDB"
+                  >
+                    {reuploadingRecords.has(r.healthId) ? '⏳' : 'REUPLOAD'}
+                  </button>
                 )}
               </td>
             </tr>

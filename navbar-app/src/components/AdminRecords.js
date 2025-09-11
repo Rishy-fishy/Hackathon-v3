@@ -19,6 +19,15 @@ export default function AdminRecords({ recentUploads = [], loading }) {
   const [toDelete, setToDelete] = useState(null);
   const [recentlyDeleted, setRecentlyDeleted] = useState(null); // { record, index }
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // API base URL
+  const API_BASE = (
+    (typeof window !== 'undefined' && window.__API_BASE) ||
+    process.env.REACT_APP_API_BASE ||
+    'http://34.58.198.143:8080'
+  ).replace(/\/$/, '');
 
   // Build dataset (fallback demo data when empty)
   const dataset = useMemo(() => {
@@ -92,15 +101,103 @@ export default function AdminRecords({ recentUploads = [], loading }) {
     setEditOpen(true);
   };
   const closeEdit = () => { setEditOpen(false); setEditing(null); };
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editing) return;
-    setRecords(rs => rs.map(r => r.id === editing.id ? editing : r));
-    closeEdit();
+    
+    setSaving(true);
+    try {
+      // Get admin token
+      const token = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token');
+      if (!token) {
+        window.dispatchEvent(new CustomEvent('toast', { 
+          detail: { type: 'error', message: 'Authentication required. Please log in again.' } 
+        }));
+        return;
+      }
+
+      // Prepare update data
+      const updateData = {
+        name: editing.name,
+        gender: editing.gender,
+        dateOfBirth: editing.dateOfBirth,
+        weightKg: editing.weightKg ? parseFloat(editing.weightKg) : null,
+        heightCm: editing.heightCm ? parseFloat(editing.heightCm) : null,
+        status: editing.status,
+        guardianName: editing.guardianName,
+        phoneNumber: editing.phoneNumber,
+        relation: editing.relation,
+        aadhaarId: editing.aadhaarId,
+        location: editing.location,
+        rep: editing.rep,
+        photoData: editing.photoData
+      };
+
+      const response = await fetch(`${API_BASE}/api/admin/child/${editing.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Update failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Update local state with the response from server
+      setRecords(rs => rs.map(r => r.id === editing.id ? {
+        ...r, 
+        ...result.record,
+        id: result.record.healthId // ensure consistency
+      } : r));
+      
+      window.dispatchEvent(new CustomEvent('toast', { 
+        detail: { type: 'success', message: 'Record updated successfully in MongoDB!' } 
+      }));
+      
+      closeEdit();
+    } catch (error) {
+      console.error('Save error:', error);
+      window.dispatchEvent(new CustomEvent('toast', { 
+        detail: { type: 'error', message: error.message || 'Failed to update record' } 
+      }));
+    } finally {
+      setSaving(false);
+    }
   };
   const beginDelete = (row) => { setToDelete(row); setDeleteOpen(true); };
   const closeDelete = () => { setDeleteOpen(false); setToDelete(null); };
-  const confirmDelete = () => {
-    if (toDelete) {
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    
+    setDeleting(true);
+    try {
+      // Get admin token
+      const token = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token');
+      if (!token) {
+        window.dispatchEvent(new CustomEvent('toast', { 
+          detail: { type: 'error', message: 'Authentication required. Please log in again.' } 
+        }));
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/api/admin/child/${toDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Delete failed: ${response.status}`);
+      }
+
+      // Remove from local state
       setRecords(rs => {
         const index = rs.findIndex(r => r.id === toDelete.id);
         const updated = rs.filter(r => r.id !== toDelete.id);
@@ -108,13 +205,26 @@ export default function AdminRecords({ recentUploads = [], loading }) {
         setSnackbarOpen(true);
         return updated;
       });
+
+      window.dispatchEvent(new CustomEvent('toast', { 
+        detail: { type: 'success', message: 'Record deleted successfully from MongoDB!' } 
+      }));
+      
+    } catch (error) {
+      console.error('Delete error:', error);
+      window.dispatchEvent(new CustomEvent('toast', { 
+        detail: { type: 'error', message: error.message || 'Failed to delete record' } 
+      }));
+    } finally {
+      setDeleting(false);
     }
-    // Placeholder: API call to delete record could go here.
+    
     closeDelete();
     if (editOpen) closeEdit();
   };
   const undoDelete = () => {
     if (recentlyDeleted) {
+      // Note: This only restores the record in the UI - it's permanently deleted from MongoDB
       setRecords(rs => {
         const { record, index } = recentlyDeleted;
         const copy = [...rs];
@@ -123,6 +233,9 @@ export default function AdminRecords({ recentUploads = [], loading }) {
         return copy;
       });
       setRecentlyDeleted(null);
+      window.dispatchEvent(new CustomEvent('toast', { 
+        detail: { type: 'warning', message: 'Record restored in UI only - it was permanently deleted from MongoDB' } 
+      }));
     }
     setSnackbarOpen(false);
   };
@@ -354,10 +467,35 @@ export default function AdminRecords({ recentUploads = [], loading }) {
                 </Grid>
               </DialogContent>
               <DialogActions sx={{ px:3, py:2, position:'sticky', bottom:0, bgcolor:'#fff', borderTop:'2px solid #000', display:'flex', justifyContent:'space-between' }}>
-                <Button onClick={()=>beginDelete(editing)} startIcon={<DeleteOutlineIcon />} color='error' variant='outlined' size='small' sx={{ textTransform:'none' }}>Delete</Button>
+                <Button 
+                  onClick={()=>beginDelete(editing)} 
+                  startIcon={<DeleteOutlineIcon />} 
+                  color='error' 
+                  variant='outlined' 
+                  size='small' 
+                  sx={{ textTransform:'none' }}
+                  disabled={saving || deleting}
+                >
+                  {deleting ? 'Deleting...' : 'Delete'}
+                </Button>
                 <Box sx={{ display:'flex', gap:2 }}>
-                  <Button onClick={closeEdit} variant='outlined' color='inherit' sx={{ textTransform:'none', minWidth:110 }}>Cancel</Button>
-                  <Button onClick={saveEdit} variant='outlined' sx={{ textTransform:'none', borderColor:'#000', color:'#000', minWidth:120, '&:hover':{ bgcolor:'#000', color:'#fff', borderColor:'#000' } }}>Save</Button>
+                  <Button 
+                    onClick={closeEdit} 
+                    variant='outlined' 
+                    color='inherit' 
+                    sx={{ textTransform:'none', minWidth:110 }}
+                    disabled={saving || deleting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={saveEdit} 
+                    variant='outlined' 
+                    sx={{ textTransform:'none', borderColor:'#000', color:'#000', minWidth:120, '&:hover':{ bgcolor:'#000', color:'#fff', borderColor:'#000' } }}
+                    disabled={saving || deleting}
+                  >
+                    {saving ? 'Saving...' : 'Save to MongoDB'}
+                  </Button>
                 </Box>
               </DialogActions>
             </Box>
@@ -377,8 +515,10 @@ export default function AdminRecords({ recentUploads = [], loading }) {
             <Typography variant='caption' color='error.main' display='block' sx={{ mt:1 }}>This action cannot be undone (unless you click UNDO immediately after).</Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={closeDelete} color='inherit'>Cancel</Button>
-            <Button onClick={confirmDelete} color='error' variant='contained'>Delete</Button>
+            <Button onClick={closeDelete} color='inherit' disabled={deleting}>Cancel</Button>
+            <Button onClick={confirmDelete} color='error' variant='contained' disabled={deleting}>
+              {deleting ? 'Deleting from MongoDB...' : 'Delete from MongoDB'}
+            </Button>
           </DialogActions>
         </Dialog>
 

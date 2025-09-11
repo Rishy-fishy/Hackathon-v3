@@ -414,7 +414,89 @@ app.get('/api/admin/children', async (req,res)=>{
   }
 });
 
+// Update child record endpoint
+app.put('/api/admin/child/:healthId', async (req, res) => {
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ')? auth.slice(7): null;
+    const session = await validateAuthToken(token);
+    if(!session) return res.status(401).json({ error: 'unauthorized' });
+    
+    const { healthId } = req.params;
+    const updates = req.body;
+    
+    if (!healthId) {
+      return res.status(400).json({ error: 'missing_health_id' });
+    }
+    
+    // Remove fields that shouldn't be updated directly
+    const { _id, uploadedAt, uploaderName, uploaderSub, source, ...allowedUpdates } = updates;
+    
+    // Add modification timestamp
+    allowedUpdates.lastModified = new Date().toISOString();
+    allowedUpdates.modifiedBy = session.username || 'admin';
+    
+    await initMongo();
+    const col = mongoDb.collection('child_records');
+    
+    const result = await col.updateOne(
+      { healthId }, 
+      { $set: allowedUpdates }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'record_not_found' });
+    }
+    
+    // Fetch and return updated record
+    const updatedRecord = await col.findOne({ healthId }, { projection: { _id: 0 } });
+    
+    return res.json({ 
+      success: true, 
+      message: 'Record updated successfully',
+      record: updatedRecord
+    });
+  } catch (e) {
+    console.error('[backend] update child record error', e);
+    return res.status(500).json({ error: 'update_failed', message: e.message });
+  }
+});
+
+// Delete child record endpoint
+app.delete('/api/admin/child/:healthId', async (req, res) => {
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ')? auth.slice(7): null;
+    const session = await validateAuthToken(token);
+    if(!session) return res.status(401).json({ error: 'unauthorized' });
+    
+    const { healthId } = req.params;
+    
+    if (!healthId) {
+      return res.status(400).json({ error: 'missing_health_id' });
+    }
+    
+    await initMongo();
+    const col = mongoDb.collection('child_records');
+    
+    const result = await col.deleteOne({ healthId });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'record_not_found' });
+    }
+    
+    return res.json({ 
+      success: true, 
+      message: 'Record deleted successfully',
+      healthId
+    });
+  } catch (e) {
+    console.error('[backend] delete child record error', e);
+    return res.status(500).json({ error: 'delete_failed', message: e.message });
+  }
+});
+
 app.listen(port, ()=> {
   console.log(`[backend] listening on :${port}`);
-  console.log('[startup] Routes registered: /health, /, /debug/routes, /api/admin/login, /api/admin/stats, /api/admin/children, /api/child/batch');
+  console.log('[startup] Routes registered: /health, /, /debug/routes, /api/admin/login, /api/admin/stats, /api/admin/children, /api/admin/child/:healthId (PUT/DELETE), /api/child/batch');
 });
