@@ -2501,4 +2501,117 @@ html[data-darkreader-mode="filter"] textarea::placeholder,
   opacity: 1 !important;
 }
 
+/* ======= RETRY MECHANISM STYLES ======= */
+.retry-btn {
+  background: #ff6b35 !important;
+  color: white !important;
+  border: 1px solid #ff6b35 !important;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+}
+
+.retry-btn:hover:not(:disabled) {
+  background: #e55a2b !important;
+  border-color: #e55a2b !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(255, 107, 53, 0.3);
+}
+
+.retry-btn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.retry-all-btn {
+  background: #dc3545 !important;
+  color: white !important;
+  border: 1px solid #dc3545 !important;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 0.5rem;
+  font-weight: 500;
+}
+
+.retry-all-btn:hover:not(:disabled) {
+  background: #c82333 !important;
+  border-color: #c82333 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.retry-all-btn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.retry-waiting {
+  color: #6c757d;
+  font-size: 0.75rem;
+  font-style: italic;
+  padding: 0.2rem 0.4rem;
+  background: #f8f9fa;
+  border-radius: 3px;
+  border: 1px solid #e9ecef;
+}
+
+.retry-countdown {
+  margin-left: 0.5rem;
+  color: #ffc107;
+  font-size: 0.9rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* Record table styles enhancement */
+.records-table th:last-child,
+.records-table td:last-child {
+  text-align: center;
+  min-width: 80px;
+}
+
+.status-failed {
+  background-color: #fff5f5 !important;
+}
+
+.status-failed .status-badge.failed {
+  background: #fee;
+  color: #dc3545;
+  border: 1px solid #f1aeb5;
+}
+
+/* Dark mode support for retry elements */
+html[data-darkreader-mode="dynamic"] .retry-waiting,
+html[data-darkreader-mode="filter"] .retry-waiting,
+[data-darkreader-scheme="dark"] .retry-waiting {
+  background: #2d3748 !important;
+  color: #a0aec0 !important;
+  border-color: #4a5568 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .status-failed,
+html[data-darkreader-mode="filter"] .status-failed,
+[data-darkreader-scheme="dark"] .status-failed {
+  background-color: #2d1b1b !important;
+}
+
 
