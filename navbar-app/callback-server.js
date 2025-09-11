@@ -5,20 +5,34 @@ const fetch = require('node-fetch');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const fs = require('fs');
+const path = require('path');
 const { MongoClient } = require('mongodb');
 const PDFDocument = require('pdfkit');
 
 const app = express();
-const port = 5000;
+// Server/network config
+const port = process.env.PORT || 5000;
+const host = process.env.HOST || '0.0.0.0'; // bind to all interfaces for cloud
+// Where the SPA (React app) runs; used for post-auth redirects (redirect to localhost for development)
+const SPA_BASE_URL = process.env.SPA_BASE_URL || 'http://localhost:3001';
+// Public base URL of this callback server (used as redirect_uri)
+const CALLBACK_BASE_URL = process.env.CALLBACK_BASE_URL || `http://34.58.198.143:${port}`;
+// Public authorize UI endpoint (eSignet UI)
+const AUTHORIZE_URI = process.env.AUTHORIZE_URI || 'http://34.58.198.143:3000/authorize';
 
 // ---- MongoDB Setup (simple singleton connection) ----
 // Environment variables or fallbacks
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
 const MONGO_DB = process.env.MONGO_DB || 'nutrition_app';
+const NO_MONGO = (process.env.NO_MONGO || '').toLowerCase() === '1' || (process.env.NO_MONGO || '').toLowerCase() === 'true';
 let mongoClient; // will hold connected client
 let mongoDb; // db instance
 
 async function initMongo() {
+  if (NO_MONGO) {
+    if (!mongoDb) console.log('🚫 Mongo initialization skipped (NO_MONGO set)');
+    return null;
+  }
   if (mongoDb) return mongoDb;
   try {
     mongoClient = new MongoClient(MONGO_URI, { useUnifiedTopology: true });
@@ -65,13 +79,19 @@ app.use(express.json({ limit: '5mb' }));
 // Load client configuration ONCE
 let clientConfig;
 try {
-  clientConfig = JSON.parse(fs.readFileSync('./client-config.json', 'utf8'));
+  const configPath = path.join(__dirname, 'client-config.json');
+  console.log('🛠  Loading client-config from', configPath);
+  clientConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   // Standardize redirect URI to callback server (must match what was registered with eSignet)
-  clientConfig.redirectUri = 'http://localhost:5000/callback';
+  clientConfig.redirectUri = `${CALLBACK_BASE_URL}/callback`;
   clientConfig.baseURL = clientConfig.baseURL || 'http://localhost:8088';
   console.log('✅ Client configuration loaded');
   console.log('📋 Client ID:', clientConfig.clientId);
   console.log('🔁 Using redirect URI:', clientConfig.redirectUri);
+  console.log('🌐 Token/API base URL:', clientConfig.baseURL);
+  console.log('🧭 Authorize UI:', AUTHORIZE_URI);
+  console.log('🖥️  SPA Base URL:', SPA_BASE_URL);
+  console.log('🗄️  Mongo Mode:', NO_MONGO ? 'DISABLED (NO_MONGO set)' : 'Enabled');
 } catch (error) {
   console.error('❌ Failed to load client configuration:', error.message);
   console.log('💡 Run "node create-client.js" to generate a new client configuration');
@@ -129,18 +149,18 @@ app.get('/callback', async (req, res) => {
 
   if (error) {
     console.error('❌ Authentication error:', error);
-    return res.redirect(`http://localhost:3001/callback?error=${encodeURIComponent(error)}&state=${encodeURIComponent(state || '')}`);
+  return res.redirect(`${SPA_BASE_URL}/callback?error=${encodeURIComponent(error)}&state=${encodeURIComponent(state || '')}`);
   }
 
   if (!code) {
     console.error('❌ No authorization code received');
-    return res.redirect(`http://localhost:3001/callback?error=no_code`);
+  return res.redirect(`${SPA_BASE_URL}/callback?error=no_code`);
   }
 
   try {
     if (processedCodes.has(code)) {
       console.log('🔁 Authorization code already processed, ignoring duplicate.');
-      return res.redirect('http://localhost:3001/?authenticated=true');
+  return res.redirect(`${SPA_BASE_URL}/?authenticated=true`);
     }
 
     // Exchange authorization code for tokens
@@ -181,7 +201,7 @@ app.get('/callback', async (req, res) => {
       console.error('❌ Token exchange failed:', errorText);
       
       // Create error HTML page
-      const errorHtml = `
+  const errorHtml = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -208,7 +228,7 @@ app.get('/callback', async (req, res) => {
               
               // Redirect back to app
               setTimeout(() => {
-                window.location.href = 'http://localhost:3001/';
+                window.location.href = '${SPA_BASE_URL}/';
               }, 2000);
             </script>
         </body>
@@ -279,7 +299,7 @@ app.get('/callback', async (req, res) => {
     const forwardB64 = Buffer.from(JSON.stringify(forwardPayload)).toString('base64url');
 
     // Create success HTML page that immediately redirects with base64 payload (auth_payload) to React app
-    const html = `
+  const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -299,14 +319,14 @@ app.get('/callback', async (req, res) => {
             try {
               console.log('Preparing redirect with encoded auth payload...');
               // Use hash fragment instead of query params to avoid very long request lines causing 431 errors
-              const target = 'http://localhost:3001/#auth_payload=${forwardB64}&authenticated=true';
+              const target = '${SPA_BASE_URL}/#auth_payload=${forwardB64}&authenticated=true';
               // small delay so user sees success state briefly
               setTimeout(()=>{ window.location.replace(target); }, 600);
               
             } catch (error) {
               console.error('❌ Error storing authentication data:', error);
               // Fallback redirect with code for React app to handle
-              window.location.href = 'http://localhost:3001/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || '')}';
+              window.location.href = '${SPA_BASE_URL}/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || '')}';
             }
           </script>
       </body>
@@ -319,7 +339,7 @@ app.get('/callback', async (req, res) => {
     console.error('❌ Callback processing error:', error);
     
     // Create error HTML page
-    const errorHtml = `
+  const errorHtml = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -346,7 +366,7 @@ app.get('/callback', async (req, res) => {
             
             // Redirect back to app
             setTimeout(() => {
-              window.location.href = 'http://localhost:3001/';
+              window.location.href = '${SPA_BASE_URL}/';
             }, 2000);
           </script>
       </body>
@@ -360,7 +380,7 @@ app.get('/callback', async (req, res) => {
 // Exchange authorization code for tokens using proper JWT client assertion
 app.post('/exchange-token', async (req, res) => {
   try {
-    const { code, state } = req.body;
+  const { code } = req.body;
     
     if (!code) {
       return res.status(400).json({ error: 'Authorization code is required' });
@@ -452,13 +472,50 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', port: port, mongo: !!mongoDb });
 });
 
+// Diagnostic endpoint printing selected env + runtime info (avoid secrets)
+app.get('/diag', (req, res) => {
+  res.json({
+    now: new Date().toISOString(),
+    pid: process.pid,
+    node: process.version,
+    env: {
+      PORT: process.env.PORT,
+      HOST: process.env.HOST,
+      SPA_BASE_URL,
+      CALLBACK_BASE_URL,
+      AUTHORIZE_URI,
+      NO_MONGO,
+    },
+    clientConfigPresent: !!clientConfig,
+    redirectUri: clientConfig && clientConfig.redirectUri,
+  });
+});
+
 // Public client metadata (safe subset) for front-end to discover current clientId
 app.get('/client-meta', (req, res) => {
   res.json({
     clientId: clientConfig.clientId,
-  authorizeUri: 'http://34.58.198.143:3000/authorize',
-    redirect_uri: clientConfig.redirectUri
+  authorizeUri: AUTHORIZE_URI,
+  redirect_uri: clientConfig.redirectUri
   });
+});
+
+// Helper endpoint to construct a canonical authorize URL (for debugging "invalid url")
+app.get('/authorize-url', (req, res) => {
+  try {
+    if (!clientConfig || !clientConfig.clientId) {
+      return res.status(500).json({ error: 'client_config_missing' });
+    }
+    const u = new URL(AUTHORIZE_URI);
+    u.searchParams.set('client_id', clientConfig.clientId);
+    u.searchParams.set('redirect_uri', clientConfig.redirectUri);
+    u.searchParams.set('response_type', 'code');
+    u.searchParams.set('scope', 'openid profile');
+    // Minimal params only; state/nonce generated client-side
+    res.json({ authorize_url: u.toString(), clientId: clientConfig.clientId, redirect_uri: clientConfig.redirectUri });
+  } catch (e) {
+    res.status(500).json({ error: 'build_failed', details: e.message });
+  }
 });
 
 // ---- Helper: Verify access token (naive decode or remote introspection) ----
@@ -528,7 +585,7 @@ app.post('/api/child/batch', async (req, res) => {
         createdAt: r.createdAt || now,
         uploadedAt: now,
         uploaderName: uploaderName || (uploader.claims && (uploader.claims.name || uploader.claims.preferred_username)) || null,
-        uploaderSub: uploader.claims && uploader.claims.sub || null,
+  uploaderSub: (uploader.claims && uploader.claims.sub) || null,
         source: 'offline_sync',
         version: r.version || 1
       });
@@ -663,8 +720,18 @@ app.get('/delegate/fetchUserInfo', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`✅ Callback server running on http://localhost:${port}`);
-  console.log(`📝 Callback URL: http://localhost:${port}/callback`);
+// Dump minimal env summary before binding
+console.log('🔧 Startup summary:', JSON.stringify({
+  PORT: port,
+  HOST: host,
+  SPA_BASE_URL,
+  CALLBACK_BASE_URL,
+  AUTHORIZE_URI,
+  NO_MONGO,
+}, null, 2));
+
+app.listen(port, host, () => {
+  console.log(`✅ Callback server running on ${host}:${port}`);
+  console.log(`📝 Callback URL: ${clientConfig.redirectUri}`);
   initMongo();
 });

@@ -38,7 +38,7 @@
       ],
       "logoUri": "https://via.placeholder.com/150",
       "redirectUris": [
-        "http://localhost:5000/callback"
+        "http://34.58.198.143:5000/callback"
       ],
       "grantTypes": [
         "authorization_code"

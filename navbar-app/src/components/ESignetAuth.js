@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './ESignetAuth.css';
 
 const ESignetAuth = () => {
@@ -11,30 +11,31 @@ const ESignetAuth = () => {
   // OIDC Configuration using the newly created client
   // IMPORTANT: redirect_uri must match what is registered for the client AND
   // what the backend callback server listens on for performing the code -> token exchange.
-  // We standardize on http://localhost:5000/callback (node callback-server.js) then it
+  // We standardize on the CLOUD callback http://34.58.198.143:5000/callback (node callback-server.js) then it
   // forwards the browser back to the React app at /?authenticated=true after storing tokens.
   // Build OIDC config dynamically using backend metadata for client_id
-  const [clientId, setClientId] = useState(null);
-  const [authorizeUri, setAuthorizeUri] = useState('http://34.58.198.143:3000/authorize');
-  const oidcConfig = {
-    acr_values: 'mosip:idp:acr:generated-code',
+  // Hardcoded client ID from cloud registration
+  const clientId = 'GB19lXsMS9kvtY0pRGlsEXNVY1-46IlmfE5IW9z2JrI';
+  const authorizeUri = 'http://34.58.198.143:3000/authorize';
+  const oidcConfig = useMemo(() => ({
     authorizeUri,
     claims_locales: 'en',
     client_id: clientId || '',
     display: 'page',
     max_age: 600,
     prompt: 'consent',
-    redirect_uri: 'http://localhost:5000/callback',
+    // MUST match the registered redirect in the Authorization Server
+    redirect_uri: 'http://34.58.198.143:5000/callback',
     scope: 'openid profile',
     ui_locales: 'en'
-  };
+  }), [authorizeUri, clientId]);
 
-  const buttonConfig = {
+  const buttonConfig = useMemo(() => ({
     labelText: 'Sign in with e-Signet',
     shape: 'soft_edges',
     theme: 'filled_orange',
     type: 'standard'
-  };
+  }), []);
 
   // Wait for the eSignet plugin to load
   const waitForESignetPlugin = () => {
@@ -92,35 +93,11 @@ const ESignetAuth = () => {
         signInElement: container
       });
 
-      // Wrap the anchor click to inject state + nonce BEFORE redirect if plugin does not manage them.
-  const anchor = container.querySelector('a[href]');
+      // Let the plugin handle the flow completely - don't override the click handler
+      const anchor = container.querySelector('a[href]');
       if (anchor) {
-        anchor.addEventListener('click', (e) => {
-          try {
-            // Generate state & nonce and persist *before* navigating away.
-            const state = generateRandomString(16);
-            const nonce = generateRandomString(16);
-            sessionStorage.setItem('esignet_state', state);
-            sessionStorage.setItem('esignet_nonce', nonce);
-
-            const original = anchor.getAttribute('href');
-            if (original) {
-      // Accept relative or absolute URLs
-      const url = new URL(original, window.location.origin);
-              // Only add if absent (avoid double appending on retries)
-              if (!url.searchParams.get('state')) url.searchParams.set('state', state);
-              if (!url.searchParams.get('nonce')) url.searchParams.set('nonce', nonce);
-              // If dynamic client_id differs from existing param (e.g., placeholder), replace it
-              // Ensure correct client_id present
-      if (oidcConfig.client_id && url.searchParams.get('client_id') !== oidcConfig.client_id) {
-                url.searchParams.set('client_id', oidcConfig.client_id);
-              }
-              anchor.setAttribute('href', url.toString());
-            }
-          } catch (wrapErr) {
-            console.warn('Failed to augment authorize URL with state/nonce:', wrapErr);
-          }
-        }, { once: true });
+        console.log('✅ eSignet plugin button ready, will use plugin default flow');
+        console.log('Plugin generated URL:', anchor.getAttribute('href'));
       }
 
       setIsLoading(false);
@@ -145,43 +122,16 @@ const ESignetAuth = () => {
       setError(err.message);
       setIsLoading(false);
     }
-  }, [authorizeUri, clientId]);
+  }, [oidcConfig, buttonConfig]);
 
-  // Generate random string for state/nonce
-  const generateRandomString = (length = 32) => {
-    const array = new Uint8Array(length);
-    crypto.getRandomValues(array);
-    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
-  };
 
-  // Initialize on component mount
-  // Fetch client metadata; only initialize after clientId is available
+
+  // Initialize on component mount - use hardcoded clientId
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const r = await fetch('http://localhost:5000/client-meta');
-        if (!r.ok) throw new Error('client-meta fetch failed');
-        const meta = await r.json();
-        if (!cancelled) {
-          if (meta?.clientId) setClientId(meta.clientId);
-          if (meta?.authorizeUri) setAuthorizeUri(meta.authorizeUri);
-        }
-      } catch (e) {
-        // Leave clientId null; the button will not activate
-        console.warn('client-meta unavailable, deferring init');
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  // Initialize when we have a clientId
-  useEffect(() => {
-    if (clientId) {
-      const t = setTimeout(() => initializeESignetButton(), 50);
-      return () => clearTimeout(t);
-    }
-  }, [clientId, initializeESignetButton]);
+    // Immediately initialize with hardcoded clientId
+    const t = setTimeout(() => initializeESignetButton(), 50);
+    return () => clearTimeout(t);
+  }, [initializeESignetButton]);
 
   // Retry initialization if it failed
   const handleRetry = () => {
@@ -199,15 +149,8 @@ const ESignetAuth = () => {
 
       <div className="auth-content">
         <div className="esignet-button-wrapper">
-          {/* Render the plugin container only when clientId is available */}
-          {clientId ? (
-            <div className="esignet-button-container" ref={buttonContainerRef}></div>
-          ) : (
-            <div className="loading-placeholder">
-              <div className="loading-spinner"></div>
-              <p>Preparing e-Signet…</p>
-            </div>
-          )}
+          {/* Render the plugin container with hardcoded clientId */}
+          <div className="esignet-button-container" ref={buttonContainerRef}></div>
         </div>
 
         {isLoading && (

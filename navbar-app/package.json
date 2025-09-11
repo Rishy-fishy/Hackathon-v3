@@ -38,6 +38,7 @@
     "start": "set PORT=3001 && react-scripts start",
     "start:windows": "set PORT=3001 && react-scripts start",
     "start:callback": "node callback-server.js",
+  "start:callback:pm2": "pm2 start ecosystem.config.js && pm2 save",
     "dev": "concurrently \"npm run start\" \"npm run start:callback\"",
     "build": "react-scripts build",
     "test": "react-scripts test",

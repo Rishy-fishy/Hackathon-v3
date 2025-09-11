@@ -103,3 +103,103 @@ If `/health` succeeds but `/health/db` returns `mongo_unavailable`:
 
 Default admin user is seeded with username `Admin` and password `Admin@123` (hash only stored). Change the password by updating the `admin_users` collection directly (replace `passwordHash` with a new bcrypt hash).
 
+---
+
+## Callback Server (OIDC Flow) – Start / Restart on VM
+
+Helper script added at `scripts/start-callback.sh` to reliably start the callback server on port 5000.
+
+Steps (on your GCP VM):
+
+```bash
+gcloud compute ssh hackathon-v3-vm --zone us-central1-a
+# Once logged in:
+cd ~/Hackathon-v3/navbar-app
+bash scripts/start-callback.sh
+```
+
+It will:
+1. Kill existing `callback-server.js` processes.
+2. Export (or use existing) env vars: `SPA_BASE_URL`, `CALLBACK_BASE_URL`, `AUTHORIZE_URI`, `HOST`, `PORT`.
+3. Start the server with `nohup`, write logs to `server.out`.
+4. Show last log lines, port listening status, `/health` and `/client-meta` probe results.
+
+Override defaults (example):
+
+```bash
+SPA_BASE_URL=http://34.58.198.143:3001 CALLBACK_BASE_URL=http://34.58.198.143:5000 bash scripts/start-callback.sh
+```
+
+Quick external checks (from your workstation):
+
+```bash
+curl -m 3 http://34.58.198.143:5000/health
+curl -m 3 http://34.58.198.143:5000/client-meta
+```
+
+If `PORT_NOT_LISTENING` appears, inspect `server.out`:
+
+```bash
+tail -50 server.out
+```
+
+Common causes of failure:
+* Wrong Node version / missing deps – run `npm install` in `navbar-app`.
+* Port already occupied – find with `ss -ltnp | grep :5000`.
+* Crashed during startup – look for stack trace in `server.out`.
+
+### Firewall / Networking
+
+If the service responds locally (`curl 127.0.0.1:5000/health` on the VM) but times out externally:
+
+1. Add a network tag to the VM (one‑time):
+```bash
+gcloud compute instances add-tags hackathon-v3-vm --zone us-central1-a --tags=callback-server
+```
+2. Create (or verify) a firewall rule allowing TCP:5000 inbound:
+```bash
+gcloud compute firewall-rules create allow-callback-5000 \
+	--allow=tcp:5000 \
+	--target-tags=callback-server \
+	--direction=INGRESS \
+	--priority=1000
+```
+3. Re-test externally:
+```bash
+curl -m 4 http://34.58.198.143:5000/health
+```
+
+To list existing rules covering port 5000:
+```bash
+gcloud compute firewall-rules list --filter="allowed.protocol=tcp AND allowed.ports=5000"
+```
+
+### PowerShell Helpers (Local Convenience)
+
+Run a minimal port diagnostic (starts `mini5000.js` remotely):
+```powershell
+pwsh scripts/diagnose-port.ps1
+```
+
+Restart full callback server (disables Mongo via NO_MONGO=1):
+```powershell
+pwsh scripts/restart-callback.ps1
+```
+
+### One-Step Provision (Create + Register + Start)
+
+Linux VM (SSH):
+```bash
+cd ~/Hackathon-v3/navbar-app
+bash scripts/provision-client-and-start.sh
+```
+
+PowerShell remote (from your workstation):
+```powershell
+pwsh .\navbar-app\scripts\provision-and-start.ps1
+```
+
+The provisioning scripts will abort starting the server if registration exits non‑zero, ensuring the callback server always runs with a valid, freshly registered client-config.
+
+If `PORT_NOT_LISTENING` appears in either script's output, open `server.out` / `mini.out` on the VM for errors.
+
