@@ -538,14 +538,7 @@ const Header = ({ onActiveViewChange }) => {
               <RecordEditForm
                 record={selectedRecord}
                 onSave={async (changes)=>{
-                  // Mark record as modified for reupload functionality
-                  const updateData = { 
-                    ...changes, 
-                    updatedAt: Date.now(),
-                    lastModified: new Date().toISOString()
-                  };
-                  
-                  await updateChildRecord(selectedRecord.healthId, updateData);
+                  await updateChildRecord(selectedRecord.healthId, { ...changes, updatedAt: Date.now() });
                   const updated = await listChildRecords();
                   setRecords(updated);
                   const newly = updated.find(r=> r.healthId === selectedRecord.healthId);
@@ -553,11 +546,6 @@ const Header = ({ onActiveViewChange }) => {
                   setEditMode(false);
                   setShowDetailModal(false);
                   setSelectedRecord(null);
-                  
-                  // Show notification about modification
-                  window.dispatchEvent(new CustomEvent('toast', { 
-                    detail: { type: 'info', message: 'Record modified! Use "REUPLOAD" button to sync changes to MongoDB.' } 
-                  }));
                 }}
                 onCancel={()=> setEditMode(false)}
               />

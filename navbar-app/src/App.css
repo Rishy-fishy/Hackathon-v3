@@ -1616,18 +1616,6 @@ button:not([class*="transparent"]),
 .badge.uploading { background:#cfe2ff; color:#084298; }
 .badge.failed { background:#f8d7da; color:#842029; }
 .badge.uploaded { background:#d1e7dd; color:#0f5132; }
-.badge.modified { 
-  background: #fff3cd; 
-  color: #856404; 
-  border: 1px solid #ffeb9c;
-  animation: pulse-yellow 2s infinite;
-}
-
-@keyframes pulse-yellow {
-  0% { background-color: #fff3cd; }
-  50% { background-color: #ffeaa7; }
-  100% { background-color: #fff3cd; }
-}
 .status-badge { padding:.25rem .5rem; border-radius:12px; text-transform:capitalize; font-size:.65rem; font-weight:600; letter-spacing:.5px; }
 .status-badge.pending { background:#fff3cd; color:#856404; }
 .status-badge.uploading { background:#cfe2ff; color:#084298; }
@@ -2538,56 +2526,6 @@ html[data-darkreader-mode="filter"] textarea::placeholder,
 }
 
 .retry-btn:disabled {
-  opacity: 0.6 !important;
-  cursor: not-allowed !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* Modified status badge */
-.status-badge.modified { 
-  background: #ff8800 !important; 
-  color: white !important; 
-  padding: 2px 6px; 
-  border-radius: 3px; 
-  font-size: 10px; 
-  font-weight: bold; 
-  animation: pulse-orange 1.5s infinite;
-}
-
-@keyframes pulse-orange {
-  0% { background-color: #ff8800; }
-  50% { background-color: #ffaa33; }
-  100% { background-color: #ff8800; }
-}
-
-/* Reupload button */
-.reupload-btn {
-  background: #28a745 !important;
-  color: white !important;
-  border: 1px solid #28a745 !important;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 70px;
-  height: 28px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.reupload-btn:hover:not(:disabled) {
-  background: #218838 !important;
-  border-color: #218838 !important;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
-}
-
-.reupload-btn:disabled {
   opacity: 0.6 !important;
   cursor: not-allowed !important;
   transform: none !important;
