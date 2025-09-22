@@ -1,9 +1,11 @@
+// DEPLOY_IDENTITY_MARKER_2025-09-23A
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { MongoClient } from 'mongodb';
 import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
+import { Client as PgClient } from 'pg';
 
 // Config
 const PORT = process.env.PORT || 8080;
@@ -11,8 +13,7 @@ const PORT = process.env.PORT || 8080;
 // (Previously a fallback hardcoded credential was present; removed for security.)
 const MONGO_URI = process.env.MONGO_URI;
 if (!MONGO_URI) {
-  console.error('[backend] FATAL: MONGO_URI environment variable not set');
-  process.exit(1);
+  console.warn('[backend] WARN: MONGO_URI not set. Mongo-dependent endpoints will be disabled.');
 }
 const DB_NAME = 'childBooklet';
 const APP_JWT_SECRET = process.env.APP_JWT_SECRET || 'dev-secret-change';
@@ -21,17 +22,19 @@ const SESSION_TTL_S = 3600; // 1 hour
 let db; let mongoClient;
 async function getDb(){
   if (db) return db;
-  mongoClient = new MongoClient(MONGO_URI, { serverSelectionTimeoutMS: 10000 });
-  await mongoClient.connect();
-  // Log sanitized host (no credentials) once to confirm correct cluster
-  try {
-    const afterAt = MONGO_URI.split('@')[1] || '';
-    const host = afterAt.split('/')[0];
-    console.log('[backend] Connected to Mongo host:', host);
-  } catch {}
-  db = mongoClient.db(DB_NAME);
-  await db.collection('child_records').createIndex({ healthId:1 }, { unique:true });
-  return db;
+  if(!MONGO_URI) throw new Error('mongo_unavailable');
+  if(!mongoClient){
+    mongoClient = new MongoClient(MONGO_URI, { serverSelectionTimeoutMS: 10000 });
+    await mongoClient.connect();
+    try {
+      const afterAt = MONGO_URI.split('@')[1] || '';
+      const host = afterAt.split('/')[0];
+      console.log('[backend] Connected to Mongo host:', host);
+    } catch {}
+    db = mongoClient.db(DB_NAME);
+    await db.collection('child_records').createIndex({ healthId:1 }, { unique:true });
+  }
+  return db; 
 }
 
 const app = express();
@@ -100,6 +103,7 @@ async function requireAuth(req,res,next){
 // Batch upload endpoint matching existing frontend expectation (/api/child/batch)
 app.post('/api/child/batch', requireAuth, async (req,res)=>{
   try {
+    if(!MONGO_URI) return res.status(503).json({ error:'mongo_disabled' });
     const { records = [] } = req.body || {};
     if(!Array.isArray(records) || !records.length) return res.status(400).json({ error:'no_records' });
     const database = await getDb();
@@ -142,6 +146,7 @@ app.post('/api/child/batch', requireAuth, async (req,res)=>{
 
 app.get('/api/child/stats', requireAuth, async (req,res)=>{
   try {
+    if(!MONGO_URI) return res.status(503).json({ error:'mongo_disabled' });
     const database = await getDb();
     const col = database.collection('child_records');
     const total = await col.countDocuments();
@@ -155,6 +160,7 @@ app.get('/api/child/stats', requireAuth, async (req,res)=>{
 // (Currently unauthenticated for convenience; tighten later if needed.)
 app.get('/api/child/search', async (req,res)=>{
   try {
+    if(!MONGO_URI) return res.status(503).json({ error:'mongo_disabled' });
     const raw = (req.query.q||'').toString().trim();
     if(!raw) return res.status(400).json({ error:'missing_query' });
     const database = await getDb();
@@ -223,12 +229,139 @@ app.post('/api/admin/login', express.json(), async (req,res)=>{
 
 app.get('/api/admin/stats', verifyAdmin, async (req,res)=>{
   try {
+    if(!MONGO_URI) return res.json({ totalChildRecords:0, recentUploads:[], warning:'mongo_disabled' });
     const database = await getDb();
     const col = database.collection('child_records');
     const totalChildRecords = await col.countDocuments();
     const recentUploads = await col.find({}, { projection:{ _id:0, healthId:1, name:1, uploadedAt:1 } }).sort({ uploadedAt:-1 }).limit(10).toArray();
     res.json({ totalChildRecords, recentUploads });
   } catch(e){ res.status(500).json({ error:'stats_failed', message:e.message }); }
+});
+
+// --- Agents Collection Helpers ---
+async function getAgentsCollection(){
+  const database = await getDb();
+  const col = database.collection('agents');
+  // Create indexes once (ignore errors on recreate)
+  try { await col.createIndex({ individualId:1 }, { unique:true }); } catch {}
+  try { await col.createIndex({ email:1 }, { sparse:true }); } catch {}
+  return col;
+}
+
+// Agent schema (stored fields): individualId (string), name, email, phone, region, status, createdAt, updatedAt, raw (optional original JSON)
+
+// List agents (basic pagination optional via ?limit=&offset=)
+app.get('/api/admin/agents', verifyAdmin, async (req,res)=>{
+  try {
+    const limit = Math.min(parseInt(req.query.limit)||100, 500);
+    const skip = parseInt(req.query.offset)||0;
+    const col = await getAgentsCollection();
+    const cursor = col.find({}, { projection:{ _id:0 } }).sort({ createdAt:-1 }).skip(skip).limit(limit);
+    const items = await cursor.toArray();
+    res.json({ items, total: await col.estimatedDocumentCount() });
+  } catch(e){ res.status(500).json({ error:'list_failed', message:e.message }); }
+});
+
+// Create new agent
+app.post('/api/admin/agents', verifyAdmin, async (req,res)=>{
+  try {
+    const { individualId, name, email, phone, region, status, raw } = req.body||{};
+    if(!individualId || !name) return res.status(400).json({ error:'missing_fields' });
+    const now = new Date().toISOString();
+    const doc = { individualId: String(individualId), name: String(name), email: email||null, phone: phone||null, region: region||null, status: status||'Active', raw: raw||null, createdAt: now, updatedAt: now };
+    const col = await getAgentsCollection();
+    await col.insertOne(doc);
+    const { _id, ...clean } = doc;
+    res.status(201).json(clean);
+  } catch(e){
+    if(e.code === 11000) return res.status(409).json({ error:'duplicate_individualId' });
+    res.status(500).json({ error:'create_failed', message:e.message });
+  }
+});
+
+// Get agent by individualId
+app.get('/api/admin/agents/:id', verifyAdmin, async (req,res)=>{
+  try {
+    const id = req.params.id;
+    const col = await getAgentsCollection();
+    const doc = await col.findOne({ individualId: id }, { projection:{ _id:0 } });
+    if(!doc) return res.status(404).json({ error:'not_found' });
+    res.json(doc);
+  } catch(e){ res.status(500).json({ error:'fetch_failed', message:e.message }); }
+});
+
+// Postgres (Mock Identity System) optional integration
+const PG_HOST = process.env.PG_HOST || 'localhost';
+const PG_PORT = process.env.PG_PORT || 5455; // mapped host port to container's 5432
+const PG_USER = process.env.PG_USER || 'postgres';
+const PG_PASSWORD = process.env.PG_PASSWORD || 'postgres';
+const PG_DB_IDENTITY = process.env.PG_DB_IDENTITY || 'mosip_mockidentitysystem';
+let pgIdentityClient; let pgIdentityReady = false;
+async function getPgIdentity(){
+  if(pgIdentityReady && pgIdentityClient) return pgIdentityClient;
+  pgIdentityClient = new PgClient({ host: PG_HOST, port: PG_PORT, user: PG_USER, password: PG_PASSWORD, database: PG_DB_IDENTITY });
+  try {
+    await pgIdentityClient.connect();
+    pgIdentityReady = true;
+    console.log('[backend] Connected to Postgres mockidentitysystem');
+  } catch (e){
+    console.warn('[backend] Postgres identity connection failed:', e.message);
+    throw e;
+  }
+  return pgIdentityClient;
+}
+
+function sanitizeIdentity(full){
+  if(!full) return null;
+  const copy = { ...full };
+  // remove sensitive fields
+  delete copy.password; delete copy.pin; delete copy.encodedPhoto; // raw photo URL optional to hide
+  return copy;
+}
+
+// Build summary record from identity_json
+function summarizeIdentity(idJson){
+  if(!idJson) return null;
+  const first = (arr)=> Array.isArray(arr) && arr.length ? arr[0].value || arr[0] : null;
+  const findLang = (arr, lang)=> Array.isArray(arr) ? (arr.find(e=>e.language===lang)?.value || first(arr)) : null;
+  return {
+    individualId: idJson.individualId,
+    name: findLang(idJson.fullName,'eng') || findLang(idJson.givenName,'eng') || idJson.individualId,
+    email: idJson.email || null,
+    phone: idJson.phone || null,
+    dateOfBirth: idJson.dateOfBirth || null,
+    country: findLang(idJson.country,'eng'),
+    region: findLang(idJson.region,'eng'),
+    gender: findLang(idJson.gender,'eng'),
+    createdAt: idJson.createdAt || null
+  };
+}
+
+// List identities (summary)
+app.get('/api/admin/identities', verifyAdmin, async (req,res)=>{
+  try {
+    let client; try { client = await getPgIdentity(); } catch { return res.json({ items:[], total:0, warning:'postgres_unavailable' }); }
+    const limit = Math.min(parseInt(req.query.limit)||100, 500);
+    const offset = parseInt(req.query.offset)||0;
+    const result = await client.query('SELECT individual_id, identity_json FROM mockidentitysystem.mock_identity ORDER BY individual_id DESC OFFSET $1 LIMIT $2', [offset, limit]);
+    const items = [];
+    for(const row of result.rows){
+      try { const parsed = JSON.parse(row.identity_json); items.push(summarizeIdentity(parsed)); } catch {}
+    }
+    res.json({ items, total: items.length });
+  } catch(e){ res.status(500).json({ error:'identity_list_failed', message:e.message }); }
+});
+
+// Get full identity
+app.get('/api/admin/identities/:id', verifyAdmin, async (req,res)=>{
+  try {
+    let client; try { client = await getPgIdentity(); } catch { return res.status(503).json({ error:'postgres_unavailable' }); }
+    const id = req.params.id;
+    const result = await client.query('SELECT identity_json FROM mockidentitysystem.mock_identity WHERE individual_id=$1 LIMIT 1', [id]);
+    if(!result.rows.length) return res.status(404).json({ error:'not_found' });
+    let parsed; try { parsed = JSON.parse(result.rows[0].identity_json); } catch { return res.status(500).json({ error:'parse_error' }); }
+    res.json({ individualId: id, summary: summarizeIdentity(parsed), identity: sanitizeIdentity(parsed) });
+  } catch(e){ res.status(500).json({ error:'identity_fetch_failed', message:e.message }); }
 });
 
 app.listen(PORT, ()=> console.log(`[backend] listening on ${PORT}`));

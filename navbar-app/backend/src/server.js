@@ -1,3 +1,4 @@
+// DEPLOY_MARKER: SERVER_JS_ACTIVE_BUILD_2025-09-23T01:55Z
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -5,6 +6,7 @@ import fetch from 'node-fetch';
 import { createRemoteJWKSet, jwtVerify, SignJWT } from 'jose';
 import { MongoClient } from 'mongodb';
 import bcrypt from 'bcryptjs';
+import { Client as PgClient } from 'pg';
 
 /*
  Simple backend facade for e-Signet auth code -> token exchange & userinfo fetch.
@@ -176,6 +178,51 @@ async function discover(field) {
 
 // Cloud Run provides PORT env; default to 8080 locally if absent.
 const port = parseInt(process.env.PORT, 10) || 8080;
+// ---------------- Postgres (Mock Identity System) Setup ----------------
+// We surface mock identity records as "agents" for the admin UI without modifying the source DB.
+const PG_HOST = process.env.PG_HOST || 'localhost';
+const PG_PORT = parseInt(process.env.PG_PORT || '5455', 10); // host-mapped port to container's 5432
+const PG_USER = process.env.PG_USER || 'postgres';
+const PG_PASSWORD = process.env.PG_PASSWORD || 'postgres';
+const PG_DB_IDENTITY = process.env.PG_DB_IDENTITY || 'mosip_mockidentitysystem';
+let pgIdentityClient; let pgIdentityReady = false;
+async function getPgIdentity(){
+  if (pgIdentityReady && pgIdentityClient) return pgIdentityClient;
+  pgIdentityClient = new PgClient({ host: PG_HOST, port: PG_PORT, user: PG_USER, password: PG_PASSWORD, database: PG_DB_IDENTITY });
+  try {
+    await pgIdentityClient.connect();
+    pgIdentityReady = true;
+    console.log('[backend] Connected to Postgres mockidentitysystem');
+  } catch (e){
+    console.warn('[backend] Postgres identity connection failed:', e.message);
+    throw e;
+  }
+  return pgIdentityClient;
+}
+
+function sanitizeIdentity(full){
+  if(!full) return null;
+  const copy = { ...full };
+  delete copy.password; delete copy.pin; delete copy.encodedPhoto; // remove sensitive fields
+  return copy;
+}
+
+function summarizeIdentity(idJson){
+  if(!idJson) return null;
+  const first = (arr)=> Array.isArray(arr) && arr.length ? arr[0].value || arr[0] : null;
+  const findLang = (arr, lang)=> Array.isArray(arr) ? (arr.find(e=>e.language===lang)?.value || first(arr)) : null;
+  return {
+    individualId: idJson.individualId,
+    name: findLang(idJson.fullName,'eng') || findLang(idJson.givenName,'eng') || idJson.individualId,
+    email: idJson.email || null,
+    phone: idJson.phone || null,
+    dateOfBirth: idJson.dateOfBirth || null,
+    country: findLang(idJson.country,'eng'),
+    region: findLang(idJson.region,'eng'),
+    gender: findLang(idJson.gender,'eng'),
+    createdAt: idJson.createdAt || null
+  };
+}
 // --------------- Child Record Batch Upload Endpoint ---------------
 // Mirrors structure used by frontend offline sync (see src/offline/sync.js)
 app.post('/api/child/batch', async (req,res) => {
@@ -343,6 +390,60 @@ app.get('/api/admin/stats', async (req,res)=>{
   }
 });
 
+// ---------------- Identities (Postgres) Admin Endpoints ----------------
+// These expose mock identity system records as read-only data for the Admin UI.
+app.get('/api/admin/identities', async (req,res)=>{
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ')? auth.slice(7): null;
+    const session = await validateAuthToken(token);
+    // Dev fallback: if no Mongo configured and no JWT secret, allow open read (NOT for production)
+    if(!session) {
+      if(!process.env.MONGO_URI && !process.env.MONGODB_URI && !process.env.ADMIN_JWT_SECRET) {
+        console.warn('[backend] identities endpoint unauthenticated fallback in effect (no auth backend configured)');
+      } else {
+        return res.status(401).json({ error: 'unauthorized' });
+      }
+    }
+    let client; try { client = await getPgIdentity(); } catch { return res.json({ items:[], total:0, warning:'postgres_unavailable' }); }
+    const limit = Math.min(parseInt(req.query.limit)||100, 500);
+    const offset = parseInt(req.query.offset)||0;
+    const result = await client.query('SELECT individual_id, identity_json FROM mockidentitysystem.mock_identity ORDER BY individual_id DESC OFFSET $1 LIMIT $2', [offset, limit]);
+    const items = [];
+    for(const row of result.rows){
+      try { const parsed = JSON.parse(row.identity_json); items.push(summarizeIdentity(parsed)); } catch {}
+    }
+    res.json({ items, total: items.length });
+  } catch (e){
+    console.error('[backend] identities list error', e);
+    res.status(500).json({ error:'identity_list_failed', message:e.message });
+  }
+});
+
+app.get('/api/admin/identities/:id', async (req,res)=>{
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ')? auth.slice(7): null;
+    const session = await validateAuthToken(token);
+    if(!session) {
+      if(!process.env.MONGO_URI && !process.env.MONGODB_URI && !process.env.ADMIN_JWT_SECRET) {
+        console.warn('[backend] identity detail endpoint unauthenticated fallback in effect');
+      } else {
+        return res.status(401).json({ error: 'unauthorized' });
+      }
+    }
+    let client; try { client = await getPgIdentity(); } catch { return res.status(503).json({ error:'postgres_unavailable' }); }
+    const id = req.params.id;
+    const result = await client.query('SELECT identity_json FROM mockidentitysystem.mock_identity WHERE individual_id=$1 LIMIT 1', [id]);
+    if(!result.rows.length) return res.status(404).json({ error:'not_found' });
+    let parsed; try { parsed = JSON.parse(result.rows[0].identity_json); } catch { return res.status(500).json({ error:'parse_error' }); }
+    res.json({ individualId: id, summary: summarizeIdentity(parsed), identity: sanitizeIdentity(parsed) });
+  } catch (e){
+    console.error('[backend] identity fetch error', e);
+    res.status(500).json({ error:'identity_fetch_failed', message:e.message });
+  }
+});
+
 app.get('/api/admin/children', async (req,res)=>{
   try {
     const auth = req.headers.authorization || '';
@@ -499,4 +600,5 @@ app.delete('/api/admin/child/:healthId', async (req, res) => {
 app.listen(port, ()=> {
   console.log(`[backend] listening on :${port}`);
   console.log('[startup] Routes registered: /health, /, /debug/routes, /api/admin/login, /api/admin/stats, /api/admin/children, /api/admin/child/:healthId (PUT/DELETE), /api/child/batch');
+  console.log('[startup] Added Postgres identity endpoints: /api/admin/identities, /api/admin/identities/:id');
 });
