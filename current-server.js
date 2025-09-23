@@ -42,8 +42,8 @@ app.use(express.json({
   }
 }));
 
-// ----- Mongo Setup (optional) -----
-const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
+// ----- Mongo Setup (hardcoded MongoDB Atlas URI) -----
+const MONGO_URI = "mongodb+srv://harshbontala188:8I52Oqeh3sWYTDJ7@cluster0.5lsiap2.mongodb.net/childBooklet?retryWrites=true&w=majority&appName=Cluster0";
 const MONGO_DB = process.env.MONGO_DB || 'childBooklet';
 let mongoClient; let mongoDb;
 async function initMongo(){
