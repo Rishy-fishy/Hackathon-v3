@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Card, CardContent, TextField, InputAdornment, Typography,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -13,6 +13,8 @@ export default function AdminRecords({ recentUploads = [], loading }) {
   const [filters, setFilters] = useState({ age: null, gender: '', location: '', status: '' });
   const [menus, setMenus] = useState({ age: null, gender: null, location: null, status: null });
   const [records, setRecords] = useState([]); // editable working copy
+  const [allRecords, setAllRecords] = useState([]); // all records from MongoDB
+  const [recordsLoading, setRecordsLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -29,9 +31,72 @@ export default function AdminRecords({ recentUploads = [], loading }) {
     'http://34.58.198.143:8080'
   ).replace(/\/$/, '');
 
-  // Build dataset (fallback demo data when empty)
+  // Fetch all records from MongoDB
+  const fetchAllRecords = useCallback(async () => {
+    setRecordsLoading(true);
+    try {
+      const token = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token');
+      if (!token) {
+        console.warn('No admin token found for fetching records');
+        setRecordsLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/api/admin/children?limit=1000`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch records: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('[AdminRecords] Fetched records:', data.total, 'records');
+      
+      // Transform the records to match the expected format
+      const transformedRecords = data.records.map((record, idx) => ({
+        id: record.healthId || record._id || `ID${idx+1}`,
+        name: record.name || 'Unknown',
+        age: record.age || record.ageInMonths || (Math.floor(Math.random() * 5) + 1),
+        gender: record.gender || (idx % 2 ? 'Male' : 'Female'),
+        location: record.location || record.address || `Location ${idx+1}`,
+        rep: record.representative || record.rep || `Rep${String(idx+1).padStart(3, '0')}`,
+        status: record.malnutritionStatus || record.status || 'Normal',
+        uploadedAt: record.uploadedAt ? new Date(record.uploadedAt) : new Date(),
+        // Include all original data for editing
+        ...record
+      }));
+      
+      setAllRecords(transformedRecords);
+      
+    } catch (error) {
+      console.error('[AdminRecords] Failed to fetch records:', error);
+      window.dispatchEvent(new CustomEvent('toast', { 
+        detail: { type: 'error', message: 'Failed to load records from database' } 
+      }));
+    } finally {
+      setRecordsLoading(false);
+    }
+  }, [API_BASE]);
+
+  // Fetch records on component mount
+  useEffect(() => {
+    fetchAllRecords();
+  }, [fetchAllRecords]);
+
+  // Build dataset (use real MongoDB data when available, fallback to demo data)
   const dataset = useMemo(() => {
-    if (recentUploads.length) {
+    // Priority 1: Use all records from MongoDB if available
+    if (allRecords.length > 0) {
+      console.log('[AdminRecords] Using MongoDB records:', allRecords.length);
+      return allRecords;
+    }
+    
+    // Priority 2: Use recent uploads as fallback (limited data)
+    if (recentUploads.length > 0) {
+      console.log('[AdminRecords] Using recentUploads as fallback:', recentUploads.length);
       return recentUploads.map((u, idx) => ({
         id: u.healthId || `ID${idx+1}`,
         name: u.name || 'Unknown',
@@ -43,6 +108,9 @@ export default function AdminRecords({ recentUploads = [], loading }) {
         uploadedAt: u.uploadedAt ? new Date(u.uploadedAt) : null
       }));
     }
+    
+    // Priority 3: Demo data when no real data is available
+    console.log('[AdminRecords] Using demo data');
     return Array.from({ length: 12 }).map((_, idx) => ({
       id: ['12345','67890','11223','33445','55667','77889','99001','22334','44556','66778','88990','99011'][idx],
       name: ['Sophia Clark','Ethan Carter','Olivia Davis','Liam Evans','Ava Foster','Noah Green','Isabella Hayes','Jackson Ingram','Mia Jenkins','Lucas King','Harper Lewis','Mason Moore'][idx],
@@ -53,7 +121,7 @@ export default function AdminRecords({ recentUploads = [], loading }) {
       status: ['Severe','Moderate','Mild','Normal','Severe','Moderate','Mild','Normal','Severe','Moderate','Mild','Normal'][idx],
       uploadedAt: new Date()
     }));
-  }, [recentUploads]);
+  }, [allRecords, recentUploads]);
 
   // sync working copy when dataset changes
   useEffect(() => { setRecords(dataset); }, [dataset]);
@@ -149,11 +217,17 @@ export default function AdminRecords({ recentUploads = [], loading }) {
       const result = await response.json();
       
       // Update local state with the response from server
-      setRecords(rs => rs.map(r => r.id === editing.id ? {
-        ...r, 
+      const updatedRecord = {
         ...result.record,
-        id: result.record.healthId // ensure consistency
-      } : r));
+        id: result.record.healthId, // ensure consistency
+        status: result.record.malnutritionStatus || result.record.status,
+        rep: result.record.representative || result.record.rep
+      };
+      
+      setRecords(rs => rs.map(r => r.id === editing.id ? updatedRecord : r));
+      
+      // Also update allRecords to keep data in sync
+      setAllRecords(rs => rs.map(r => r.id === editing.id ? updatedRecord : r));
       
       window.dispatchEvent(new CustomEvent('toast', { 
         detail: { type: 'success', message: 'Record updated successfully in MongoDB!' } 
@@ -197,7 +271,7 @@ export default function AdminRecords({ recentUploads = [], loading }) {
         throw new Error(error.message || `Delete failed: ${response.status}`);
       }
 
-      // Remove from local state
+      // Remove from both local state and allRecords
       setRecords(rs => {
         const index = rs.findIndex(r => r.id === toDelete.id);
         const updated = rs.filter(r => r.id !== toDelete.id);
@@ -205,6 +279,9 @@ export default function AdminRecords({ recentUploads = [], loading }) {
         setSnackbarOpen(true);
         return updated;
       });
+      
+      // Also remove from allRecords to keep data in sync
+      setAllRecords(rs => rs.filter(r => r.id !== toDelete.id));
 
       window.dispatchEvent(new CustomEvent('toast', { 
         detail: { type: 'success', message: 'Record deleted successfully from MongoDB!' } 
@@ -361,7 +438,9 @@ export default function AdminRecords({ recentUploads = [], loading }) {
               )) : (
                 <TableRow>
                   <TableCell colSpan={8} align='center' sx={{ py:6 }}>
-                    <Typography variant='body2' color='text.secondary'>{loading ? 'Loading records...' : 'No records found'}</Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      {loading || recordsLoading ? 'Loading records from MongoDB...' : 'No records found'}
+                    </Typography>
                   </TableCell>
                 </TableRow>
               )}

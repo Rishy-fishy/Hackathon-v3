@@ -238,6 +238,115 @@ app.get('/api/admin/identities/:id', async (req,res)=>{
   } catch(e){ res.status(500).json({ error:'identity_fetch_failed', message:e.message }); }
 });
 
+// Get all child records for admin panel
+app.get('/api/admin/children', async (req,res)=>{
+  try {
+    const auth = req.headers.authorization||''; const token = auth.startsWith('Bearer ')? auth.slice(7): null;
+    const session = await validateAuthToken(token); 
+    if(!session) return res.status(401).json({ error:'unauthorized' });
+    
+    await initMongo(); 
+    if(!mongoDb) return res.json({ records:[], total:0, warning:'mongo_disabled' });
+    
+    const col = mongoDb.collection('child_records');
+    const limit = Math.min(parseInt(req.query.limit)||1000, 1000); // Allow up to 1000 records
+    const offset = parseInt(req.query.offset)||0;
+    
+    const records = await col.find({}, { 
+      projection:{ _id:0 } 
+    }).sort({ uploadedAt:-1 }).skip(offset).limit(limit).toArray();
+    
+    const total = await col.countDocuments();
+    
+    res.json({ records, total, limit, offset });
+  } catch(e){ 
+    console.error('[admin/children] Error:', e.message);
+    res.status(500).json({ error:'fetch_failed', message:e.message }); 
+  }
+});
+
+// Update child record
+app.put('/api/admin/child/:id', async (req,res)=>{
+  try {
+    const auth = req.headers.authorization||''; const token = auth.startsWith('Bearer ')? auth.slice(7): null;
+    const session = await validateAuthToken(token);
+    if(!session) return res.status(401).json({ error:'unauthorized' });
+    
+    await initMongo();
+    if(!mongoDb) return res.status(503).json({ error:'mongo_disabled' });
+    
+    const col = mongoDb.collection('child_records');
+    const healthId = req.params.id;
+    const updateData = req.body;
+    
+    // Clean and validate update data
+    const cleanUpdate = {};
+    const allowedFields = ['name', 'gender', 'dateOfBirth', 'weightKg', 'heightCm', 'malnutritionStatus', 
+                          'guardianName', 'phoneNumber', 'relation', 'aadhaarId', 'location', 
+                          'representative', 'photoData'];
+    
+    allowedFields.forEach(field => {
+      if (updateData[field] !== undefined) {
+        cleanUpdate[field] = updateData[field];
+      }
+    });
+    
+    // Add updated timestamp
+    cleanUpdate.updatedAt = new Date();
+    
+    const result = await col.updateOne(
+      { healthId: healthId },
+      { $set: cleanUpdate }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error:'not_found', message:'Child record not found' });
+    }
+    
+    // Return updated record
+    const updatedRecord = await col.findOne({ healthId: healthId }, { projection: { _id: 0 } });
+    
+    res.json({ 
+      message: 'Record updated successfully',
+      record: updatedRecord,
+      modifiedCount: result.modifiedCount
+    });
+  } catch(e){
+    console.error('[admin/child/update] Error:', e.message);
+    res.status(500).json({ error:'update_failed', message:e.message });
+  }
+});
+
+// Delete child record
+app.delete('/api/admin/child/:id', async (req,res)=>{
+  try {
+    const auth = req.headers.authorization||''; const token = auth.startsWith('Bearer ')? auth.slice(7): null;
+    const session = await validateAuthToken(token);
+    if(!session) return res.status(401).json({ error:'unauthorized' });
+    
+    await initMongo();
+    if(!mongoDb) return res.status(503).json({ error:'mongo_disabled' });
+    
+    const col = mongoDb.collection('child_records');
+    const healthId = req.params.id;
+    
+    const result = await col.deleteOne({ healthId: healthId });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error:'not_found', message:'Child record not found' });
+    }
+    
+    res.json({ 
+      message: 'Record deleted successfully',
+      deletedCount: result.deletedCount,
+      healthId: healthId
+    });
+  } catch(e){
+    console.error('[admin/child/delete] Error:', e.message);
+    res.status(500).json({ error:'delete_failed', message:e.message });
+  }
+});
+
 // Global error handler for Express routes
 app.use((error, req, res, next) => {
   console.error('[ERROR] Express error handler:', error.message);

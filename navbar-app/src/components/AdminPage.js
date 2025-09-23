@@ -81,6 +81,7 @@ export default function AdminPage() {
   const [token,setToken] = useState(null);
   const [error,setError] = useState(null);
   const [stats,setStats] = useState(null);
+  const [agentCount, setAgentCount] = useState(0);
   const [loading,setLoading] = useState(false);
   const [downloadHealthId, setDownloadHealthId] = useState('');
   const [section, setSection] = useState('Dashboard');
@@ -98,6 +99,7 @@ export default function AdminPage() {
   useEffect(()=>{
     if (token) {
       fetchStats();
+      fetchAgentCount();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[token]);
@@ -156,6 +158,42 @@ export default function AdminPage() {
     } catch (e) { setError(e.message); } finally { setLoading(false); }
   }
 
+  async function fetchAgentCount(){
+    try {
+      // First login to identity backend to get token
+      const IDENTITY_API_BASE = 'http://34.27.252.72:8080';
+      const loginResp = await fetch(`${IDENTITY_API_BASE}/api/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'Admin', password: 'Admin@123' })
+      });
+      
+      if (!loginResp.ok) {
+        console.warn('[AdminPage] Identity backend login failed');
+        return;
+      }
+      
+      const loginData = await loginResp.json();
+      const identityToken = loginData.token;
+      
+      // Fetch agent count from identity backend
+      const agentsResp = await fetch(`${IDENTITY_API_BASE}/api/admin/identities?limit=1000`, {
+        headers: { Authorization: `Bearer ${identityToken}` }
+      });
+      
+      if (!agentsResp.ok) {
+        console.warn('[AdminPage] Failed to fetch agents from identity backend');
+        return;
+      }
+      
+      const agentsData = await agentsResp.json();
+      const count = agentsData.items?.length || 0;
+      setAgentCount(count);
+      console.log('[AdminPage] Fetched agent count:', count);
+    } catch (e) {
+      console.error('[AdminPage] Error fetching agent count:', e.message);
+    }
+  }
 
   function logout(){
     sessionStorage.removeItem('admin_token');
@@ -184,7 +222,7 @@ export default function AdminPage() {
   const totalRecords = stats?.totalChildRecords ?? 0;
   const recentUploads = stats?.recentUploads || [];
   // Placeholder / derived values (no API changes):
-  const activeFieldAgents = 56; // static demo value matching design
+  const activeFieldAgents = agentCount ?? 56; // dynamic agent count from identity backend
   const malnutritionCases = 123; // legacy placeholder
   const pendingUploads = Math.max(0, recentUploads.filter(u => !u.uploadedAt).length) || 12; // fallback demo value
 
