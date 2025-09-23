@@ -156,12 +156,57 @@ const PG_USER = process.env.PG_USER || 'postgres';
 const PG_PASSWORD = process.env.PG_PASSWORD || 'postgres';
 const PG_DB_IDENTITY = process.env.PG_DB_IDENTITY || 'mosip_mockidentitysystem';
 let pgIdentityClient; let pgReady=false;
+
+// Initialize PostgreSQL connection with retry logic
+async function initPgIdentity(){
+  if(pgReady && pgIdentityClient) return pgIdentityClient;
+  
+  const maxRetries = 5;
+  let retryCount = 0;
+  
+  while(retryCount < maxRetries) {
+    try {
+      if(pgIdentityClient) {
+        try { await pgIdentityClient.end(); } catch(e) {}
+      }
+      
+      pgIdentityClient = new PgClient({ 
+        host: PG_HOST, 
+        port: PG_PORT, 
+        user: PG_USER, 
+        password: PG_PASSWORD, 
+        database: PG_DB_IDENTITY,
+        connectionTimeoutMillis: 5000,
+        idleTimeoutMillis: 30000,
+        max: 1
+      });
+      
+      await pgIdentityClient.connect(); 
+      pgReady = true; 
+      console.log('[backend] Connected Postgres mockidentitysystem');
+      
+      // Add connection error handlers
+      pgIdentityClient.on('error', (err) => {
+        console.error('[postgres] Connection error:', err.message);
+        pgReady = false;
+      });
+      
+      return pgIdentityClient;
+    } catch(e) { 
+      retryCount++;
+      console.warn(`[backend] Postgres connect attempt ${retryCount}/${maxRetries} failed:`, e.message);
+      if(retryCount < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 2000 * retryCount)); // exponential backoff
+      } else {
+        throw e;
+      }
+    }
+  }
+}
+
 async function getPgIdentity(){
   if(pgReady && pgIdentityClient) return pgIdentityClient;
-  pgIdentityClient = new PgClient({ host:PG_HOST, port:PG_PORT, user:PG_USER, password:PG_PASSWORD, database:PG_DB_IDENTITY });
-  try { await pgIdentityClient.connect(); pgReady=true; console.log('[backend] Connected Postgres mockidentitysystem'); }
-  catch(e){ console.warn('[backend] Postgres connect failed', e.message); throw e; }
-  return pgIdentityClient;
+  return await initPgIdentity();
 }
 function sanitizeIdentity(full){ if(!full) return null; const c={...full}; delete c.password; delete c.pin; delete c.encodedPhoto; return c; }
 function summarizeIdentity(js){ if(!js) return null; const first=a=>Array.isArray(a)&&a.length?(a[0].value||a[0]):null; const find=(a,l)=>Array.isArray(a)?(a.find(x=>x.language===l)?.value||first(a)):null; return { individualId: js.individualId, name: find(js.fullName,'eng')||find(js.givenName,'eng')||js.individualId, email: js.email||null, phone: js.phone||null, dateOfBirth: js.dateOfBirth||null, country: find(js.country,'eng'), region: find(js.region,'eng'), gender: find(js.gender,'eng'), createdAt: js.createdAt||null }; }
@@ -211,7 +256,16 @@ app.use((req, res) => {
 });
 
 const PORT = parseInt(process.env.PORT||'8080',10);
-app.listen(PORT, '0.0.0.0', ()=>{
+app.listen(PORT, '0.0.0.0', async ()=>{
   console.log('[backend] server-merged listening on', PORT);
   console.log('[startup] Identities endpoints active: /api/admin/identities[/ :id]');
+  
+  // Initialize PostgreSQL connection on startup
+  try {
+    await initPgIdentity();
+    console.log('[startup] PostgreSQL connection initialized successfully');
+  } catch (error) {
+    console.error('[startup] Failed to initialize PostgreSQL:', error.message);
+    console.error('[startup] Identity endpoints will attempt reconnection on first request');
+  }
 });

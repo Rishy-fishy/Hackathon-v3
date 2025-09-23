@@ -26,9 +26,17 @@ body.admin-body {
   left: 0;
 }
 
+/* Dark mode for admin page */
+html[data-darkreader-mode="dynamic"] .admin-page,
+html[data-darkreader-mode="filter"] .admin-page,
+[data-darkreader-scheme="dark"] .admin-page {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+  color: gray !important;
+}
+
 /* Admin Header */
 .admin-header {
-  background: white;
+  background: gray;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   border-bottom: 1px solid #e0e6ed;
   position: sticky;
@@ -368,6 +376,48 @@ body.admin-body {
   border-bottom: none;
 }
 
+/* Dark mode for regular data tables */
+html[data-darkreader-mode="dynamic"] .data-table,
+html[data-darkreader-mode="filter"] .data-table,
+[data-darkreader-scheme="dark"] .data-table {
+  background: rgba(55, 65, 81, 0.3) !important;
+  border: 1px solid rgba(75, 85, 99, 0.2) !important;
+  border-radius: 12px !important;
+}
+
+html[data-darkreader-mode="dynamic"] .data-table thead,
+html[data-darkreader-mode="filter"] .data-table thead,
+[data-darkreader-scheme="dark"] .data-table thead {
+  background: rgba(75, 85, 99, 0.5) !important;
+  border-bottom: 2px solid rgba(107, 114, 128, 0.4) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .data-table th,
+html[data-darkreader-mode="filter"] .data-table th,
+[data-darkreader-scheme="dark"] .data-table th {
+  color: #e5e7eb !important;
+  background: rgba(75, 85, 99, 0.4) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .data-table td,
+html[data-darkreader-mode="filter"] .data-table td,
+[data-darkreader-scheme="dark"] .data-table td {
+  color: #d1d5db !important;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.3) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .data-table tbody tr,
+html[data-darkreader-mode="filter"] .data-table tbody tr,
+[data-darkreader-scheme="dark"] .data-table tbody tr {
+  background: transparent !important;
+}
+
+html[data-darkreader-mode="dynamic"] .data-table tbody tr:hover,
+html[data-darkreader-mode="filter"] .data-table tbody tr:hover,
+[data-darkreader-scheme="dark"] .data-table tbody tr:hover {
+  background: rgba(75, 85, 99, 0.3) !important;
+}
+
 /* Table Cell Specific Styles */
 .health-id {
   font-weight: 600;
@@ -382,6 +432,80 @@ body.admin-body {
 
 .age, .location, .guardian, .date {
   color: #4a5568;
+}
+
+/* Dark mode for table cell specific styles */
+html[data-darkreader-mode="dynamic"] .health-id,
+html[data-darkreader-mode="filter"] .health-id,
+[data-darkreader-scheme="dark"] .health-id {
+  color: #e5e7eb !important;
+}
+
+html[data-darkreader-mode="dynamic"] .name,
+html[data-darkreader-mode="filter"] .name,
+[data-darkreader-scheme="dark"] .name {
+  color: #d1d5db !important;
+}
+
+html[data-darkreader-mode="dynamic"] .age,
+html[data-darkreader-mode="filter"] .age,
+[data-darkreader-scheme="dark"] .age,
+html[data-darkreader-mode="dynamic"] .location,
+html[data-darkreader-mode="filter"] .location,
+[data-darkreader-scheme="dark"] .location,
+html[data-darkreader-mode="dynamic"] .guardian,
+html[data-darkreader-mode="filter"] .guardian,
+[data-darkreader-scheme="dark"] .guardian,
+html[data-darkreader-mode="dynamic"] .date,
+html[data-darkreader-mode="filter"] .date,
+[data-darkreader-scheme="dark"] .date {
+  color: #9ca3af !important;
+}
+
+/* Dark mode for search inputs */
+html[data-darkreader-mode="dynamic"] .search-bar input,
+html[data-darkreader-mode="filter"] .search-bar input,
+[data-darkreader-scheme="dark"] .search-bar input {
+  background: rgba(55, 65, 81, 0.5) !important;
+  border: 2px solid rgba(75, 85, 99, 0.4) !important;
+  color: #d1d5db !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .search-bar input:focus,
+html[data-darkreader-mode="filter"] .search-bar input:focus,
+[data-darkreader-scheme="dark"] .search-bar input:focus {
+  border-color: rgba(107, 114, 128, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.3) !important;
+  background: rgba(75, 85, 99, 0.6) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .search-input,
+html[data-darkreader-mode="filter"] .search-input,
+[data-darkreader-scheme="dark"] .search-input {
+  background: rgba(55, 65, 81, 0.5) !important;
+  border: 2px solid rgba(75, 85, 99, 0.4) !important;
+  color: #d1d5db !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .search-input:focus,
+html[data-darkreader-mode="filter"] .search-input:focus,
+[data-darkreader-scheme="dark"] .search-input:focus {
+  border-color: rgba(107, 114, 128, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.3) !important;
+  background: rgba(75, 85, 99, 0.6) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .search-bar input::placeholder,
+html[data-darkreader-mode="filter"] .search-bar input::placeholder,
+[data-darkreader-scheme="dark"] .search-bar input::placeholder,
+html[data-darkreader-mode="dynamic"] .search-input::placeholder,
+html[data-darkreader-mode="filter"] .search-input::placeholder,
+[data-darkreader-scheme="dark"] .search-input::placeholder {
+  color: #9ca3af !important;
 }
 
 .status-badge {
@@ -1183,6 +1307,465 @@ body:not(.admin-authed) .admin-page > h2 + form.admin-login-form { margin-top:0;
   .recent-item .rtime { grid-column:1 / span 2; text-align:left; font-size:.7rem; }
 }
 
+/* ===== DARK MODE FOR ADMIN DASHBOARD ===== */
+
+/* Material-UI Paper/Card Components */
+html[data-darkreader-mode="dynamic"] .MuiPaper-root,
+html[data-darkreader-mode="filter"] .MuiPaper-root,
+[data-darkreader-scheme="dark"] .MuiPaper-root {
+  background: rgba(55, 65, 81, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(75, 85, 99, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  color: #e5e7eb !important;
+}
+
+/* Material-UI Drawer */
+html[data-darkreader-mode="dynamic"] .MuiDrawer-paper,
+html[data-darkreader-mode="filter"] .MuiDrawer-paper,
+[data-darkreader-scheme="dark"] .MuiDrawer-paper {
+  background: rgba(18, 18, 18, 0.6) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+/* Material-UI AppBar */
+html[data-darkreader-mode="dynamic"] .MuiAppBar-root,
+html[data-darkreader-mode="filter"] .MuiAppBar-root,
+[data-darkreader-scheme="dark"] .MuiAppBar-root {
+  background: rgba(18, 18, 18, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+/* Material-UI Typography */
+html[data-darkreader-mode="dynamic"] .MuiTypography-root,
+html[data-darkreader-mode="filter"] .MuiTypography-root,
+[data-darkreader-scheme="dark"] .MuiTypography-root {
+  color: #e2e8f0 !important;
+}
+
+/* Material-UI TextField */
+html[data-darkreader-mode="dynamic"] .MuiTextField-root .MuiInputBase-root,
+html[data-darkreader-mode="filter"] .MuiTextField-root .MuiInputBase-root,
+[data-darkreader-scheme="dark"] .MuiTextField-root .MuiInputBase-root {
+  background: rgba(18, 18, 18, 0.3) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 12px !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiTextField-root .MuiInputLabel-root,
+html[data-darkreader-mode="filter"] .MuiTextField-root .MuiInputLabel-root,
+[data-darkreader-scheme="dark"] .MuiTextField-root .MuiInputLabel-root {
+  color: #a0a0a0 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiInputBase-input,
+html[data-darkreader-mode="filter"] .MuiInputBase-input,
+[data-darkreader-scheme="dark"] .MuiInputBase-input {
+  color: #e2e8f0 !important;
+}
+
+/* Material-UI Button */
+html[data-darkreader-mode="dynamic"] .MuiButton-root,
+html[data-darkreader-mode="filter"] .MuiButton-root,
+[data-darkreader-scheme="dark"] .MuiButton-root {
+  background: rgba(75, 85, 99, 0.4) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(107, 114, 128, 0.3) !important;
+  border-radius: 20px !important;
+  color: #d1d5db !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiButton-contained,
+html[data-darkreader-mode="filter"] .MuiButton-contained,
+[data-darkreader-scheme="dark"] .MuiButton-contained {
+  background: rgba(55, 65, 81, 0.8) !important;
+  color: #e5e7eb !important;
+  border: 1px solid rgba(75, 85, 99, 0.6) !important;
+}
+
+/* Material-UI List Items */
+html[data-darkreader-mode="dynamic"] .MuiListItemButton-root,
+html[data-darkreader-mode="filter"] .MuiListItemButton-root,
+[data-darkreader-scheme="dark"] .MuiListItemButton-root {
+  background: rgba(55, 65, 81, 0.3) !important;
+  color: #d1d5db !important;
+  border-radius: 8px !important;
+  margin: 4px 8px !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(75, 85, 99, 0.2) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiListItemButton-root:hover,
+html[data-darkreader-mode="filter"] .MuiListItemButton-root:hover,
+[data-darkreader-scheme="dark"] .MuiListItemButton-root:hover {
+  background: rgba(75, 85, 99, 0.5) !important;
+  border-color: rgba(107, 114, 128, 0.4) !important;
+  transform: translateX(2px) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiListItemButton-root.Mui-selected,
+html[data-darkreader-mode="filter"] .MuiListItemButton-root.Mui-selected,
+[data-darkreader-scheme="dark"] .MuiListItemButton-root.Mui-selected {
+  background: rgba(75, 85, 99, 0.7) !important;
+  color: #f3f4f6 !important;
+  border-color: rgba(107, 114, 128, 0.5) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Material-UI Icons */
+html[data-darkreader-mode="dynamic"] .MuiSvgIcon-root,
+html[data-darkreader-mode="filter"] .MuiSvgIcon-root,
+[data-darkreader-scheme="dark"] .MuiSvgIcon-root {
+  color: #e2e8f0 !important;
+}
+
+/* Material-UI Avatar */
+html[data-darkreader-mode="dynamic"] .MuiAvatar-root,
+html[data-darkreader-mode="filter"] .MuiAvatar-root,
+[data-darkreader-scheme="dark"] .MuiAvatar-root {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #e2e8f0 !important;
+}
+
+/* Material-UI Menu */
+html[data-darkreader-mode="dynamic"] .MuiMenu-paper,
+html[data-darkreader-mode="filter"] .MuiMenu-paper,
+[data-darkreader-scheme="dark"] .MuiMenu-paper {
+  background: rgba(18, 18, 18, 0.8) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiMenuItem-root,
+html[data-darkreader-mode="filter"] .MuiMenuItem-root,
+[data-darkreader-scheme="dark"] .MuiMenuItem-root {
+  color: #e2e8f0 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiMenuItem-root:hover,
+html[data-darkreader-mode="filter"] .MuiMenuItem-root:hover,
+[data-darkreader-scheme="dark"] .MuiMenuItem-root:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Material-UI Table */
+html[data-darkreader-mode="dynamic"] .MuiTable-root,
+html[data-darkreader-mode="filter"] .MuiTable-root,
+[data-darkreader-scheme="dark"] .MuiTable-root {
+  background: rgba(55, 65, 81, 0.3) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiTableHead-root,
+html[data-darkreader-mode="filter"] .MuiTableHead-root,
+[data-darkreader-scheme="dark"] .MuiTableHead-root {
+  background: rgba(75, 85, 99, 0.5) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiTableCell-root,
+html[data-darkreader-mode="filter"] .MuiTableCell-root,
+[data-darkreader-scheme="dark"] .MuiTableCell-root {
+  color: #d1d5db !important;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.3) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiTableHead-root .MuiTableCell-root,
+html[data-darkreader-mode="filter"] .MuiTableHead-root .MuiTableCell-root,
+[data-darkreader-scheme="dark"] .MuiTableHead-root .MuiTableCell-root {
+  color: #e5e7eb !important;
+  font-weight: 600 !important;
+  background: rgba(75, 85, 99, 0.4) !important;
+}
+
+/* Material-UI Chip */
+html[data-darkreader-mode="dynamic"] .MuiChip-root,
+html[data-darkreader-mode="filter"] .MuiChip-root,
+[data-darkreader-scheme="dark"] .MuiChip-root {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Material-UI IconButton */
+html[data-darkreader-mode="dynamic"] .MuiIconButton-root,
+html[data-darkreader-mode="filter"] .MuiIconButton-root,
+[data-darkreader-scheme="dark"] .MuiIconButton-root {
+  color: #e2e8f0 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiIconButton-root:hover,
+html[data-darkreader-mode="filter"] .MuiIconButton-root:hover,
+[data-darkreader-scheme="dark"] .MuiIconButton-root:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Material-UI CircularProgress */
+html[data-darkreader-mode="dynamic"] .MuiCircularProgress-root,
+html[data-darkreader-mode="filter"] .MuiCircularProgress-root,
+[data-darkreader-scheme="dark"] .MuiCircularProgress-root {
+  color: #e2e8f0 !important;
+}
+
+/* Material-UI LinearProgress */
+html[data-darkreader-mode="dynamic"] .MuiLinearProgress-root,
+html[data-darkreader-mode="filter"] .MuiLinearProgress-root,
+[data-darkreader-scheme="dark"] .MuiLinearProgress-root {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Material-UI Toolbar */
+html[data-darkreader-mode="dynamic"] .MuiToolbar-root,
+html[data-darkreader-mode="filter"] .MuiToolbar-root,
+[data-darkreader-scheme="dark"] .MuiToolbar-root {
+  color: #e2e8f0 !important;
+}
+
+/* Material-UI Divider */
+html[data-darkreader-mode="dynamic"] .MuiDivider-root,
+html[data-darkreader-mode="filter"] .MuiDivider-root,
+[data-darkreader-scheme="dark"] .MuiDivider-root {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Enhanced glassmorphism effects for dark mode */
+html[data-darkreader-mode="dynamic"] .MuiCard-root,
+html[data-darkreader-mode="filter"] .MuiCard-root,
+[data-darkreader-scheme="dark"] .MuiCard-root {
+  background: rgba(55, 65, 81, 0.4) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(75, 85, 99, 0.3) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(107, 114, 128, 0.2) !important;
+  transition: all 0.3s ease !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiCard-root:hover,
+html[data-darkreader-mode="filter"] .MuiCard-root:hover,
+[data-darkreader-scheme="dark"] .MuiCard-root:hover {
+  background: rgba(75, 85, 99, 0.5) !important;
+  border-color: rgba(107, 114, 128, 0.4) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(156, 163, 175, 0.2) !important;
+}
+
+/* Main content area glassmorphism */
+html[data-darkreader-mode="dynamic"] .admin-page .MuiBox-root,
+html[data-darkreader-mode="filter"] .admin-page .MuiBox-root,
+[data-darkreader-scheme="dark"] .admin-page .MuiBox-root {
+  background: transparent !important;
+}
+
+/* Login form glassmorphism */
+html[data-darkreader-mode="dynamic"] .admin-page .MuiPaper-root,
+html[data-darkreader-mode="filter"] .admin-page .MuiPaper-root,
+[data-darkreader-scheme="dark"] .admin-page .MuiPaper-root {
+  background: rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Specific login form styling */
+html[data-darkreader-mode="dynamic"] .admin-login-form,
+html[data-darkreader-mode="filter"] .admin-login-form,
+[data-darkreader-scheme="dark"] .admin-login-form {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Material-UI Input field styling with glassmorphism */
+html[data-darkreader-mode="dynamic"] .MuiTextField-root .MuiOutlinedInput-root,
+html[data-darkreader-mode="filter"] .MuiTextField-root .MuiOutlinedInput-root,
+[data-darkreader-scheme="dark"] .MuiTextField-root .MuiOutlinedInput-root {
+  background: rgba(18, 18, 18, 0.4) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiTextField-root .MuiOutlinedInput-notchedOutline,
+html[data-darkreader-mode="filter"] .MuiTextField-root .MuiOutlinedInput-notchedOutline,
+[data-darkreader-scheme="dark"] .MuiTextField-root .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Grid container transparency */
+html[data-darkreader-mode="dynamic"] .MuiGrid-container,
+html[data-darkreader-mode="filter"] .MuiGrid-container,
+[data-darkreader-scheme="dark"] .MuiGrid-container {
+  background: transparent !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiGrid-item,
+html[data-darkreader-mode="filter"] .MuiGrid-item,
+[data-darkreader-scheme="dark"] .MuiGrid-item {
+  background: transparent !important;
+}
+
+/* Table containers glassmorphism */
+html[data-darkreader-mode="dynamic"] .MuiTableContainer-root,
+html[data-darkreader-mode="filter"] .MuiTableContainer-root,
+[data-darkreader-scheme="dark"] .MuiTableContainer-root {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 16px !important;
+}
+
+/* Progress bars and charts glassmorphism */
+html[data-darkreader-mode="dynamic"] .chart-container,
+html[data-darkreader-mode="filter"] .chart-container,
+[data-darkreader-scheme="dark"] .chart-container {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border-radius: 12px !important;
+  padding: 1rem !important;
+}
+
+/* Input focus states for glassmorphism */
+html[data-darkreader-mode="dynamic"] .MuiTextField-root .MuiInputBase-root:focus-within,
+html[data-darkreader-mode="filter"] .MuiTextField-root .MuiInputBase-root:focus-within,
+[data-darkreader-scheme="dark"] .MuiTextField-root .MuiInputBase-root:focus-within {
+  background: rgba(18, 18, 18, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Button hover states */
+html[data-darkreader-mode="dynamic"] .MuiButton-root:hover,
+html[data-darkreader-mode="filter"] .MuiButton-root:hover,
+[data-darkreader-scheme="dark"] .MuiButton-root:hover {
+  background: rgba(107, 114, 128, 0.5) !important;
+  border-color: rgba(156, 163, 175, 0.4) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiButton-contained:hover,
+html[data-darkreader-mode="filter"] .MuiButton-contained:hover,
+[data-darkreader-scheme="dark"] .MuiButton-contained:hover {
+  background: rgba(75, 85, 99, 0.9) !important;
+  border-color: rgba(107, 114, 128, 0.7) !important;
+}
+
+/* Scrollbar styling for dark mode */
+html[data-darkreader-mode="dynamic"] .MuiDrawer-paper::-webkit-scrollbar,
+html[data-darkreader-mode="filter"] .MuiDrawer-paper::-webkit-scrollbar,
+[data-darkreader-scheme="dark"] .MuiDrawer-paper::-webkit-scrollbar {
+  width: 6px;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiDrawer-paper::-webkit-scrollbar-track,
+html[data-darkreader-mode="filter"] .MuiDrawer-paper::-webkit-scrollbar-track,
+[data-darkreader-scheme="dark"] .MuiDrawer-paper::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+html[data-darkreader-mode="dynamic"] .MuiDrawer-paper::-webkit-scrollbar-thumb,
+html[data-darkreader-mode="filter"] .MuiDrawer-paper::-webkit-scrollbar-thumb,
+[data-darkreader-scheme="dark"] .MuiDrawer-paper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+html[data-darkreader-mode="dynamic"] .MuiDrawer-paper::-webkit-scrollbar-thumb:hover,
+html[data-darkreader-mode="filter"] .MuiDrawer-paper::-webkit-scrollbar-thumb:hover,
+[data-darkreader-scheme="dark"] .MuiDrawer-paper::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Dark mode styles for dashboard stats and charts */
+html[data-darkreader-mode="dynamic"] .dashboard-stats,
+html[data-darkreader-mode="filter"] .dashboard-stats,
+[data-darkreader-scheme="dark"] .dashboard-stats {
+  background: transparent !important;
+}
+
+html[data-darkreader-mode="dynamic"] .stat-card,
+html[data-darkreader-mode="filter"] .stat-card,
+[data-darkreader-scheme="dark"] .stat-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  color: #e2e8f0 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .recent-uploads,
+html[data-darkreader-mode="filter"] .recent-uploads,
+[data-darkreader-scheme="dark"] .recent-uploads {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 16px !important;
+}
+
+/* Map widget glassmorphism */
+html[data-darkreader-mode="dynamic"] .map-widget-container,
+html[data-darkreader-mode="filter"] .map-widget-container,
+[data-darkreader-scheme="dark"] .map-widget-container {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 16px !important;
+}
+
+/* Severity breakdown chart glassmorphism */
+html[data-darkreader-mode="dynamic"] .severity-chart,
+html[data-darkreader-mode="filter"] .severity-chart,
+[data-darkreader-scheme="dark"] .severity-chart {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border-radius: 12px !important;
+}
+
+/* Geographic breakdown table glassmorphism */
+html[data-darkreader-mode="dynamic"] .geo-breakdown-table,
+html[data-darkreader-mode="filter"] .geo-breakdown-table,
+[data-darkreader-scheme="dark"] .geo-breakdown-table {
+  background: rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-radius: 12px !important;
+}
+
+/* Status indicators with glassmorphism */
+html[data-darkreader-mode="dynamic"] .status-indicator,
+html[data-darkreader-mode="filter"] .status-indicator,
+[data-darkreader-scheme="dark"] .status-indicator {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 20px !important;
+}
+
 /* ===== New Sidebar Admin Layout ===== */
 .admin-shell { 
   display: flex; 
@@ -1197,6 +1780,13 @@ body:not(.admin-authed) .admin-page > h2 + form.admin-login-form { margin-top:0;
   z-index: 999;
 }
 
+/* Dark mode for admin shell */
+html[data-darkreader-mode="dynamic"] .admin-shell,
+html[data-darkreader-mode="filter"] .admin-shell,
+[data-darkreader-scheme="dark"] .admin-shell {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+}
+
 .admin-sidebar { 
   width: 200px; 
   background: #4a90e2; 
@@ -1206,6 +1796,16 @@ body:not(.admin-authed) .admin-page > h2 + form.admin-login-form { margin-top:0;
   padding: 0;
   box-sizing: border-box; 
   overflow-y: auto;
+}
+
+/* Dark mode glassmorphism for admin sidebar */
+html[data-darkreader-mode="dynamic"] .admin-sidebar,
+html[data-darkreader-mode="filter"] .admin-sidebar,
+[data-darkreader-scheme="dark"] .admin-sidebar {
+  background: rgba(18, 18, 18, 0.6) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .brand-block { 
