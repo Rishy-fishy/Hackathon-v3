@@ -46,7 +46,6 @@ import {
 } from '@mui/icons-material';
 import AdminRecords from './AdminRecords';
 import AdminAnalytics from './AdminAnalytics';
-import MapWidget from './MapWidget';
 import AdminAgents from './AdminAgents';
 
 // Backend endpoints expected:
@@ -82,6 +81,7 @@ export default function AdminPage() {
   const [error,setError] = useState(null);
   const [stats,setStats] = useState(null);
   const [agentCount, setAgentCount] = useState(0);
+  const [periodStats, setPeriodStats] = useState({ current: 0, previous: 0, delta: 0 });
   const [loading,setLoading] = useState(false);
   const [downloadHealthId, setDownloadHealthId] = useState('');
   const [section, setSection] = useState('Dashboard');
@@ -100,6 +100,7 @@ export default function AdminPage() {
     if (token) {
       fetchStats();
       fetchAgentCount();
+      fetchPeriodComparison();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[token]);
@@ -195,6 +196,55 @@ export default function AdminPage() {
     }
   }
 
+  async function fetchPeriodComparison() {
+    try {
+      const t = sessionStorage.getItem('admin_token');
+      if (!t) return;
+      
+      // Calculate date ranges for current period (last 30 days) and previous period (31-60 days ago)
+      const now = new Date();
+      const currentPeriodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+      const previousPeriodStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000); // 60 days ago
+      const previousPeriodEnd = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+      
+      // Fetch all records to analyze by date
+      const response = await fetch(api('/api/admin/children?limit=1000'), {
+        headers: { 'Authorization': `Bearer ${t}` }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch records for period comparison');
+      const data = await response.json();
+      
+      // Filter records by upload date for current and previous periods
+      const currentPeriodRecords = data.records.filter(record => {
+        if (!record.uploadedAt) return false;
+        const uploadDate = new Date(record.uploadedAt);
+        return uploadDate >= currentPeriodStart && uploadDate <= now;
+      });
+      
+      const previousPeriodRecords = data.records.filter(record => {
+        if (!record.uploadedAt) return false;
+        const uploadDate = new Date(record.uploadedAt);
+        return uploadDate >= previousPeriodStart && uploadDate <= previousPeriodEnd;
+      });
+      
+      const currentCount = currentPeriodRecords.length;
+      const previousCount = previousPeriodRecords.length;
+      const delta = previousCount > 0 ? (((currentCount - previousCount) / previousCount) * 100).toFixed(1) : 0;
+      
+      setPeriodStats({
+        current: currentCount,
+        previous: previousCount,
+        delta: parseFloat(delta)
+      });
+      
+      console.log('[AdminPage] Period comparison:', { currentCount, previousCount, delta });
+    } catch (error) {
+      console.error('Error fetching period comparison:', error);
+      setPeriodStats({ current: 0, previous: 0, delta: 0 });
+    }
+  }
+
   function logout(){
     sessionStorage.removeItem('admin_token');
     setToken(null);
@@ -237,9 +287,9 @@ export default function AdminPage() {
   const totalRecordsDelta = prevTotalRecords ? (((totalRecords - prevTotalRecords)/prevTotalRecords)*100).toFixed(1) : '0.0';
   const prevActiveAgents = activeFieldAgents; // no change
   const activeAgentsDelta = 0; // neutral
-  const newRecords = 1230; // placeholder
-  const prevNewRecords = 1256; // placeholder for -2.1%
-  const newRecordsDelta = (((newRecords - prevNewRecords)/prevNewRecords)*100).toFixed(1); // negative
+  const newRecords = periodStats.current;
+  const prevNewRecords = periodStats.previous;
+  const newRecordsDelta = periodStats.delta;
   const regionBreakdown = [
     { region:'Northern Region', cases:2714, severe:112 },
     { region:'Eastern Region',  cases:1980, severe:74  },
@@ -448,9 +498,9 @@ export default function AdminPage() {
                   <Card elevation={0} sx={{ border:'1px solid #e2e8f0', borderRadius:2, background:'#fff' }}>
                     <CardContent sx={{ p:2.25 }}>
                       <Typography sx={{ fontSize:13, fontWeight:600, color:'#475569', mb:0.5 }}>New vs. Last Period</Typography>
-                      <Typography variant="h5" fontWeight={700}>{nf.format(newRecords)}</Typography>
-                      <Typography variant="caption" sx={{ mt:0.5, display:'flex', alignItems:'center', gap:.5, color: parseFloat(newRecordsDelta) >= 0 ? 'success.main':'error.main' }}>
-                        {parseFloat(newRecordsDelta) >= 0 ? '↑' : '↓'} {Math.abs(newRecordsDelta)}% new records
+                      <Typography variant="h5" fontWeight={700}>{nf.format(newRecords || 0)}</Typography>
+                      <Typography variant="caption" sx={{ mt:0.5, display:'flex', alignItems:'center', gap:.5, color: parseFloat(newRecordsDelta || 0) >= 0 ? 'success.main':'error.main' }}>
+                        {periodStats.previous === 0 ? 'No previous data' : `${parseFloat(newRecordsDelta || 0) >= 0 ? '↑' : '↓'} ${Math.abs(newRecordsDelta || 0)}% new records`}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -498,9 +548,9 @@ export default function AdminPage() {
                 </Grid>
               </Grid>
 
-              {/* Geographic Breakdown & Map Placeholder */}
+              {/* Geographic Breakdown */}
               <Grid container spacing={2}>
-                <Grid item xs={12} md={7}>
+                <Grid item xs={12}>
                   <Card elevation={0} sx={{ border:'1px solid #e2e8f0', borderRadius:2 }}>
                     <CardContent sx={{ p:2.2 }}>
                       <Typography variant="subtitle2" fontWeight={600} mb={1}>Geographic Breakdown</Typography>
@@ -522,18 +572,6 @@ export default function AdminPage() {
                           ))}
                         </TableBody>
                       </Table>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={5}>
-                  <Card elevation={0} sx={{ border:'1px solid #e2e8f0', borderRadius:2, height:'100%' }}>
-                    <CardContent sx={{ p:2.2 }}>
-                      <Typography variant="subtitle2" fontWeight={600} mb={1}>Region Map</Typography>
-                      <MapWidget height={260} markers={[
-                        { position:{ lat:28.6139, lng:77.2090 }, label:'Delhi' },
-                        { position:{ lat:19.0760, lng:72.8777 }, label:'Mumbai' },
-                        { position:{ lat:13.0827, lng:80.2707 }, label:'Chennai' }
-                      ]} />
                     </CardContent>
                   </Card>
                 </Grid>

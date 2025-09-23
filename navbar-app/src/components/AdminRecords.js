@@ -81,47 +81,25 @@ export default function AdminRecords({ recentUploads = [], loading }) {
     }
   }, [API_BASE]);
 
-  // Fetch records on component mount
+  // Fetch records immediately on component mount
   useEffect(() => {
+    console.log('[AdminRecords] Component mounted, fetching records immediately...');
     fetchAllRecords();
   }, [fetchAllRecords]);
 
-  // Build dataset (use real MongoDB data when available, fallback to demo data)
+  // Build dataset (use only real MongoDB data, no fallbacks)
   const dataset = useMemo(() => {
-    // Priority 1: Use all records from MongoDB if available
+    // Only show data if we have successfully fetched real MongoDB records
     if (allRecords.length > 0) {
       console.log('[AdminRecords] Using MongoDB records:', allRecords.length);
       return allRecords;
     }
     
-    // Priority 2: Use recent uploads as fallback (limited data)
-    if (recentUploads.length > 0) {
-      console.log('[AdminRecords] Using recentUploads as fallback:', recentUploads.length);
-      return recentUploads.map((u, idx) => ({
-        id: u.healthId || `ID${idx+1}`,
-        name: u.name || 'Unknown',
-        age: u.age || (2 + (idx % 5)),
-        gender: u.gender || (idx % 2 ? 'Male' : 'Female'),
-        location: u.location || `Rural Village ${String.fromCharCode(65 + (idx % 6))}`,
-        rep: u.representative || `Rep00${(idx%9)+1}`,
-        status: u.malnutritionStatus || (['Severe','Moderate','Mild','Normal'][idx % 4]),
-        uploadedAt: u.uploadedAt ? new Date(u.uploadedAt) : null
-      }));
-    }
-    
-    // Priority 3: Demo data when no real data is available
-    console.log('[AdminRecords] Using demo data');
-    return Array.from({ length: 12 }).map((_, idx) => ({
-      id: ['12345','67890','11223','33445','55667','77889','99001','22334','44556','66778','88990','99011'][idx],
-      name: ['Sophia Clark','Ethan Carter','Olivia Davis','Liam Evans','Ava Foster','Noah Green','Isabella Hayes','Jackson Ingram','Mia Jenkins','Lucas King','Harper Lewis','Mason Moore'][idx],
-      age: [3,2,4,5,3,4,2,4,1,3,5,2][idx],
-      gender: ['Female','Male','Female','Male','Female','Male','Female','Male','Female','Male','Female','Male'][idx],
-      location: ['Rural Village A','Urban Center B','Rural Village C','Urban Center D','Rural Village E','Urban Center F','Rural Village G','Urban Center H','Rural Village I','Urban Center J','Rural Village K','Urban Center L'][idx],
-      rep: ['Rep001','Rep002','Rep003','Rep004','Rep005','Rep006','Rep007','Rep008','Rep009','Rep010','Rep011','Rep012'][idx],
-      status: ['Severe','Moderate','Mild','Normal','Severe','Moderate','Mild','Normal','Severe','Moderate','Mild','Normal'][idx],
-      uploadedAt: new Date()
-    }));
-  }, [allRecords, recentUploads]);
+    // Always return empty array to show loading state until real data arrives
+    // This prevents any demo/placeholder data from flashing
+    console.log('[AdminRecords] Waiting for real MongoDB data, showing loading state');
+    return [];
+  }, [allRecords]);
 
   // sync working copy when dataset changes
   useEffect(() => { setRecords(dataset); }, [dataset]);
@@ -439,7 +417,7 @@ export default function AdminRecords({ recentUploads = [], loading }) {
                 <TableRow>
                   <TableCell colSpan={8} align='center' sx={{ py:6 }}>
                     <Typography variant='body2' color='text.secondary'>
-                      {loading || recordsLoading ? 'Loading records from MongoDB...' : 'No records found'}
+                      {loading || recordsLoading ? 'Loading...' : 'No records found'}
                     </Typography>
                   </TableCell>
                 </TableRow>
