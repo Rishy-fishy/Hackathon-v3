@@ -3,25 +3,24 @@ import {
   Card, CardContent, TextField, InputAdornment, Typography,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Paper, Chip, Stack, Menu, MenuItem, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button,
-  FormControl, InputLabel, Select, Snackbar, Grid, Divider, IconButton
+  Snackbar
 } from '@mui/material';
-import { Search as SearchIcon, ArrowDropDown as ArrowDropDownIcon, Close as CloseIcon, DeleteOutline as DeleteOutlineIcon, PhotoCamera as PhotoCameraIcon } from '@mui/icons-material';
+import { Search as SearchIcon, ArrowDropDown as ArrowDropDownIcon } from '@mui/icons-material';
 
 // Clean implementation: header filter menus for Age, Gender, Location, Malnutrition Status
-export default function AdminRecords({ recentUploads = [], loading }) {
+export default function AdminRecords() {
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({ age: null, gender: '', location: '', status: '' });
   const [menus, setMenus] = useState({ age: null, gender: null, location: null, status: null });
-  const [records, setRecords] = useState([]); // editable working copy
+  const [records, setRecords] = useState([]); // working copy of records
   const [allRecords, setAllRecords] = useState([]); // all records from MongoDB
-  const [recordsLoading, setRecordsLoading] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [recordsLoading, setRecordsLoading] = useState(true);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState(null);
   const [recentlyDeleted, setRecentlyDeleted] = useState(null); // { record, index }
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
+
   const [deleting, setDeleting] = useState(false);
 
   // API base URL
@@ -65,7 +64,7 @@ export default function AdminRecords({ recentUploads = [], loading }) {
         rep: record.representative || record.rep || `Rep${String(idx+1).padStart(3, '0')}`,
         status: record.malnutritionStatus || record.status || 'Normal',
         uploadedAt: record.uploadedAt ? new Date(record.uploadedAt) : new Date(),
-        // Include all original data for editing
+        // Include all original data
         ...record
       }));
       
@@ -81,24 +80,16 @@ export default function AdminRecords({ recentUploads = [], loading }) {
     }
   }, [API_BASE]);
 
-  // Fetch records immediately on component mount
+  // Fetch records on component mount
   useEffect(() => {
-    console.log('[AdminRecords] Component mounted, fetching records immediately...');
     fetchAllRecords();
   }, [fetchAllRecords]);
 
-  // Build dataset (use only real MongoDB data, no fallbacks)
+  // Build dataset (only use real MongoDB data, no fallbacks)
   const dataset = useMemo(() => {
-    // Only show data if we have successfully fetched real MongoDB records
-    if (allRecords.length > 0) {
-      console.log('[AdminRecords] Using MongoDB records:', allRecords.length);
-      return allRecords;
-    }
-    
-    // Always return empty array to show loading state until real data arrives
-    // This prevents any demo/placeholder data from flashing
-    console.log('[AdminRecords] Waiting for real MongoDB data, showing loading state');
-    return [];
+    // Only use MongoDB records - no fallbacks to avoid showing temporary demo data
+    console.log('[AdminRecords] Using MongoDB records:', allRecords.length);
+    return allRecords;
   }, [allRecords]);
 
   // sync working copy when dataset changes
@@ -132,95 +123,7 @@ export default function AdminRecords({ recentUploads = [], loading }) {
   const chooseFilter = (key, value) => { setFilters(f => ({ ...f, [key]: value })); closeMenu(key); };
   const clearFilter = (key) => setFilters(f=>({ ...f, [key]: key==='age'? null : '' }));
 
-  const beginEdit = (row) => {
-    setEditing({
-      ...row,
-      dateOfBirth: row.dateOfBirth || '',
-      aadhaarId: row.aadhaarId || '',
-      weightKg: row.weightKg || '',
-      heightCm: row.heightCm || '',
-      guardianName: row.guardianName || row.rep || '',
-      phoneNumber: row.phoneNumber || '',
-      relation: row.relation || '',
-      photoData: row.photoData || ''
-    });
-    setEditOpen(true);
-  };
-  const closeEdit = () => { setEditOpen(false); setEditing(null); };
-  const saveEdit = async () => {
-    if (!editing) return;
-    
-    setSaving(true);
-    try {
-      // Get admin token
-      const token = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token');
-      if (!token) {
-        window.dispatchEvent(new CustomEvent('toast', { 
-          detail: { type: 'error', message: 'Authentication required. Please log in again.' } 
-        }));
-        return;
-      }
 
-      // Prepare update data
-      const updateData = {
-        name: editing.name,
-        gender: editing.gender,
-        dateOfBirth: editing.dateOfBirth,
-        weightKg: editing.weightKg ? parseFloat(editing.weightKg) : null,
-        heightCm: editing.heightCm ? parseFloat(editing.heightCm) : null,
-        status: editing.status,
-        guardianName: editing.guardianName,
-        phoneNumber: editing.phoneNumber,
-        relation: editing.relation,
-        aadhaarId: editing.aadhaarId,
-        location: editing.location,
-        rep: editing.rep,
-        photoData: editing.photoData
-      };
-
-      const response = await fetch(`${API_BASE}/api/admin/child/${editing.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(updateData)
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Update failed: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      // Update local state with the response from server
-      const updatedRecord = {
-        ...result.record,
-        id: result.record.healthId, // ensure consistency
-        status: result.record.malnutritionStatus || result.record.status,
-        rep: result.record.representative || result.record.rep
-      };
-      
-      setRecords(rs => rs.map(r => r.id === editing.id ? updatedRecord : r));
-      
-      // Also update allRecords to keep data in sync
-      setAllRecords(rs => rs.map(r => r.id === editing.id ? updatedRecord : r));
-      
-      window.dispatchEvent(new CustomEvent('toast', { 
-        detail: { type: 'success', message: 'Record updated successfully in MongoDB!' } 
-      }));
-      
-      closeEdit();
-    } catch (error) {
-      console.error('Save error:', error);
-      window.dispatchEvent(new CustomEvent('toast', { 
-        detail: { type: 'error', message: error.message || 'Failed to update record' } 
-      }));
-    } finally {
-      setSaving(false);
-    }
-  };
   const beginDelete = (row) => { setToDelete(row); setDeleteOpen(true); };
   const closeDelete = () => { setDeleteOpen(false); setToDelete(null); };
   const confirmDelete = async () => {
@@ -275,7 +178,6 @@ export default function AdminRecords({ recentUploads = [], loading }) {
     }
     
     closeDelete();
-    if (editOpen) closeEdit();
   };
   const undoDelete = () => {
     if (recentlyDeleted) {
@@ -398,7 +300,15 @@ export default function AdminRecords({ recentUploads = [], loading }) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.length ? rows.map(r => (
+              {recordsLoading ? (
+                <TableRow>
+                  <TableCell colSpan={8} align='center' sx={{ py:6 }}>
+                    <Typography variant='body2' color='text.secondary'>
+                      Loading...
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : rows.length > 0 ? rows.map(r => (
                 <TableRow key={r.id} hover>
                   <TableCell sx={{ color:'#0f62fe', fontWeight:600 }}>{r.id}</TableCell>
                   <TableCell>{r.name}</TableCell>
@@ -410,14 +320,14 @@ export default function AdminRecords({ recentUploads = [], loading }) {
                     <Chip size='small' label={r.status} color={statusColor(r.status)} variant='outlined' sx={{ fontWeight:600 }} />
                   </TableCell>
                   <TableCell align='center'>
-                    <Typography variant='body2' sx={{ color:'#0f62fe', cursor:'pointer', fontWeight:500 }} onClick={()=>beginEdit(r)}>Edit</Typography>
+                    <Typography variant='body2' sx={{ color:'#dc2626', cursor:'pointer', fontWeight:500 }} onClick={()=>beginDelete(r)}>Delete</Typography>
                   </TableCell>
                 </TableRow>
               )) : (
                 <TableRow>
                   <TableCell colSpan={8} align='center' sx={{ py:6 }}>
                     <Typography variant='body2' color='text.secondary'>
-                      {loading || recordsLoading ? 'Loading...' : 'No records found'}
+                      No records found
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -426,138 +336,7 @@ export default function AdminRecords({ recentUploads = [], loading }) {
           </Table>
         </TableContainer>
 
-  <Dialog open={editOpen} onClose={closeEdit} maxWidth='md' fullWidth scroll='paper' PaperProps={{ sx:{ border:'2px solid #000', borderRadius:0, boxShadow:'none' } }}>
-          {editing && (
-            <Box sx={{ position:'relative' }}>
-              <DialogTitle sx={{ pb:0, typography:'h6', fontSize:18, fontWeight:600, textAlign:'center' }}>
-                <IconButton onClick={closeEdit} sx={{ position:'absolute', right:12, top:12 }} aria-label='Close dialog'>
-                  <CloseIcon />
-                </IconButton>
-                <Typography variant='subtitle1' align='center' sx={{ fontWeight:600, mt:1 }}>{editing.id}</Typography>
-              </DialogTitle>
-              <DialogContent dividers sx={{ pt:2 }}>
-                <Box sx={{ borderBottom:'1px solid #000', mx:12, mb:4 }} />
-                <Grid container spacing={4}>
-                  {/* Form fields left */}
-                  <Grid item xs={12} sm={8} md={9}>
-                    <Grid container spacing={3}>
-                      {/* Row 1 */}
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Name *' fullWidth size='small' value={editing.name} onChange={e=>setEditing(ed=>({...ed, name:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <FormControl size='small' fullWidth>
-                          <InputLabel>Gender</InputLabel>
-                          <Select label='Gender' value={editing.gender||''} onChange={e=>setEditing(ed=>({...ed, gender:e.target.value}))}>
-                            <MenuItem value='Male'>Male</MenuItem>
-                            <MenuItem value='Female'>Female</MenuItem>
-                            <MenuItem value='Other'>Other</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Date of Birth' type='date' fullWidth size='small' InputLabelProps={{ shrink:true }} value={editing.dateOfBirth} onChange={e=>setEditing(ed=>({...ed, dateOfBirth:e.target.value}))} />
-                      </Grid>
-                      {/* Row 2 */}
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Weight (kg)' type='number' fullWidth size='small' value={editing.weightKg} onChange={e=>setEditing(ed=>({...ed, weightKg:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Height (cm)' type='number' fullWidth size='small' value={editing.heightCm} onChange={e=>setEditing(ed=>({...ed, heightCm:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <FormControl size='small' fullWidth>
-                          <InputLabel>Status</InputLabel>
-                          <Select label='Status' value={editing.status} onChange={e=>setEditing(ed=>({...ed, status:e.target.value}))}>
-                            {['Severe','Moderate','Mild','Normal'].map(s=> <MenuItem key={s} value={s}>{s}</MenuItem>)}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      {/* Row 3 */}
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Guardian' fullWidth size='small' value={editing.guardianName} onChange={e=>setEditing(ed=>({...ed, guardianName:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Phone Number' fullWidth size='small' value={editing.phoneNumber} onChange={e=>setEditing(ed=>({...ed, phoneNumber:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Relation with Child' fullWidth size='small' value={editing.relation} onChange={e=>setEditing(ed=>({...ed, relation:e.target.value}))} />
-                      </Grid>
-                      {/* Row 4 */}
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Aadhaar ID (optional)' fullWidth size='small' value={editing.aadhaarId} onChange={e=>setEditing(ed=>({...ed, aadhaarId:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Location' fullWidth size='small' value={editing.location} onChange={e=>setEditing(ed=>({...ed, location:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Representative ID' fullWidth size='small' value={editing.rep} onChange={e=>setEditing(ed=>({...ed, rep:e.target.value}))} />
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                  {/* Photo upload right */}
-                  <Grid item xs={12} sm={4} md={3} sx={{ display:'flex', justifyContent:'center', alignSelf:'flex-start' }}>
-                    <Box sx={{ position:'relative', width:200, height:200, border:'2px solid #000', display:'flex', alignItems:'center', justifyContent:'center', bgcolor:'#fafafa' }}>
-                      {editing.photoData ? (
-                        <>
-                          <img src={editing.photoData} alt='Child' style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                          <IconButton size='small' onClick={()=>setEditing(ed=>({...ed, photoData:''}))} sx={{ position:'absolute', top:4, right:4, bgcolor:'rgba(255,255,255,0.9)' }} aria-label='Remove photo'>
-                            <CloseIcon fontSize='small' />
-                          </IconButton>
-                        </>
-                      ) : (
-                        <IconButton component='label' sx={{ flexDirection:'column', color:'#000', '&:hover':{ color:'#222' } }}>
-                          <PhotoCameraIcon />
-                          <Typography variant='caption' sx={{ fontSize:14 }}>Upload</Typography>
-                          <input hidden type='file' accept='image/*' onChange={e=>{
-                            const file = e.target.files?.[0];
-                            if(file){
-                              const reader = new FileReader();
-                              reader.onload = ev => setEditing(ed=>({...ed, photoData: ev.target?.result || ''}));
-                              reader.readAsDataURL(file);
-                            }
-                          }} />
-                        </IconButton>
-                      )}
-                    </Box>
-                  </Grid>
-                </Grid>
-              </DialogContent>
-              <DialogActions sx={{ px:3, py:2, position:'sticky', bottom:0, bgcolor:'#fff', borderTop:'2px solid #000', display:'flex', justifyContent:'space-between' }}>
-                <Button 
-                  onClick={()=>beginDelete(editing)} 
-                  startIcon={<DeleteOutlineIcon />} 
-                  color='error' 
-                  variant='outlined' 
-                  size='small' 
-                  sx={{ textTransform:'none' }}
-                  disabled={saving || deleting}
-                >
-                  {deleting ? 'Deleting...' : 'Delete'}
-                </Button>
-                <Box sx={{ display:'flex', gap:2 }}>
-                  <Button 
-                    onClick={closeEdit} 
-                    variant='outlined' 
-                    color='inherit' 
-                    sx={{ textTransform:'none', minWidth:110 }}
-                    disabled={saving || deleting}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={saveEdit} 
-                    variant='outlined' 
-                    sx={{ textTransform:'none', borderColor:'#000', color:'#000', minWidth:120, '&:hover':{ bgcolor:'#000', color:'#fff', borderColor:'#000' } }}
-                    disabled={saving || deleting}
-                  >
-                    {saving ? 'Saving...' : 'Save to MongoDB'}
-                  </Button>
-                </Box>
-              </DialogActions>
-            </Box>
-          )}
-        </Dialog>
+
 
         <Dialog open={deleteOpen} onClose={closeDelete} maxWidth='xs' fullWidth>
           <DialogTitle>Delete Record</DialogTitle>
