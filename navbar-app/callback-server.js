@@ -467,6 +467,101 @@ app.post('/exchange-token', async (req, res) => {
   }
 });
 
+// Enhanced userInfo endpoint to extract individual ID from mock identity system
+app.post('/auth/esignet', async (req, res) => {
+  try {
+    const { userInfo } = req.body;
+    console.log('🔄 Enhancing userInfo with individual ID...');
+    console.log('📋 Received userInfo:', userInfo);
+    
+    let enhancedUser = { ...userInfo };
+    
+    // Try to extract individual ID from various sources
+    if (userInfo.sub) {
+      try {
+        // First, try to decode the sub field if it contains the individual ID
+        // The sub might be base64 encoded or contain the individualId directly
+        
+        // Check if sub is a direct individual ID (10-digit number)
+        if (/^\d{10}$/.test(userInfo.sub)) {
+          enhancedUser.individualId = userInfo.sub;
+          console.log('✅ Individual ID found in sub field:', userInfo.sub);
+        } else {
+          // Try to extract from mock identity system using sub as identifier
+          console.log('🔍 Attempting to fetch from mock identity system...');
+          
+          // Try common individual IDs from our database
+          const knownIds = ['7003476853', '9392351645', '8777782136', '9069197741', '1234567890'];
+          
+          for (const id of knownIds) {
+            try {
+              const mockResponse = await fetch(`http://localhost:8082/v1/mock-identity-system/identity/${id}`);
+              if (mockResponse.ok) {
+                const mockData = await mockResponse.json();
+                
+                // Check if this identity matches the user (by email or phone)
+                if (mockData.response) {
+                  const identity = mockData.response;
+                  const userEmail = userInfo.email?.toLowerCase();
+                  const userPhone = userInfo.phone_number;
+                  
+                  if ((userEmail && identity.email?.toLowerCase() === userEmail) || 
+                      (userPhone && identity.phone === userPhone)) {
+                    enhancedUser.individualId = identity.individualId;
+                    enhancedUser.fullName = identity.fullName;
+                    console.log('✅ Found matching individual ID:', identity.individualId);
+                    break;
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn('⚠️ Error checking individual ID', id, ':', err.message);
+            }
+          }
+          
+          // If still no individual ID found, try to extract from sub field patterns
+          if (!enhancedUser.individualId) {
+            // Try base64 decode
+            try {
+              const decoded = Buffer.from(userInfo.sub, 'base64').toString('utf-8');
+              const idMatch = decoded.match(/\d{10}/);
+              if (idMatch) {
+                enhancedUser.individualId = idMatch[0];
+                console.log('✅ Individual ID extracted from base64 sub:', idMatch[0]);
+              }
+            } catch (e) {
+              console.log('ℹ️ Sub field is not base64 encoded');
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Error processing sub field:', error.message);
+      }
+    }
+    
+    // If still no individual ID, use a fallback
+    if (!enhancedUser.individualId) {
+      console.log('⚠️ No individual ID found, using sub as fallback');
+      enhancedUser.individualId = userInfo.sub;
+    }
+    
+    console.log('✅ Enhanced user data:', enhancedUser);
+    
+    res.json({
+      success: true,
+      user: enhancedUser,
+      token: req.body.id_token // Return the token if provided
+    });
+    
+  } catch (error) {
+    console.error('❌ Error enhancing userInfo:', error);
+    res.status(500).json({ 
+      error: 'Failed to enhance user info', 
+      details: error.message 
+    });
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', port: port, mongo: !!mongoDb });

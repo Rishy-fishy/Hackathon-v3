@@ -630,6 +630,21 @@ margin: auto;
 .sketch-layout .profile-avatar.large img { width:100%; height:100%; object-fit:cover; }
 .sketch-layout .profile-name-main { margin:0 0 .25rem; font-size:1.3rem; font-weight:700; }
 .sketch-layout .profile-email.subtle { margin:0; font-size:.75rem; color:#444; }
+
+/* Individual ID styling */
+.profile-individual-id {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: #666;
+  font-weight: 500;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  background: #f0f0f0;
+  border-radius: 12px;
+  display: inline-block;
+  border: 1px solid #ddd;
+}
 .sketch-layout .profile-info-box { border:2px solid #000; border-radius:30px; padding:1.4rem 1.6rem 1.6rem; display:flex; flex-direction:column; gap:.9rem; background:#fff; max-width:100%; flex:1; }
 .sketch-layout { overflow:visible; }
 .sketch-layout .info-row { display:flex; gap:.75rem; font-size:.8rem; }
@@ -1010,4 +1025,207 @@ html[data-darkreader-mode="dynamic"] .switch-btn .knob,
 html[data-darkreader-mode="filter"] .switch-btn .knob,
 [data-darkreader-scheme="dark"] .switch-btn .knob {
   background: #e2e8f0 !important;
+}
+
+/* ================ LOCATION FEATURE STYLES ================ */
+
+/* Location row in profile modal */
+.location-row {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+.location-info {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.location-details .coordinates {
+  font-family: monospace;
+  font-weight: 600;
+  color: #059669;
+  margin-bottom: 2px;
+}
+
+.location-details .location-meta {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.location-city {
+  color: #059669;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.location-address-details {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.address-street,
+.address-postcode {
+  color: #6b7280;
+  font-size: 0.75rem;
+  margin: 2px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.address-street {
+  font-weight: 500;
+}
+
+.location-loading {
+  color: #f59e0b;
+  font-size: 0.85rem;
+  animation: pulse 2s infinite;
+}
+
+.location-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+}
+
+.location-placeholder {
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.location-refresh-btn {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.location-refresh-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.location-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.location-error-container,
+.location-placeholder-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.location-retry-btn,
+.location-get-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.location-retry-btn:hover:not(:disabled),
+.location-get-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.location-retry-btn:disabled,
+.location-get-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Dark mode styles for location feature */
+html[data-darkreader-mode="dynamic"] .location-details .coordinates,
+html[data-darkreader-mode="filter"] .location-details .coordinates,
+[data-darkreader-scheme="dark"] .location-details .coordinates {
+  color: #10b981 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .location-city,
+html[data-darkreader-mode="filter"] .location-city,
+[data-darkreader-scheme="dark"] .location-city {
+  color: #34d399 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .location-address-details,
+html[data-darkreader-mode="filter"] .location-address-details,
+[data-darkreader-scheme="dark"] .location-address-details {
+  border-top-color: #4b5563 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .address-street,
+html[data-darkreader-mode="filter"] .address-street,
+[data-darkreader-scheme="dark"] .address-street,
+html[data-darkreader-mode="dynamic"] .address-postcode,
+html[data-darkreader-mode="filter"] .address-postcode,
+[data-darkreader-scheme="dark"] .address-postcode {
+  color: #9ca3af !important;
+}
+
+html[data-darkreader-mode="dynamic"] .location-details .location-meta,
+html[data-darkreader-mode="filter"] .location-details .location-meta,
+[data-darkreader-scheme="dark"] .location-details .location-meta {
+  color: #9ca3af !important;
+}
+
+html[data-darkreader-mode="dynamic"] .location-refresh-btn,
+html[data-darkreader-mode="filter"] .location-refresh-btn,
+[data-darkreader-scheme="dark"] .location-refresh-btn {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #e5e7eb !important;
+}
+
+html[data-darkreader-mode="dynamic"] .location-refresh-btn:hover:not(:disabled),
+html[data-darkreader-mode="filter"] .location-refresh-btn:hover:not(:disabled),
+[data-darkreader-scheme="dark"] .location-refresh-btn:hover:not(:disabled) {
+  background: #4b5563 !important;
+  border-color: #6b7280 !important;
+}
+
+html[data-darkreader-mode="dynamic"] .location-retry-btn,
+html[data-darkreader-mode="filter"] .location-retry-btn,
+[data-darkreader-scheme="dark"] .location-retry-btn,
+html[data-darkreader-mode="dynamic"] .location-get-btn,
+html[data-darkreader-mode="filter"] .location-get-btn,
+[data-darkreader-scheme="dark"] .location-get-btn {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+html[data-darkreader-mode="dynamic"] .location-retry-btn:hover:not(:disabled),
+html[data-darkreader-mode="filter"] .location-retry-btn:hover:not(:disabled),
+[data-darkreader-scheme="dark"] .location-retry-btn:hover:not(:disabled),
+html[data-darkreader-mode="dynamic"] .location-get-btn:hover:not(:disabled),
+html[data-darkreader-mode="filter"] .location-get-btn:hover:not(:disabled),
+[data-darkreader-scheme="dark"] .location-get-btn:hover:not(:disabled) {
+  background: #1d4ed8 !important;
+}
+
+/* Dark mode for individual ID */
+html[data-darkreader-mode="dynamic"] .profile-individual-id,
+html[data-darkreader-mode="filter"] .profile-individual-id,
+[data-darkreader-scheme="dark"] .profile-individual-id {
+  color: #d1d5db !important;
+  background: #374151 !important;
+  border-color: #4b5563 !important;
 }
