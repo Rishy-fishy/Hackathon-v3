@@ -8,6 +8,7 @@ export default function AdminAgents({ token }) {
   const api = useCallback((path) => `${IDENTITY_API_BASE}${path}`, []);
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [backgroundSyncing, setBackgroundSyncing] = useState(false);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [openDetail, setOpenDetail] = useState(false);
@@ -36,7 +37,16 @@ export default function AdminAgents({ token }) {
   }, [api]);
 
   const fetchAgents = useCallback(async (manual=false)=>{
-    if(!token) return; setLoading(true); setError(null);
+    if(!token) return; 
+    
+    // Only show loading indicator for manual refreshes, not background syncs
+    if(manual) {
+      setLoading(true);
+    } else {
+      setBackgroundSyncing(true);
+    }
+    setError(null);
+    
     try {
       // Get identity token if not available
       let idToken = identityToken;
@@ -64,8 +74,19 @@ export default function AdminAgents({ token }) {
       }
       setAgents(json.items || []);
       if(manual) setPoll(false); // stop auto polling if user manually refreshed
-    } catch(e){ setError(e.message); }
-    finally { setLoading(false); }
+    } catch(e){ 
+      // Only show errors for manual refreshes, silently handle background sync errors
+      if(manual) {
+        setError(e.message); 
+      }
+    }
+    finally { 
+      if(manual) {
+        setLoading(false);
+      } else {
+        setBackgroundSyncing(false);
+      }
+    }
   }, [token, api, identityToken, loginToIdentityBackend]);
 
   // initial + polling
