@@ -3,8 +3,9 @@ import { Box, Card, CardContent, Typography, TextField, InputAdornment, Button, 
 import { Search as SearchIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 
 export default function AdminAgents({ token }) {
-  const API_BASE = (process.env.REACT_APP_API_BASE || (window.location.hostname === 'localhost' ? 'http://localhost:8080' : '')).replace(/\/$/, '');
-  const api = useCallback((path) => `${API_BASE}${path}`, [API_BASE]);
+  // Always use production identity backend for now (since no local backend is set up)
+  const IDENTITY_API_BASE = 'http://34.27.252.72:8080';
+  const api = useCallback((path) => `${IDENTITY_API_BASE}${path}`, []);
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -12,19 +13,60 @@ export default function AdminAgents({ token }) {
   const [openDetail, setOpenDetail] = useState(false);
   const [detail, setDetail] = useState(null);
   const [poll, setPoll] = useState(true);
+  const [identityToken, setIdentityToken] = useState(null);
   const POLL_INTERVAL_MS = 15000; // 15s auto-refresh
+
+  // Login to identity backend to get token
+  const loginToIdentityBackend = useCallback(async () => {
+    try {
+      const resp = await fetch(api('/api/admin/login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'Admin', password: 'Admin@123' })
+      });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.error || 'Identity login failed');
+      setIdentityToken(json.token);
+      return json.token;
+    } catch (e) {
+      console.error('Identity backend login failed:', e);
+      setError(`Identity login failed: ${e.message}`);
+      return null;
+    }
+  }, [api]);
 
   const fetchAgents = useCallback(async (manual=false)=>{
     if(!token) return; setLoading(true); setError(null);
     try {
-      const resp = await fetch(api('/api/admin/identities'), { headers:{ Authorization:`Bearer ${token}` } });
+      // Get identity token if not available
+      let idToken = identityToken;
+      if (!idToken) {
+        idToken = await loginToIdentityBackend();
+        if (!idToken) return;
+      }
+
+      const resp = await fetch(api('/api/admin/identities'), { headers:{ Authorization:`Bearer ${idToken}` } });
       let json; try { json = await resp.json(); } catch { json = { items:[] }; }
-      if(!resp.ok) throw new Error(json.error || 'Failed to fetch identities');
+      if(!resp.ok) {
+        // If unauthorized, try to login again
+        if (resp.status === 401) {
+          idToken = await loginToIdentityBackend();
+          if (idToken) {
+            const retryResp = await fetch(api('/api/admin/identities'), { headers:{ Authorization:`Bearer ${idToken}` } });
+            json = await retryResp.json();
+            if (!retryResp.ok) throw new Error(json.error || 'Failed to fetch identities');
+          } else {
+            throw new Error('Authentication failed');
+          }
+        } else {
+          throw new Error(json.error || 'Failed to fetch identities');
+        }
+      }
       setAgents(json.items || []);
       if(manual) setPoll(false); // stop auto polling if user manually refreshed
     } catch(e){ setError(e.message); }
     finally { setLoading(false); }
-  }, [token, api]);
+  }, [token, api, identityToken, loginToIdentityBackend]);
 
   // initial + polling
   useEffect(()=>{ if(token){ fetchAgents(); } }, [token, fetchAgents]);
@@ -45,9 +87,33 @@ export default function AdminAgents({ token }) {
   async function openAgentDetail(id){
     try {
       setDetail({ loading:true }); setOpenDetail(true);
-      const resp = await fetch(api(`/api/admin/identities/${id}`), { headers:{ Authorization:`Bearer ${token}` } });
+      
+      // Get identity token if not available
+      let idToken = identityToken;
+      if (!idToken) {
+        idToken = await loginToIdentityBackend();
+        if (!idToken) {
+          setDetail({ loading:false, error: 'Authentication failed' });
+          return;
+        }
+      }
+
+      const resp = await fetch(api(`/api/admin/identities/${id}`), { headers:{ Authorization:`Bearer ${idToken}` } });
       const json = await resp.json();
-      if(!resp.ok) throw new Error(json.error||'Failed to load identity');
+      if(!resp.ok) {
+        if (resp.status === 401) {
+          // Try to login again
+          idToken = await loginToIdentityBackend();
+          if (idToken) {
+            const retryResp = await fetch(api(`/api/admin/identities/${id}`), { headers:{ Authorization:`Bearer ${idToken}` } });
+            const retryJson = await retryResp.json();
+            if (!retryResp.ok) throw new Error(retryJson.error || 'Failed to load identity');
+            setDetail({ loading:false, data: retryJson });
+            return;
+          }
+        }
+        throw new Error(json.error||'Failed to load identity');
+      }
       setDetail({ loading:false, data: json });
     } catch(e){ setDetail({ loading:false, error: e.message }); }
   }

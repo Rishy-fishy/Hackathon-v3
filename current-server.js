@@ -16,9 +16,31 @@ const OIDC_READY = !!(OIDC_ISSUER && OIDC_CLIENT_ID && REDIRECT_URI);
 console.log('[diag] Starting server-merged PID', process.pid);
 console.log('[diag] Node', process.version, 'PORT=', process.env.PORT);
 
+// Add error handlers to prevent server crashes
+process.on('uncaughtException', (error) => {
+  console.error('[ERROR] Uncaught Exception:', error.message);
+  console.error(error.stack);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[ERROR] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const app = express();
 app.use(cors({ origin:true, credentials:false }));
-app.use(express.json({ limit:'5mb' }));
+
+// Add error handling for JSON parsing
+app.use(express.json({ 
+  limit:'5mb',
+  verify: (req, res, buf) => {
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      console.error('[ERROR] Invalid JSON received:', buf.toString().substring(0, 100));
+      throw new Error('Invalid JSON format');
+    }
+  }
+}));
 
 // ----- Mongo Setup (optional) -----
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
@@ -129,7 +151,7 @@ app.get('/api/admin/stats', async (req,res)=>{
 
 // ----- Postgres Mock Identity Integration -----
 const PG_HOST = process.env.PG_HOST || '34.58.198.143';
-const PG_PORT = parseInt(process.env.PG_PORT || '5432',10);
+const PG_PORT = parseInt(process.env.PG_PORT || '5455',10);
 const PG_USER = process.env.PG_USER || 'postgres';
 const PG_PASSWORD = process.env.PG_PASSWORD || 'postgres';
 const PG_DB_IDENTITY = process.env.PG_DB_IDENTITY || 'mosip_mockidentitysystem';
@@ -171,7 +193,22 @@ app.get('/api/admin/identities/:id', async (req,res)=>{
   } catch(e){ res.status(500).json({ error:'identity_fetch_failed', message:e.message }); }
 });
 
-// (Optional) child endpoints omitted for brevity; keep existing file if needed.
+// Global error handler for Express routes
+app.use((error, req, res, next) => {
+  console.error('[ERROR] Express error handler:', error.message);
+  console.error('Request:', req.method, req.path, req.headers['content-type']);
+  
+  if (error.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'invalid_json', message: 'Request contains invalid JSON' });
+  }
+  
+  res.status(500).json({ error: 'internal_server_error', message: 'An unexpected error occurred' });
+});
+
+// Handle 404s
+app.use((req, res) => {
+  res.status(404).json({ error: 'not_found', path: req.path });
+});
 
 const PORT = parseInt(process.env.PORT||'8080',10);
 app.listen(PORT, '0.0.0.0', ()=>{
