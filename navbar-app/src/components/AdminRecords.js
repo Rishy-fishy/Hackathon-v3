@@ -55,18 +55,77 @@ export default function AdminRecords() {
       console.log('[AdminRecords] Fetched records:', data.total, 'records');
       
       // Transform the records to match the expected format
-      const transformedRecords = data.records.map((record, idx) => ({
-        id: record.healthId || record._id || `ID${idx+1}`,
-        name: record.name || 'Unknown',
-        age: record.age || record.ageInMonths || (Math.floor(Math.random() * 5) + 1),
-        gender: record.gender || (idx % 2 ? 'Male' : 'Female'),
-        location: record.location || record.address || `Location ${idx+1}`,
-        rep: record.representative || record.rep || `Rep${String(idx+1).padStart(3, '0')}`,
-        status: record.malnutritionStatus || record.status || 'Normal',
-        uploadedAt: record.uploadedAt ? new Date(record.uploadedAt) : new Date(),
-        // Include all original data
-        ...record
-      }));
+      const transformedRecords = data.records.map((record, idx) => {
+        // Extract location info - handle both string and object formats
+        let locationDisplay = `Location ${idx+1}`; // fallback
+        if (record.uploaderLocation) {
+          if (typeof record.uploaderLocation === 'string') {
+            locationDisplay = record.uploaderLocation;
+          } else if (typeof record.uploaderLocation === 'object') {
+            // Extract city and state from location object
+            const { city, state, country } = record.uploaderLocation;
+            const parts = [city, state].filter(Boolean);
+            locationDisplay = parts.length > 0 ? parts.join(', ') : (country || 'Unknown Location');
+          }
+        } else if (record.location) {
+          locationDisplay = record.location;
+        } else if (record.address) {
+          locationDisplay = record.address;
+        }
+
+        // Determine malnutrition status based on malnutrition signs directly
+        let malnutritionStatus = 'Normal'; // default for all cases including N/A
+        
+        if (record.malnutritionSigns && 
+            record.malnutritionSigns !== 'None' && 
+            record.malnutritionSigns !== '' && 
+            record.malnutritionSigns !== 'none' &&
+            record.malnutritionSigns !== 'N/A' &&
+            record.malnutritionSigns !== 'n/a') {
+          
+          // Count the number of malnutrition signs by splitting and filtering
+          const signs = record.malnutritionSigns
+            .split(/[,;|\n()]/) // Added parentheses to split on
+            .map(sign => sign.trim())
+            .filter(sign => sign && 
+                   sign !== 'None' && 
+                   sign !== 'none' && 
+                   sign !== 'N/A' && 
+                   sign !== 'n/a' && 
+                   sign !== 'nil' &&
+                   sign.length > 2); // Filter out very short fragments
+          
+          const signCount = signs.length;
+          
+          if (signCount === 1) {
+            malnutritionStatus = 'Normal';
+          } else if (signCount === 2 || signCount === 3) {
+            malnutritionStatus = 'Moderate';
+          } else if (signCount > 3) {
+            malnutritionStatus = 'Severe';
+          }
+        }
+
+        return {
+          // Only include the fields we need, without spreading the original record
+          id: record.healthId || record._id || `ID${idx+1}`,
+          name: record.name || 'Unknown',
+          age: record.ageMonths || record.age || Math.floor(Math.random() * 60) + 1,
+          gender: record.gender || (idx % 2 ? 'Male' : 'Female'),
+          location: locationDisplay,
+          rep: record.uploaderName || record.representative || record.rep || `Rep${String(idx+1).padStart(3, '0')}`,
+          status: malnutritionStatus, // Our calculated status - no override possible
+          uploadedAt: record.uploadedAt ? new Date(record.uploadedAt) : new Date(),
+          // Include other useful fields but not the original status
+          healthId: record.healthId,
+          weightKg: record.weightKg,
+          heightCm: record.heightCm,
+          malnutritionSigns: record.malnutritionSigns,
+          guardianName: record.guardianName,
+          guardianPhone: record.guardianPhone,
+          createdAt: record.createdAt
+        };
+      });
       
       setAllRecords(transformedRecords);
       

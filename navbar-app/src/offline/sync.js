@@ -12,14 +12,33 @@ const API_BASE = (
 ).replace(/\/$/, '');
 
 let lastSyncInfo = { time: null, result: null };
+let syncInProgress = false;
 
 export function getLastSyncInfo() { return lastSyncInfo; }
 
 export async function syncPendingRecords({ accessToken, uploaderName, uploaderEmail, retentionDays, allowNoToken } = {}) {
+  if (syncInProgress) {
+    console.log('⏳ Sync already in progress, skipping...');
+    return { skipped: true, reason: 'sync_in_progress' };
+  }
+  
+  syncInProgress = true;
+  
   try {
-  const token = accessToken || sessionStorage.getItem('access_token') || localStorage.getItem('access_token');
-  if (!token && !allowNoToken) return { skipped: true, reason: 'no_token' };
+    const token = accessToken || 
+      sessionStorage.getItem('access_token') || 
+      sessionStorage.getItem('raw_esignet_access_token') ||
+      localStorage.getItem('access_token');
+    
+    if (!token && !allowNoToken) {
+      console.log('🚫 No token available for sync');
+      return { skipped: true, reason: 'no_token' };
+    }
+    
+    console.log('🔄 Starting sync to:', `${API_BASE}/api/child/batch`);
     const list = await pendingRecords();
+    console.log(`📊 Found ${list.length} records to sync`);
+    
     if (!list.length) {
       const counts = await recordCounts();
       window.dispatchEvent(new CustomEvent('sync-update', { detail:{ counts } }));
@@ -27,42 +46,72 @@ export async function syncPendingRecords({ accessToken, uploaderName, uploaderEm
     }
 
     // Mark as uploading
+    console.log('🔄 Marking records as uploading...');
     for (const r of list) {
       await updateChildRecord(r.healthId, { status: 'uploading' });
     }
 
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    const uploaderLocation = getUploaderLocation(); // Get location data from session storage
+    
+    console.log('📡 Sending request to backend...');
     const res = await fetch(`${API_BASE}/api/child/batch`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ records: list, uploaderName, uploaderEmail })
+      body: JSON.stringify({ 
+        records: list, 
+        uploaderName, 
+        uploaderEmail,
+        uploaderLocation // Include location data in the request
+      })
     });
+    
+    console.log(`📬 Backend response: ${res.status} ${res.statusText}`);
+    
     if (!res.ok) {
+      console.error('❌ Sync failed with status:', res.status);
       for (const r of list) await updateChildRecord(r.healthId, { status: 'failed' });
   window.dispatchEvent(new CustomEvent('toast', { detail:{ type:'error', message:`Sync failed (${res.status})` } }));
   return { error: true, status: res.status };
     }
-  const json = await res.json();
-  lastSyncInfo = { time: Date.now(), result: json.summary };
+    
+    console.log('✅ Parsing response...');
+    const json = await res.json();
+    console.log('📄 Backend response data:', json);
+    
+    lastSyncInfo = { time: Date.now(), result: json.summary };
+    
     // Update statuses
+    console.log('🔄 Updating record statuses...');
     for (const r of json.results) {
-      if (r.status === 'uploaded') await updateChildRecord(r.healthId, { status: 'uploaded', uploadedAt: new Date().toISOString() });
-      else if (r.status === 'failed') await updateChildRecord(r.healthId, { status: 'failed' });
+      if (r.status === 'uploaded') {
+        await updateChildRecord(r.healthId, { status: 'uploaded', uploadedAt: new Date().toISOString() });
+        console.log(`✅ Marked ${r.healthId} as uploaded`);
+      } else if (r.status === 'failed') {
+        await updateChildRecord(r.healthId, { status: 'failed' });
+        console.log(`❌ Marked ${r.healthId} as failed`);
+      }
     }
-  if (retentionDays) await purgeOldUploaded(retentionDays);
-  const counts = await recordCounts();
-  window.dispatchEvent(new CustomEvent('sync-update', { detail:{ counts } }));
-  window.dispatchEvent(new CustomEvent('toast', { detail:{ type:'success', message:`Synced ${json.summary.uploaded} records` } }));
-  return json;
+    
+    if (retentionDays) await purgeOldUploaded(retentionDays);
+    const counts = await recordCounts();
+    window.dispatchEvent(new CustomEvent('sync-update', { detail:{ counts } }));
+    window.dispatchEvent(new CustomEvent('toast', { detail:{ type:'success', message:`Synced ${json.summary.uploaded} records` } }));
+    
+    console.log('🎉 Sync completed successfully!', json.summary);
+    return json;
   } catch (e) {
+    console.error('❌ Sync error occurred:', e.message);
     // revert to failed
     const list = await pendingRecords();
     for (const r of list) await updateChildRecord(r.healthId, { status: 'failed' });
-  window.dispatchEvent(new CustomEvent('toast', { detail:{ type:'error', message:`Sync error: ${e.message}` } }));
-  const counts = await recordCounts();
-  window.dispatchEvent(new CustomEvent('sync-update', { detail:{ counts } }));
-  return { error: true, message: e.message };
+    window.dispatchEvent(new CustomEvent('toast', { detail:{ type:'error', message:`Sync error: ${e.message}` } }));
+    const counts = await recordCounts();
+    window.dispatchEvent(new CustomEvent('sync-update', { detail:{ counts } }));
+    return { error: true, message: e.message };
+  } finally {
+    syncInProgress = false;
   }
 }
 
@@ -75,7 +124,11 @@ export function startAutoSync(intervalMs = 15000) {
     if (!navigator.onLine) return;
     const auth = sessionStorage.getItem('esignet_authenticated') === 'true' || localStorage.getItem('is_authenticated') === 'true';
     if (!auth) return;
-    await syncPendingRecords({ uploaderName: getUploaderName(), retentionDays: 7 });
+    await syncPendingRecords({ 
+      uploaderName: getUploaderName(), 
+      retentionDays: 7,
+      uploaderLocation: getUploaderLocation()
+    });
   };
   setInterval(tick, intervalMs);
   // Run once after short delay
@@ -88,5 +141,15 @@ function getUploaderName() {
     if (!userStr) return null;
     const user = JSON.parse(userStr);
     return user.name || user.preferred_username || null;
+  } catch { return null; }
+}
+
+// Get uploader location data from session storage (set by Header component)
+function getUploaderLocation() {
+  try {
+    const locationStr = sessionStorage.getItem('user_location');
+    if (!locationStr) return null;
+    const location = JSON.parse(locationStr);
+    return location;
   } catch { return null; }
 }

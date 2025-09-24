@@ -63,6 +63,8 @@ const Header = ({ onActiveViewChange }) => {
       setLocation(locationData);
       setLocationDetected(true);
       setLocationLoading(false);
+      // Store location data in session storage for child record uploads
+      sessionStorage.setItem('user_location', JSON.stringify(locationData));
       console.log('Location auto-detected for session');
     }, 1000);
   }, [locationDetected, location]);
@@ -91,6 +93,8 @@ const Header = ({ onActiveViewChange }) => {
       setLocation(locationData);
       setLocationDetected(true);
       setLocationLoading(false);
+      // Store location data in session storage for child record uploads
+      sessionStorage.setItem('user_location', JSON.stringify(locationData));
     }, 800);
   };
 

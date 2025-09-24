@@ -22,8 +22,8 @@ const AUTHORIZE_URI = process.env.AUTHORIZE_URI || 'http://34.58.198.143:3000/au
 
 // ---- MongoDB Setup (simple singleton connection) ----
 // Environment variables or fallbacks
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
-const MONGO_DB = process.env.MONGO_DB || 'nutrition_app';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://harshbontala188:8I52Oqeh3sWYTDJ7@cluster0.5lsiap2.mongodb.net/childBooklet?retryWrites=true&w=majority&appName=Cluster0';
+const MONGO_DB = process.env.MONGO_DB || 'childBooklet';
 const NO_MONGO = (process.env.NO_MONGO || '').toLowerCase() === '1' || (process.env.NO_MONGO || '').toLowerCase() === 'true';
 let mongoClient; // will hold connected client
 let mongoDb; // db instance
@@ -639,7 +639,7 @@ function extractUploaderInfo(req) {
 // Adds uploader attribution (name, sub) and writes to MongoDB.
 app.post('/api/child/batch', async (req, res) => {
   try {
-    const { records, uploaderName } = req.body;
+    const { records, uploaderName, uploaderLocation } = req.body;
     if (!Array.isArray(records) || !records.length) {
       return res.status(400).json({ error: 'No records provided' });
     }
@@ -672,6 +672,8 @@ app.post('/api/child/batch', async (req, res) => {
         weightKg: r.weightKg ?? null,
         heightCm: r.heightCm ?? null,
         guardianName: r.guardianName || null,
+        guardianPhone: r.guardianPhone || null,
+        guardianRelation: r.guardianRelation || null,
         malnutritionSigns: r.malnutritionSigns || null,
         recentIllnesses: r.recentIllnesses || null,
         parentalConsent: !!r.parentalConsent,
@@ -680,9 +682,23 @@ app.post('/api/child/batch', async (req, res) => {
         createdAt: r.createdAt || now,
         uploadedAt: now,
         uploaderName: uploaderName || (uploader.claims && (uploader.claims.name || uploader.claims.preferred_username)) || null,
-  uploaderSub: (uploader.claims && uploader.claims.sub) || null,
+        uploaderEmail: (uploader.claims && uploader.claims.email) || null,
+        uploaderSub: (uploader.claims && uploader.claims.sub) || null,
+        // Add location data from authenticated user
+        uploaderLocation: uploaderLocation ? {
+          source: uploaderLocation.source || null,
+          city: uploaderLocation.city || null,
+          state: uploaderLocation.state || null,
+          country: uploaderLocation.country || null,
+          coordinates: uploaderLocation.coordinates || null,
+          accuracy: uploaderLocation.accuracy || null,
+          timestamp: uploaderLocation.timestamp || new Date().toISOString(),
+          area: uploaderLocation.area || null,
+          street: uploaderLocation.street || null,
+          postcode: uploaderLocation.postcode || null
+        } : null,
         source: 'offline_sync',
-        version: r.version || 1
+        version: r.version || 2
       });
     }
 
