@@ -2,9 +2,10 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Card, CardContent, TextField, InputAdornment, Typography,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Chip, Stack, Menu, MenuItem, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button
+  Paper, Chip, Stack, Menu, MenuItem, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button,
+  Grid, Avatar, CircularProgress
 } from '@mui/material';
-import { Search as SearchIcon, ArrowDropDown as ArrowDropDownIcon } from '@mui/icons-material';
+import { Search as SearchIcon, ArrowDropDown as ArrowDropDownIcon, Person as PersonIcon } from '@mui/icons-material';
 
 // Clean implementation: header filter menus for Age, Gender, Location, Malnutrition Status
 export default function AdminRecords() {
@@ -20,6 +21,8 @@ export default function AdminRecords() {
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [toDelete, setToDelete] = useState(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
   const [deleting, setDeleting] = useState(false);
 
@@ -145,6 +148,7 @@ export default function AdminRecords() {
           malnutritionSigns: record.malnutritionSigns,
           guardianName: record.guardianName,
           guardianPhone: record.guardianPhone,
+          facePhoto: record.facePhoto, // Add face photo field
           createdAt: record.createdAt
         };
       });
@@ -203,6 +207,34 @@ export default function AdminRecords() {
   const closeMenu = (key) => setMenus(m => ({ ...m, [key]: null }));
   const chooseFilter = (key, value) => { setFilters(f => ({ ...f, [key]: value })); closeMenu(key); };
   const clearFilter = (key) => setFilters(f=>({ ...f, [key]: key==='age'? null : '' }));
+
+  // Simple component for displaying label-value pairs
+  const InfoRow = ({ label, value }) => (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary', minWidth: 120 }}>
+        {label}:
+      </Typography>
+      <Typography variant="body2" sx={{ textAlign: 'right', wordBreak: 'break-word', maxWidth: '60%' }}>
+        {value === 'N/A' || value === null || value === undefined || value === '' ? (
+          <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>N/A</span>
+        ) : (
+          value
+        )}
+      </Typography>
+    </Box>
+  );
+
+  // Function to open record detail dialog
+  const openRecordDetail = (record) => {
+    setSelectedRecord(record);
+    setDetailOpen(true);
+  };
+
+  // Function to close record detail dialog
+  const closeRecordDetail = () => {
+    setDetailOpen(false);
+    setSelectedRecord(null);
+  };
 
 
   const beginDelete = (row) => { 
@@ -397,7 +429,7 @@ export default function AdminRecords() {
                   </TableCell>
                 </TableRow>
               ) : rows.length > 0 ? rows.map(r => (
-                <TableRow key={r.id} hover>
+                <TableRow key={r.id} hover sx={{ cursor: 'pointer' }} onClick={() => openRecordDetail(r)}>
                   <TableCell sx={{ color:'#0f62fe', fontWeight:600 }}>{r.id}</TableCell>
                   <TableCell>{r.name}</TableCell>
                   <TableCell>{r.ageDisplay}</TableCell>
@@ -407,7 +439,7 @@ export default function AdminRecords() {
                   <TableCell>
                     <Chip size='small' label={r.status} color={statusColor(r.status)} variant='outlined' sx={{ fontWeight:600 }} />
                   </TableCell>
-                  <TableCell align='center'>
+                  <TableCell align='center' onClick={(e) => e.stopPropagation()}>
                     <Typography variant='body2' sx={{ color:'#dc2626', cursor:'pointer', fontWeight:500 }} onClick={()=>beginDelete(r)}>Delete</Typography>
                   </TableCell>
                 </TableRow>
@@ -487,6 +519,175 @@ export default function AdminRecords() {
               disabled={!password || deleting}
             >
               {deleting ? 'Deleting...' : 'Delete Record'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Record Detail Dialog */}
+        <Dialog open={detailOpen} onClose={closeRecordDetail} fullWidth maxWidth="lg">
+          <DialogTitle sx={{ pb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <PersonIcon color="primary" />
+              <Typography variant="h6">Child Health Record Details</Typography>
+            </Box>
+          </DialogTitle>
+          <DialogContent dividers>
+            {selectedRecord && (
+              <Box sx={{ py: 1 }}>
+                {/* Header with name, ID and photo */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 2, 
+                  mb: 3,
+                  p: 2,
+                  bgcolor: 'primary.50',
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'primary.200'
+                }}>
+                  {selectedRecord.facePhoto ? (
+                    <Box sx={{ 
+                      width: 64, 
+                      height: 64, 
+                      borderRadius: '50%', 
+                      overflow: 'hidden',
+                      border: '3px solid',
+                      borderColor: 'primary.main',
+                      flexShrink: 0
+                    }}>
+                      <img 
+                        src={selectedRecord.facePhoto} 
+                        alt={selectedRecord.name}
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover' 
+                        }}
+                        onError={(e) => {
+                          // Fallback to avatar with initials if image fails to load
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <Avatar sx={{ 
+                        bgcolor: 'primary.main', 
+                        width: 58, 
+                        height: 58, 
+                        display: 'none',
+                        fontSize: '1.5rem'
+                      }}>
+                        {selectedRecord.name.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </Box>
+                  ) : (
+                    <Avatar sx={{ bgcolor: 'primary.main', width: 64, height: 64, fontSize: '1.5rem' }}>
+                      {selectedRecord.name.charAt(0).toUpperCase()}
+                    </Avatar>
+                  )}
+                  <Box>
+                    <Typography variant="h6" fontWeight={600}>
+                      {selectedRecord.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Health ID: {selectedRecord.id}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Grid container spacing={3}>
+                  {/* Personal Information */}
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined" sx={{ height: '100%' }}>
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                          Personal Information
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <InfoRow label="Full Name" value={selectedRecord.name} />
+                          <InfoRow label="Age" value={selectedRecord.ageDisplay} />
+                          <InfoRow label="Gender" value={selectedRecord.gender} />
+                          <InfoRow label="Health ID" value={selectedRecord.healthId || selectedRecord.id} />
+                          <InfoRow label="Weight (kg)" value={selectedRecord.weightKg} />
+                          <InfoRow label="Height (cm)" value={selectedRecord.heightCm} /> 
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Guardian Information */}
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined" sx={{ height: '100%' }}>
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                          Guardian Information
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <InfoRow label="Guardian Name" value={selectedRecord.guardianName} />
+                          <InfoRow label="Guardian Phone" value={selectedRecord.guardianPhone} />
+                          <InfoRow label="Location" value={selectedRecord.location} />
+                          <InfoRow label="Representative" value={selectedRecord.rep} />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Health Information */}
+                  <Grid item xs={12}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                          Health Assessment
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <InfoRow 
+                            label="Malnutrition Status" 
+                            value={
+                              <Chip 
+                                size='small' 
+                                label={selectedRecord.status} 
+                                color={statusColor(selectedRecord.status)} 
+                                variant='outlined' 
+                                sx={{ fontWeight: 600 }} 
+                              />
+                            } 
+                          />
+                          <InfoRow label="Malnutrition Signs" value={selectedRecord.malnutritionSigns} />
+                          {selectedRecord.createdAt && (
+                            <InfoRow 
+                              label="Record Created" 
+                              value={new Date(selectedRecord.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })} 
+                            />
+                          )}
+                          {selectedRecord.uploadedAt && (
+                            <InfoRow 
+                              label="Record Uploaded" 
+                              value={new Date(selectedRecord.uploadedAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })} 
+                            />
+                          )}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button onClick={closeRecordDetail} variant="contained">
+              Close
             </Button>
           </DialogActions>
         </Dialog>
