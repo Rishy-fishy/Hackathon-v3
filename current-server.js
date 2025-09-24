@@ -317,6 +317,28 @@ app.put('/api/admin/child/:id', async (req,res)=>{
   }
 });
 
+// Verify admin password for secure operations
+app.post('/api/admin/verify-password', async (req,res)=>{
+  try {
+    const auth = req.headers.authorization||''; const token = auth.startsWith('Bearer ')? auth.slice(7): null;
+    const session = await validateAuthToken(token);
+    if(!session) return res.status(401).json({ error:'unauthorized' });
+    
+    const { password } = req.body||{};
+    if(!password) return res.status(400).json({ error:'password_required' });
+    
+    // For simplicity, using the same admin password. In production, you might want a separate delete password
+    const isValid = password === 'Admin@123';
+    
+    if(!isValid) return res.status(401).json({ error:'invalid_password', message:'Incorrect password' });
+    
+    res.json({ message: 'Password verified successfully', verified: true });
+  } catch(e){
+    console.error('[admin/verify-password] Error:', e.message);
+    res.status(500).json({ error:'verification_failed', message:e.message });
+  }
+});
+
 // Delete child record
 app.delete('/api/admin/child/:id', async (req,res)=>{
   try {

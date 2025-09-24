@@ -2,8 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Card, CardContent, TextField, InputAdornment, Typography,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Chip, Stack, Menu, MenuItem, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button,
-  Snackbar
+  Paper, Chip, Stack, Menu, MenuItem, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button
 } from '@mui/material';
 import { Search as SearchIcon, ArrowDropDown as ArrowDropDownIcon } from '@mui/icons-material';
 
@@ -17,17 +16,18 @@ export default function AdminRecords() {
   const [recordsLoading, setRecordsLoading] = useState(true);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [toDelete, setToDelete] = useState(null);
-  const [recentlyDeleted, setRecentlyDeleted] = useState(null); // { record, index }
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const [deleting, setDeleting] = useState(false);
 
-  // API base URL
+  // API base URL - Updated to use your GCloud VM backend
   const API_BASE = (
     (typeof window !== 'undefined' && window.__API_BASE) ||
     process.env.REACT_APP_API_BASE ||
-    'http://34.58.198.143:8080'
+    'http://34.27.252.72:8080' // Your GCloud VM backend
   ).replace(/\/$/, '');
 
   // Fetch all records from MongoDB
@@ -106,11 +106,33 @@ export default function AdminRecords() {
           }
         }
 
+        // Handle age display logic
+        let ageDisplay = 'Unknown';
+        let ageValue = record.ageMonths || record.age || null;
+        
+        if (ageValue !== null && ageValue >= 0) {  // Changed from > 0 to >= 0 to handle 0 months
+          // If age is in months and greater than 18 years (216 months), cap it at 18 years
+          if (ageValue > 216) {
+            ageDisplay = '18 years';
+            ageValue = 216; // for filtering purposes
+          }
+          // If age is less than 12 months, show in months
+          else if (ageValue < 12) {
+            ageDisplay = ageValue === 0 ? 'Newborn' : `${ageValue} months`;
+          }
+          // Otherwise show in years
+          else {
+            const years = Math.floor(ageValue / 12);
+            ageDisplay = years === 1 ? '1 year' : `${years} years`;
+          }
+        }
+
         return {
           // Only include the fields we need, without spreading the original record
           id: record.healthId || record._id || `ID${idx+1}`,
           name: record.name || 'Unknown',
-          age: record.ageMonths || record.age || Math.floor(Math.random() * 60) + 1,
+          age: ageValue, // Keep numeric value for filtering
+          ageDisplay: ageDisplay, // Human readable display
           gender: record.gender || (idx % 2 ? 'Male' : 'Female'),
           location: locationDisplay,
           rep: record.uploaderName || record.representative || record.rep || `Rep${String(idx+1).padStart(3, '0')}`,
@@ -183,79 +205,86 @@ export default function AdminRecords() {
   const clearFilter = (key) => setFilters(f=>({ ...f, [key]: key==='age'? null : '' }));
 
 
-  const beginDelete = (row) => { setToDelete(row); setDeleteOpen(true); };
-  const closeDelete = () => { setDeleteOpen(false); setToDelete(null); };
-  const confirmDelete = async () => {
-    if (!toDelete) return;
-    
+  const beginDelete = (row) => { 
+    setToDelete(row); 
+    setDeleteOpen(true); 
+    setPassword('');
+    setPasswordError('');
+  };
+
+  const closeDelete = () => { 
+    setDeleteOpen(false); 
+    setPasswordOpen(false);
+    setToDelete(null); 
+    setPassword('');
+    setPasswordError('');
+  };
+
+  const proceedToPasswordVerification = () => {
+    setDeleteOpen(false);
+    setPasswordOpen(true);
+  };
+
+  const verifyPasswordAndDelete = async () => {
+    if (!password) {
+      setPasswordError('Password is required');
+      return;
+    }
+
+    // Simple password verification (you can enhance this)
+    if (password !== 'Admin@123') {
+      setPasswordError('Incorrect password. Please try again.');
+      return;
+    }
+
     setDeleting(true);
+    setPasswordError('');
+    
     try {
       // Get admin token
       const token = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token');
       if (!token) {
-        window.dispatchEvent(new CustomEvent('toast', { 
-          detail: { type: 'error', message: 'Authentication required. Please log in again.' } 
-        }));
+        setPasswordError('Authentication required. Please log in again.');
         return;
       }
 
-      const response = await fetch(`${API_BASE}/api/admin/child/${toDelete.id}`, {
+      // Proceed with deletion
+      const deleteResponse = await fetch(`${API_BASE}/api/admin/child/${toDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Delete failed: ${response.status}`);
+      if (!deleteResponse.ok) {
+        const error = await deleteResponse.json();
+        throw new Error(error.message || `Delete failed: ${deleteResponse.status}`);
       }
 
-      // Remove from both local state and allRecords
-      setRecords(rs => {
-        const index = rs.findIndex(r => r.id === toDelete.id);
-        const updated = rs.filter(r => r.id !== toDelete.id);
-        setRecentlyDeleted({ record: toDelete, index });
-        setSnackbarOpen(true);
-        return updated;
-      });
-      
-      // Also remove from allRecords to keep data in sync
-      setAllRecords(rs => rs.filter(r => r.id !== toDelete.id));
+      // Refetch all records from MongoDB to ensure consistency
+      await fetchAllRecords();
 
+      // Show success message
       window.dispatchEvent(new CustomEvent('toast', { 
         detail: { type: 'success', message: 'Record deleted successfully from MongoDB!' } 
       }));
+
+      // Close password modal
+      setPasswordOpen(false);
+      setPassword('');
       
     } catch (error) {
       console.error('Delete error:', error);
-      window.dispatchEvent(new CustomEvent('toast', { 
-        detail: { type: 'error', message: error.message || 'Failed to delete record' } 
-      }));
+      setPasswordError(error.message || 'Failed to delete record');
     } finally {
       setDeleting(false);
     }
-    
-    closeDelete();
   };
-  const undoDelete = () => {
-    if (recentlyDeleted) {
-      // Note: This only restores the record in the UI - it's permanently deleted from MongoDB
-      setRecords(rs => {
-        const { record, index } = recentlyDeleted;
-        const copy = [...rs];
-        const insertAt = Math.min(Math.max(index, 0), copy.length);
-        copy.splice(insertAt, 0, record);
-        return copy;
-      });
-      setRecentlyDeleted(null);
-      window.dispatchEvent(new CustomEvent('toast', { 
-        detail: { type: 'warning', message: 'Record restored in UI only - it was permanently deleted from MongoDB' } 
-      }));
-    }
-    setSnackbarOpen(false);
+
+  const confirmDelete = async () => {
+    // This is now just for the initial confirmation
+    proceedToPasswordVerification();
   };
-  const closeSnackbar = () => setSnackbarOpen(false);
 
   return (
     <Card elevation={0} sx={{ border:'1px solid #e2e8f0', borderRadius:2, background:'#fff' }}>
@@ -371,7 +400,7 @@ export default function AdminRecords() {
                 <TableRow key={r.id} hover>
                   <TableCell sx={{ color:'#0f62fe', fontWeight:600 }}>{r.id}</TableCell>
                   <TableCell>{r.name}</TableCell>
-                  <TableCell>{r.age}</TableCell>
+                  <TableCell>{r.ageDisplay}</TableCell>
                   <TableCell>{r.gender}</TableCell>
                   <TableCell>{r.location}</TableCell>
                   <TableCell>{r.rep}</TableCell>
@@ -398,33 +427,69 @@ export default function AdminRecords() {
 
 
         <Dialog open={deleteOpen} onClose={closeDelete} maxWidth='xs' fullWidth>
-          <DialogTitle>Delete Record</DialogTitle>
+          <DialogTitle>Delete Record - Confirmation</DialogTitle>
           <DialogContent dividers>
-            <Typography variant='body2' sx={{ mb:1 }}>You are about to permanently delete this record.</Typography>
-            <Box sx={{ p:1, bgcolor:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:1 }}>
+            <Typography variant='body2' sx={{ mb:2 }}>You are about to permanently delete this record.</Typography>
+            <Box sx={{ p:2, bgcolor:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:1 }}>
               <Typography variant='caption' display='block'><strong>ID:</strong> {toDelete?.id}</Typography>
               <Typography variant='caption' display='block'><strong>Name:</strong> {toDelete?.name}</Typography>
               <Typography variant='caption' display='block'><strong>Location:</strong> {toDelete?.location}</Typography>
               <Typography variant='caption' display='block'><strong>Status:</strong> {toDelete?.status}</Typography>
             </Box>
-            <Typography variant='caption' color='error.main' display='block' sx={{ mt:1 }}>This action cannot be undone (unless you click UNDO immediately after).</Typography>
+            <Typography variant='body2' color='warning.main' display='block' sx={{ mt:2 }}>
+              This action cannot be undone. You will need to enter your password to confirm.
+            </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={closeDelete} color='inherit' disabled={deleting}>Cancel</Button>
-            <Button onClick={confirmDelete} color='error' variant='contained' disabled={deleting}>
-              {deleting ? 'Deleting from MongoDB...' : 'Delete from MongoDB'}
+            <Button onClick={closeDelete} color='inherit'>Cancel</Button>
+            <Button onClick={confirmDelete} color='error' variant='contained'>
+              Proceed to Password Verification
             </Button>
           </DialogActions>
         </Dialog>
 
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={5000}
-          onClose={closeSnackbar}
-          message={recentlyDeleted ? `Record ${recentlyDeleted.record.id} deleted` : 'Record deleted'}
-          action={<Button size='small' onClick={undoDelete} sx={{ color:'#fff' }}>UNDO</Button>}
-          ContentProps={{ sx:{ bgcolor:'#334155' } }}
-        />
+        {/* Password Verification Dialog */}
+        <Dialog open={passwordOpen} onClose={closeDelete} maxWidth='xs' fullWidth>
+          <DialogTitle>Delete Record - Enter Password</DialogTitle>
+          <DialogContent dividers>
+            <Typography variant='body2' sx={{ mb:2 }}>
+              Enter your admin password to confirm deletion of <strong>{toDelete?.name}</strong>:
+            </Typography>
+            <TextField
+              fullWidth
+              type="password"
+              label="Admin Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !deleting) {
+                  verifyPasswordAndDelete();
+                }
+              }}
+              error={!!passwordError}
+              helperText={passwordError}
+              disabled={deleting}
+              autoFocus
+              sx={{ mt: 1 }}
+            />
+            <Typography variant='caption' color='error.main' display='block' sx={{ mt:1 }}>
+              This will permanently delete the record from MongoDB.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDelete} color='inherit' disabled={deleting}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={verifyPasswordAndDelete} 
+              color='error' 
+              variant='contained' 
+              disabled={!password || deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete Record'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </CardContent>
     </Card>
   );

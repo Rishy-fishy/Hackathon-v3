@@ -82,6 +82,7 @@ export default function AdminPage() {
   const [stats,setStats] = useState(null);
   const [agentCount, setAgentCount] = useState(0);
   const [periodStats, setPeriodStats] = useState({ current: 0, previous: 0, delta: 0 });
+  const [realMalnutritionStats, setRealMalnutritionStats] = useState({ severe: 0, moderate: 0, normal: 0 });
   const [loading,setLoading] = useState(false);
   const [downloadHealthId, setDownloadHealthId] = useState('');
   const [section, setSection] = useState('Dashboard');
@@ -101,6 +102,10 @@ export default function AdminPage() {
       fetchStats();
       fetchAgentCount();
       fetchPeriodComparison();
+      // Fetch real malnutrition statistics
+      calculateRealMalnutritionStats().then(stats => {
+        setRealMalnutritionStats(stats);
+      });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[token]);
@@ -196,6 +201,65 @@ export default function AdminPage() {
     }
   }
 
+  async function calculateRealMalnutritionStats() {
+    try {
+      const t = sessionStorage.getItem('admin_token');
+      if (!t) return { severe: 0, moderate: 0,  normal: 0 };
+      
+      // Fetch all records to calculate real malnutrition distribution
+      const response = await fetch(api('/api/admin/children?limit=1000'), {
+        headers: { 'Authorization': `Bearer ${t}` }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch records for malnutrition stats');
+      const data = await response.json();
+      
+      // Calculate malnutrition status for each record (same logic as AdminRecords.js)
+      const malnutritionCounts = { severe: 0, moderate: 0, normal: 0 };
+      
+      data.records.forEach(record => {
+        let status = 'normal';
+        
+        if (record.malnutritionSigns && 
+            record.malnutritionSigns !== 'None' && 
+            record.malnutritionSigns !== '' && 
+            record.malnutritionSigns !== 'none' &&
+            record.malnutritionSigns !== 'N/A' &&
+            record.malnutritionSigns !== 'n/a') {
+          
+          const signs = record.malnutritionSigns
+            .split(/[,;|\n()]/)
+            .map(sign => sign.trim())
+            .filter(sign => sign && 
+                   sign !== 'None' && 
+                   sign !== 'none' && 
+                   sign !== 'N/A' && 
+                   sign !== 'n/a' && 
+                   sign !== 'nil' &&
+                   sign.length > 2);
+          
+          const signCount = signs.length;
+          
+          if (signCount === 1) {
+            status = 'normal';
+          } else if (signCount === 2 || signCount === 3) {
+            status = 'moderate';
+          } else if (signCount > 3) {
+            status = 'severe';
+          }
+        }
+        
+        malnutritionCounts[status]++;
+      });
+      
+      return malnutritionCounts;
+      
+    } catch (error) {
+      console.error('Error calculating malnutrition stats:', error);
+      return { severe: 0, moderate: 0, normal: 0 };
+    }
+  }
+
   async function fetchPeriodComparison() {
     try {
       const t = sessionStorage.getItem('admin_token');
@@ -276,8 +340,8 @@ export default function AdminPage() {
   const malnutritionCases = 123; // legacy placeholder
   const pendingUploads = Math.max(0, recentUploads.filter(u => !u.uploadedAt).length) || 12; // fallback demo value
 
-  // New richer placeholder data for redesigned dashboard
-  const severityStats = { severe: 84, moderate: 210, mild: 560, normal: 900 };
+  // New richer data using real malnutrition statistics from MongoDB
+  const severityStats = realMalnutritionStats;
   const severityTotal = Object.values(severityStats).reduce((a,b)=>a+b,0) || 1;
   const severityPct = Object.fromEntries(
     Object.entries(severityStats).map(([k,v])=>[k, ((v / severityTotal) * 100).toFixed(0)])
@@ -465,7 +529,7 @@ export default function AdminPage() {
                     </CardContent>
                   </Card>
                 </Grid>
-                {/* Malnutrition Distribution (show Severe/Moderate/Mild only) */}
+                {/* Malnutrition Distribution (show Severe/Moderate/Normal only) */}
                 <Grid item xs={12} sm={6} md={3}>
                   <Card elevation={0} sx={{ border:'1px solid #e2e8f0', borderRadius:2, background:'#fff' }}>
                     <CardContent sx={{ p:2.25 }}>
@@ -480,14 +544,13 @@ export default function AdminPage() {
                           <Typography variant="caption" sx={{ color:'#64748b' }}>Moderate</Typography>
                         </Box>
                         <Box sx={{ textAlign:'center', flex:1 }}>
-                          <Typography sx={{ fontSize:14, fontWeight:600, color:'#d97706' }}>{severityPct.mild}%</Typography>
-                          <Typography variant="caption" sx={{ color:'#64748b' }}>Mild</Typography>
+                          <Typography sx={{ fontSize:14, fontWeight:600, color:'#16a34a' }}>{severityPct.normal}%</Typography>
+                          <Typography variant="caption" sx={{ color:'#64748b' }}>Normal</Typography>
                         </Box>
                       </Box>
                       <Box sx={{ mt:0.5, display:'flex', height:6, borderRadius:3, overflow:'hidden' }}>
                         <Box sx={{ width:`${severityPct.severe}%`, bgcolor:'#dc2626' }} />
                         <Box sx={{ width:`${severityPct.moderate}%`, bgcolor:'#f59e0b' }} />
-                        <Box sx={{ width:`${severityPct.mild}%`, bgcolor:'#d97706' }} />
                         <Box sx={{ flex:1, bgcolor:'#16a34a' }} />
                       </Box>
                     </CardContent>
@@ -533,7 +596,7 @@ export default function AdminPage() {
                     <CardContent sx={{ p:2.2 }}>
                       <Typography variant="subtitle2" fontWeight={600} mb={1}>Severity Breakdown</Typography>
                       <Box sx={{ height:200, display:'flex', alignItems:'flex-end', gap:2, px:1 }}>
-                        {[{ label:'Normal', value:severityStats.normal, color:'#16a34a' },{ label:'Mild', value:severityStats.mild, color:'#0ea5e9' },{ label:'Moderate', value:severityStats.moderate, color:'#f59e0b' },{ label:'Severe', value:severityStats.severe, color:'#dc2626' }].map(s=> {
+                        {[{ label:'Normal', value:severityStats.normal, color:'#16a34a' },{ label:'Moderate', value:severityStats.moderate, color:'#f59e0b' },{ label:'Severe', value:severityStats.severe, color:'#dc2626' }].map(s=> {
                           const h = (s.value / Math.max(...Object.values(severityStats))) * 160 + 20;
                           return (
                             <Box key={s.label} sx={{ flex:1, textAlign:'center' }}>
