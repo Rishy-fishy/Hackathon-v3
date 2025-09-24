@@ -2,9 +2,10 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Card, CardContent, TextField, InputAdornment, Typography,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Chip, Stack, Menu, MenuItem, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button
+  Paper, Chip, Stack, Menu, MenuItem, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button,
+  Grid, Avatar, CircularProgress
 } from '@mui/material';
-import { Search as SearchIcon, ArrowDropDown as ArrowDropDownIcon } from '@mui/icons-material';
+import { Search as SearchIcon, ArrowDropDown as ArrowDropDownIcon, Person as PersonIcon, PhotoCamera as PhotoIcon } from '@mui/icons-material';
 
 // Clean implementation: header filter menus for Age, Gender, Location, Malnutrition Status
 export default function AdminRecords() {
@@ -20,6 +21,9 @@ export default function AdminRecords() {
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [toDelete, setToDelete] = useState(null);
+
+  const [recordDetailOpen, setRecordDetailOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
   const [deleting, setDeleting] = useState(false);
 
@@ -203,6 +207,34 @@ export default function AdminRecords() {
   const closeMenu = (key) => setMenus(m => ({ ...m, [key]: null }));
   const chooseFilter = (key, value) => { setFilters(f => ({ ...f, [key]: value })); closeMenu(key); };
   const clearFilter = (key) => setFilters(f=>({ ...f, [key]: key==='age'? null : '' }));
+
+  // Function to open record details
+  const openRecordDetail = (record) => {
+    setSelectedRecord(record);
+    setRecordDetailOpen(true);
+  };
+
+  // Function to close record details
+  const closeRecordDetail = () => {
+    setRecordDetailOpen(false);
+    setSelectedRecord(null);
+  };
+
+  // Simple component for displaying label-value pairs
+  const InfoRow = ({ label, value }) => (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', py: 0.5 }}>
+      <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary', minWidth: 140 }}>
+        {label}:
+      </Typography>
+      <Typography variant="body2" sx={{ textAlign: 'right', wordBreak: 'break-word', maxWidth: '60%' }}>
+        {!value || value === 'Unknown' || value === 'N/A' ? (
+          <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>N/A</span>
+        ) : (
+          value
+        )}
+      </Typography>
+    </Box>
+  );
 
 
   const beginDelete = (row) => { 
@@ -397,7 +429,7 @@ export default function AdminRecords() {
                   </TableCell>
                 </TableRow>
               ) : rows.length > 0 ? rows.map(r => (
-                <TableRow key={r.id} hover>
+                <TableRow key={r.id} hover sx={{ cursor: 'pointer' }} onClick={() => openRecordDetail(r)}>
                   <TableCell sx={{ color:'#0f62fe', fontWeight:600 }}>{r.id}</TableCell>
                   <TableCell>{r.name}</TableCell>
                   <TableCell>{r.ageDisplay}</TableCell>
@@ -407,7 +439,7 @@ export default function AdminRecords() {
                   <TableCell>
                     <Chip size='small' label={r.status} color={statusColor(r.status)} variant='outlined' sx={{ fontWeight:600 }} />
                   </TableCell>
-                  <TableCell align='center'>
+                  <TableCell align='center' onClick={(e) => e.stopPropagation()}>
                     <Typography variant='body2' sx={{ color:'#dc2626', cursor:'pointer', fontWeight:500 }} onClick={()=>beginDelete(r)}>Delete</Typography>
                   </TableCell>
                 </TableRow>
@@ -487,6 +519,165 @@ export default function AdminRecords() {
               disabled={!password || deleting}
             >
               {deleting ? 'Deleting...' : 'Delete Record'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Record Detail Dialog */}
+        <Dialog open={recordDetailOpen} onClose={closeRecordDetail} fullWidth maxWidth="md">
+          <DialogTitle sx={{ pb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <PersonIcon color="primary" />
+              <Typography variant="h6">Child Health Record Details</Typography>
+            </Box>
+          </DialogTitle>
+          <DialogContent dividers>
+            {selectedRecord && (
+              <Box sx={{ py: 1 }}>
+                {/* Header with name and ID */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 2, 
+                  mb: 3,
+                  p: 2,
+                  bgcolor: 'primary.50',
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'primary.200'
+                }}>
+                  <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
+                    {selectedRecord.name?.charAt(0)?.toUpperCase() || 'C'}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" fontWeight={600}>
+                      {selectedRecord.name || 'Unknown Child'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Health ID: {selectedRecord.healthId || selectedRecord.id}
+                    </Typography>
+                    <Chip 
+                      size='small' 
+                      label={selectedRecord.status} 
+                      color={statusColor(selectedRecord.status)} 
+                      variant='outlined' 
+                      sx={{ fontWeight:600, mt: 0.5 }} 
+                    />
+                  </Box>
+                </Box>
+
+                <Grid container spacing={3}>
+                  {/* Personal Information */}
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined" sx={{ height: '100%' }}>
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                          Personal Information
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <InfoRow label="Full Name" value={selectedRecord.name} />
+                          <InfoRow label="Age" value={selectedRecord.ageDisplay} />
+                          <InfoRow label="Age (Months)" value={selectedRecord.age ? `${selectedRecord.age} months` : 'N/A'} />
+                          <InfoRow label="Gender" value={selectedRecord.gender} />
+                          <InfoRow label="Weight" value={selectedRecord.weightKg ? `${selectedRecord.weightKg} kg` : 'N/A'} />
+                          <InfoRow label="Height" value={selectedRecord.heightCm ? `${selectedRecord.heightCm} cm` : 'N/A'} />
+                          <InfoRow label="Health ID" value={selectedRecord.healthId || selectedRecord.id} />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Guardian Information */}
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined" sx={{ height: '100%' }}>
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                          Guardian Information
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <InfoRow label="Guardian Name" value={selectedRecord.guardianName} />
+                          <InfoRow label="Guardian Phone" value={selectedRecord.guardianPhone} />
+                          <InfoRow label="Relation" value={selectedRecord.guardianRelation} />
+                          <InfoRow label="Location" value={selectedRecord.location} />
+                          <InfoRow label="Representative" value={selectedRecord.rep} />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Health Information */}
+                  <Grid item xs={12}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                          Health Information
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <InfoRow label="Malnutrition Status" value={selectedRecord.status} />
+                          <InfoRow label="Malnutrition Signs" value={selectedRecord.malnutritionSigns} />
+                          <InfoRow label="Recent Illnesses" value={selectedRecord.recentIllnesses} />
+                          <InfoRow label="BMI Category" value={
+                            selectedRecord.weightKg && selectedRecord.heightCm ? 
+                            (() => {
+                              const heightM = selectedRecord.heightCm / 100;
+                              const bmi = (selectedRecord.weightKg / (heightM * heightM)).toFixed(1);
+                              return `${bmi} (${bmi < 18.5 ? 'Underweight' : bmi < 25 ? 'Normal' : bmi < 30 ? 'Overweight' : 'Obese'})`;
+                            })() : 'N/A'
+                          } />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Photo Section */}
+                  {selectedRecord.facePhoto && (
+                    <Grid item xs={12}>
+                      <Card variant="outlined">
+                        <CardContent>
+                          <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                            <PhotoIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                            Child Photo
+                          </Typography>
+                          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                            <img 
+                              src={selectedRecord.facePhoto} 
+                              alt="Child"
+                              style={{
+                                maxWidth: '200px',
+                                maxHeight: '200px',
+                                objectFit: 'cover',
+                                borderRadius: '8px',
+                                border: '1px solid #e0e0e0'
+                              }}
+                            />
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )}
+
+                  {/* System Information */}
+                  <Grid item xs={12}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                          System Information
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <InfoRow label="Created At" value={selectedRecord.createdAt ? new Date(selectedRecord.createdAt).toLocaleString() : 'N/A'} />
+                          <InfoRow label="Uploaded At" value={selectedRecord.uploadedAt ? new Date(selectedRecord.uploadedAt).toLocaleString() : 'N/A'} />
+                          <InfoRow label="Updated At" value={selectedRecord.updatedAt ? new Date(selectedRecord.updatedAt).toLocaleString() : 'N/A'} />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button onClick={closeRecordDetail} variant="contained">
+              Close
             </Button>
           </DialogActions>
         </Dialog>
