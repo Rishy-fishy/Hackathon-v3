@@ -4,7 +4,7 @@ import { enable as drEnable, disable as drDisable, auto as drAuto, isEnabled as 
 class ThemeManager {
   constructor() {
     this.darkReaderConfig = { brightness:100, contrast:90, sepia:10 };
-    // Apply saved theme immediately
+    // Apply saved theme immediately and synchronously
     this.applySavedTheme();
     this.setupSystemThemeListener();
   }
@@ -14,9 +14,18 @@ class ThemeManager {
       const saved = localStorage.getItem('appSettings');
       if(saved){
         const { theme='light' } = JSON.parse(saved);
+        // Apply theme synchronously to prevent flicker
         this.setTheme(theme);
+        console.log('Theme applied on init:', theme);
+      } else {
+        // Ensure light theme is explicitly set if no saved settings
+        this.setTheme('light');
       }
-    } catch(e){ console.warn('applySavedTheme failed', e); }
+    } catch(e){ 
+      console.warn('applySavedTheme failed', e);
+      // Fallback to light theme
+      this.setTheme('light');
+    }
   }
 
   setTheme(theme){

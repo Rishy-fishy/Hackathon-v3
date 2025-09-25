@@ -3,6 +3,7 @@ import './App.css';
 import  './glass.css';
 import Header from './components/Header';
 import Homepage from './components/Homepage';
+import ViewData from './components/ViewData';
 import Settings from './components/settings';
 import AuthCallback from './components/AuthCallback';
 import AuthSuccess from './components/AuthSuccess';
@@ -53,6 +54,11 @@ function App() {
       {activeView === 'home' && (
         <main className="main-content" aria-label="Main content">
           <Homepage />
+        </main>
+      )}
+      {activeView === 'view' && (
+        <main className="main-content" aria-label="View Data">
+          <ViewData />
         </main>
       )}
       {activeView === 'settings' && (
