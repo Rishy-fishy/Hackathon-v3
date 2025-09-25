@@ -57,15 +57,18 @@ export default function AdminPage() {
   // Resolution order for backend base URL (first non-empty wins):
   // 1. window.__API_BASE (runtime injected script) e.g. placed in public/runtime-config.js
   // 2. REACT_APP_API_BASE (build-time)
-  // 3. If running on localhost frontend dev server -> http://localhost:3002
+  // Resolution order for backend base URL (first non-empty wins):
+  // 1. window.__API_BASE (runtime injected script) e.g. placed in public/runtime-config.js
+  // 2. REACT_APP_API_BASE (build-time)
+  // 3. GCloud VM backend (updated IP after restart)
   // 4. Empty string => same-origin relative calls
   const runtimeBase = typeof window !== 'undefined' && window.__API_BASE ? window.__API_BASE : '';
-  const CLOUD_RUN_FALLBACK = 'https://navbar-backend-clean-87485236346.us-central1.run.app';
+  const GCLOUD_VM_BACKEND = 'http://35.194.34.36:8080'; // Updated IP after VM restart
   const API_BASE = (
     runtimeBase ||
     process.env.REACT_APP_API_BASE ||
-    // If developing locally and no override, still use remote backend instead of failing
-    (window.location.hostname === 'localhost' ? CLOUD_RUN_FALLBACK : CLOUD_RUN_FALLBACK)
+    // Use GCloud VM backend as primary
+    GCLOUD_VM_BACKEND
   ).replace(/\/$/,'');
   if (typeof window !== 'undefined') {
     // One-time debug to confirm which backend URL AdminPage is using
@@ -167,7 +170,7 @@ export default function AdminPage() {
   async function fetchAgentCount(){
     try {
       // First login to identity backend to get token
-      const IDENTITY_API_BASE = 'http://34.27.252.72:8080';
+      const IDENTITY_API_BASE = 'http://35.194.34.36:8080';
       const loginResp = await fetch(`${IDENTITY_API_BASE}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

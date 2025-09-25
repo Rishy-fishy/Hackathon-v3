@@ -8,7 +8,7 @@ import { Search as SearchIcon, Refresh as RefreshIcon, Person as PersonIcon } fr
 
 export default function AdminAgents({ token }) {
   // Always use production identity backend for now (since no local backend is set up)
-  const IDENTITY_API_BASE = 'http://34.27.252.72:8080';
+  const IDENTITY_API_BASE = 'http://35.194.34.36:8080';
   const api = useCallback((path) => `${IDENTITY_API_BASE}${path}`, []);
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);

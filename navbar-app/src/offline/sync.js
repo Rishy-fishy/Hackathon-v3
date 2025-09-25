@@ -4,11 +4,11 @@ import { pendingRecords, updateChildRecord, recordCounts, purgeOldUploaded } fro
 // Cloud Run backend base URL resolution (first non-empty wins):
 // 1. window.__API_BASE (runtime-config.js)
 // 2. REACT_APP_API_BASE (build-time)
-// 3. Fallback to current deployed clean backend URL
+// 3. Fallback to GCloud VM backend URL
 const API_BASE = (
   (typeof window !== 'undefined' && window.__API_BASE) ||
   process.env.REACT_APP_API_BASE ||
-  'https://navbar-backend-clean-87485236346.us-central1.run.app'
+  'http://35.194.34.36:8080'
 ).replace(/\/$/, '');
 
 let lastSyncInfo = { time: null, result: null };
@@ -29,6 +29,15 @@ export async function syncPendingRecords({ accessToken, uploaderName, uploaderEm
       sessionStorage.getItem('access_token') || 
       sessionStorage.getItem('raw_esignet_access_token') ||
       localStorage.getItem('access_token');
+    
+    console.log('🔐 Token check:', {
+      accessTokenProvided: !!accessToken,
+      sessionAccessToken: !!sessionStorage.getItem('access_token'),
+      rawEsignetToken: !!sessionStorage.getItem('raw_esignet_access_token'),
+      localStorageToken: !!localStorage.getItem('access_token'),
+      finalToken: !!token,
+      allowNoToken
+    });
     
     if (!token && !allowNoToken) {
       console.log('🚫 No token available for sync');
@@ -52,28 +61,56 @@ export async function syncPendingRecords({ accessToken, uploaderName, uploaderEm
     }
 
     const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      console.log('🔑 Added authorization header with token');
+    } else {
+      console.log('⚠️ No token - proceeding without authorization header');
+    }
+    
     const uploaderLocation = getUploaderLocation(); // Get location data from session storage
+    console.log('📍 Uploader location:', uploaderLocation ? 'available' : 'not available');
+    
+    const requestBody = { 
+      records: list, 
+      uploaderName, 
+      uploaderEmail,
+      uploaderLocation // Include location data in the request
+    };
     
     console.log('📡 Sending request to backend...');
+    console.log('📋 Request details:', {
+      url: `${API_BASE}/api/child/batch`,
+      method: 'POST',
+      recordCount: list.length,
+      uploaderName,
+      uploaderEmail,
+      hasLocation: !!uploaderLocation,
+      hasAuth: !!token
+    });
+    
     const res = await fetch(`${API_BASE}/api/child/batch`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ 
-        records: list, 
-        uploaderName, 
-        uploaderEmail,
-        uploaderLocation // Include location data in the request
-      })
+      body: JSON.stringify(requestBody)
     });
     
     console.log(`📬 Backend response: ${res.status} ${res.statusText}`);
     
     if (!res.ok) {
+      let errorText = `Status ${res.status}`;
+      try {
+        const errorBody = await res.text();
+        errorText += `: ${errorBody}`;
+        console.error('❌ Error response body:', errorBody);
+      } catch (parseError) {
+        console.error('❌ Could not parse error response');
+      }
+      
       console.error('❌ Sync failed with status:', res.status);
       for (const r of list) await updateChildRecord(r.healthId, { status: 'failed' });
-  window.dispatchEvent(new CustomEvent('toast', { detail:{ type:'error', message:`Sync failed (${res.status})` } }));
-  return { error: true, status: res.status };
+      window.dispatchEvent(new CustomEvent('toast', { detail:{ type:'error', message:`Sync failed (${res.status})` } }));
+      return { error: true, status: res.status, message: errorText };
     }
     
     console.log('✅ Parsing response...');
@@ -102,10 +139,21 @@ export async function syncPendingRecords({ accessToken, uploaderName, uploaderEm
     console.log('🎉 Sync completed successfully!', json.summary);
     return json;
   } catch (e) {
-    console.error('❌ Sync error occurred:', e.message);
+    console.error('❌ Sync error occurred:', e);
+    console.error('❌ Full error details:', {
+      message: e.message,
+      stack: e.stack,
+      name: e.name
+    });
+    
     // revert to failed
-    const list = await pendingRecords();
-    for (const r of list) await updateChildRecord(r.healthId, { status: 'failed' });
+    try {
+      const list = await pendingRecords();
+      for (const r of list) await updateChildRecord(r.healthId, { status: 'failed' });
+    } catch (revertError) {
+      console.error('❌ Failed to revert record statuses:', revertError);
+    }
+    
     window.dispatchEvent(new CustomEvent('toast', { detail:{ type:'error', message:`Sync error: ${e.message}` } }));
     const counts = await recordCounts();
     window.dispatchEvent(new CustomEvent('sync-update', { detail:{ counts } }));

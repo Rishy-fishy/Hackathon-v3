@@ -30,7 +30,7 @@ export default function AdminRecords() {
   const API_BASE = (
     (typeof window !== 'undefined' && window.__API_BASE) ||
     process.env.REACT_APP_API_BASE ||
-    'http://34.27.252.72:8080' // Your GCloud VM backend
+    'http://35.194.34.36:8080' // Your GCloud VM backend (updated IP)
   ).replace(/\/$/, '');
 
   // Fetch all records from MongoDB

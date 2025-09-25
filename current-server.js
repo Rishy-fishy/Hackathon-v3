@@ -149,6 +149,73 @@ app.get('/api/admin/stats', async (req,res)=>{
   } catch(e){ res.status(500).json({ error:'stats_failed', message:e.message }); }
 });
 
+// Batch upload endpoint for child records (from mobile app sync)
+app.post('/api/child/batch', async (req,res)=>{
+  try {
+    const { records, uploaderName, uploaderEmail, uploaderLocation } = req.body || {};
+    
+    if (!records || !Array.isArray(records)) {
+      return res.status(400).json({ error:'invalid_request', message:'Records array required' });
+    }
+    
+    console.log(`[batch] Processing ${records.length} records from ${uploaderName || 'anonymous'}`);
+    
+    await initMongo();
+    if (!mongoDb) return res.status(503).json({ error:'mongo_disabled' });
+    
+    const col = mongoDb.collection('child_records');
+    const results = [];
+    const summary = { uploaded: 0, failed: 0, duplicates: 0 };
+    
+    for (const record of records) {
+      try {
+        // Check for existing record
+        const existing = await col.findOne({ healthId: record.healthId });
+        if (existing) {
+          results.push({ healthId: record.healthId, status: 'duplicate', reason: 'already_exists' });
+          summary.duplicates++;
+          continue;
+        }
+        
+        // Enhance record with upload metadata
+        const enhancedRecord = {
+          ...record,
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: uploaderEmail || uploaderName || 'anonymous',
+          uploaderName: uploaderName,
+          uploaderEmail: uploaderEmail,
+          uploaderLocation: uploaderLocation,
+          representative: record.representative || uploaderName || 'Field Agent',
+          status: 'uploaded'
+        };
+        
+        // Insert record into MongoDB
+        await col.insertOne(enhancedRecord);
+        results.push({ healthId: record.healthId, status: 'uploaded' });
+        summary.uploaded++;
+        
+        console.log(`[batch] Uploaded ${record.healthId} successfully`);
+        
+      } catch (error) {
+        console.error(`[batch] Failed to upload ${record.healthId}:`, error.message);
+        results.push({ healthId: record.healthId, status: 'failed', reason: error.message });
+        summary.failed++;
+      }
+    }
+    
+    console.log(`[batch] Upload summary: ${summary.uploaded} uploaded, ${summary.failed} failed, ${summary.duplicates} duplicates`);
+    res.json({ 
+      results, 
+      summary,
+      message: `Successfully processed ${records.length} records`
+    });
+    
+  } catch(e) {
+    console.error('[batch] Batch upload error:', e.message);
+    res.status(500).json({ error:'batch_upload_failed', message: e.message });
+  }
+});
+
 // ----- Postgres Mock Identity Integration -----
 const PG_HOST = process.env.PG_HOST || '34.58.198.143';
 const PG_PORT = parseInt(process.env.PG_PORT || '5455',10);

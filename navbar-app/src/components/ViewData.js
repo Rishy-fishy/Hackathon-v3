@@ -119,31 +119,97 @@ const ViewData = () => {
   };
 
   const handleUpload = async () => {
-    if (!isAuthenticated || uploadLoading) return;
+    if (!isAuthenticated || uploadLoading) {
+      console.log('🚫 Upload blocked - isAuthenticated:', isAuthenticated, 'uploadLoading:', uploadLoading);
+      return;
+    }
     
+    console.log('🚀 Starting upload process...');
     setUploadLoading(true);
     setUploadSuccess(false);
     
     try {
+      console.log('📋 Loading sync module...');
       const { syncPendingRecords } = await import('../offline/sync');
+      
+      // Debug authentication state
       const userStr = sessionStorage.getItem('esignet_user') || localStorage.getItem('user_info');
+      const accessToken = sessionStorage.getItem('access_token') || 
+        sessionStorage.getItem('raw_esignet_access_token') ||
+        localStorage.getItem('access_token');
+      
+      console.log('🔐 Authentication debug:');
+      console.log('- User string exists:', !!userStr);
+      console.log('- Access token exists:', !!accessToken);
+      console.log('- Token preview:', accessToken ? accessToken.substring(0, 20) + '...' : 'null');
+      
       let uploaderName = 'manual_upload';
       let uploaderEmail = null;
       if (userStr) {
         try { 
           const u = JSON.parse(userStr); 
           uploaderName = u.name || uploaderName; 
-          uploaderEmail = u.email || null; 
-        } catch {}
+          uploaderEmail = u.email || null;
+          console.log('👤 Uploader info - Name:', uploaderName, 'Email:', uploaderEmail);
+        } catch (parseError) {
+          console.error('❌ Failed to parse user info:', parseError);
+        }
       }
-      const res = await syncPendingRecords({ uploaderName, uploaderEmail, allowNoToken: false });
+      
+      // Check for pending records before sync
+      const { pendingRecords, listChildRecords } = await import('../offline/db');
+      const pendingList = await pendingRecords();
+      console.log('📊 Found', pendingList.length, 'pending records to upload');
+      
+      // If no pending records, check for records that need upload (not uploaded or failed)
+      if (pendingList.length === 0) {
+        console.log('🔍 No records with pending/failed status, checking for unuploaded records...');
+        const allRecords = await listChildRecords();
+        const unuploadedRecords = allRecords.filter(r => !r.uploadedAt || r.status === 'failed' || r.status !== 'uploaded');
+        console.log('📊 Found', unuploadedRecords.length, 'unuploaded records');
+        
+        if (unuploadedRecords.length === 0) {
+          console.log('ℹ️ No records to upload - all records appear to be uploaded');
+          // Removed the alert popup as requested
+          return;
+        }
+        
+        // Update unuploaded records to have pending status
+        const { updateChildRecord } = await import('../offline/db');
+        console.log('🔄 Updating', unuploadedRecords.length, 'records to pending status...');
+        for (const record of unuploadedRecords) {
+          await updateChildRecord(record.healthId, { status: 'pending' });
+        }
+        // Refresh the pending list
+        const updatedPendingList = await pendingRecords();
+        console.log('📊 Updated pending records count:', updatedPendingList.length);
+      }
+      
+      console.log('🔄 Starting sync...');
+      const res = await syncPendingRecords({ 
+        uploaderName, 
+        uploaderEmail, 
+        allowNoToken: false 
+      });
+      
+      console.log('📡 Sync result:', res);
+      
       if (res && !res.error) {
+        console.log('✅ Upload successful!');
         loadRecords(); // Refresh records after upload
         setUploadSuccess(true);
         setTimeout(() => setUploadSuccess(false), 3000); // Hide success state after 3 seconds
+        alert(`Upload successful! ${res.summary?.uploaded || 0} records uploaded.`);
+      } else if (res && res.error) {
+        console.error('❌ Upload failed with error:', res);
+        alert(`Upload failed: ${res.message || 'Unknown error'}`);
+      } else if (res && res.skipped) {
+        console.log('⏭️ Upload skipped:', res.reason);
+        alert(`Upload skipped: ${res.reason}`);
       }
     } catch (e) { 
-      console.warn('Upload failed', e); 
+      console.error('❌ Upload error:', e);
+      alert(`Upload error: ${e.message}`);
     } finally {
       setUploadLoading(false);
     }
