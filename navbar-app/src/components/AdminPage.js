@@ -46,7 +46,6 @@ import {
 } from '@mui/icons-material';
 import AdminRecords from './AdminRecords';
 import AdminAnalytics from './AdminAnalytics';
-import MapWidget from './MapWidget';
 import AdminAgents from './AdminAgents';
 
 // Backend endpoints expected:
@@ -81,6 +80,9 @@ export default function AdminPage() {
   const [token,setToken] = useState(null);
   const [error,setError] = useState(null);
   const [stats,setStats] = useState(null);
+  const [agentCount, setAgentCount] = useState(0);
+  const [periodStats, setPeriodStats] = useState({ current: 0, previous: 0, delta: 0 });
+  const [realMalnutritionStats, setRealMalnutritionStats] = useState({ severe: 0, moderate: 0, normal: 0 });
   const [loading,setLoading] = useState(false);
   const [downloadHealthId, setDownloadHealthId] = useState('');
   const [section, setSection] = useState('Dashboard');
@@ -98,6 +100,12 @@ export default function AdminPage() {
   useEffect(()=>{
     if (token) {
       fetchStats();
+      fetchAgentCount();
+      fetchPeriodComparison();
+      // Fetch real malnutrition statistics
+      calculateRealMalnutritionStats().then(stats => {
+        setRealMalnutritionStats(stats);
+      });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[token]);
@@ -156,6 +164,150 @@ export default function AdminPage() {
     } catch (e) { setError(e.message); } finally { setLoading(false); }
   }
 
+  async function fetchAgentCount(){
+    try {
+      // First login to identity backend to get token
+      const IDENTITY_API_BASE = 'http://34.27.252.72:8080';
+      const loginResp = await fetch(`${IDENTITY_API_BASE}/api/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'Admin', password: 'Admin@123' })
+      });
+      
+      if (!loginResp.ok) {
+        console.warn('[AdminPage] Identity backend login failed');
+        return;
+      }
+      
+      const loginData = await loginResp.json();
+      const identityToken = loginData.token;
+      
+      // Fetch agent count from identity backend
+      const agentsResp = await fetch(`${IDENTITY_API_BASE}/api/admin/identities?limit=1000`, {
+        headers: { Authorization: `Bearer ${identityToken}` }
+      });
+      
+      if (!agentsResp.ok) {
+        console.warn('[AdminPage] Failed to fetch agents from identity backend');
+        return;
+      }
+      
+      const agentsData = await agentsResp.json();
+      const count = agentsData.items?.length || 0;
+      setAgentCount(count);
+      console.log('[AdminPage] Fetched agent count:', count);
+    } catch (e) {
+      console.error('[AdminPage] Error fetching agent count:', e.message);
+    }
+  }
+
+  async function calculateRealMalnutritionStats() {
+    try {
+      const t = sessionStorage.getItem('admin_token');
+      if (!t) return { severe: 0, moderate: 0,  normal: 0 };
+      
+      // Fetch all records to calculate real malnutrition distribution
+      const response = await fetch(api('/api/admin/children?limit=1000'), {
+        headers: { 'Authorization': `Bearer ${t}` }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch records for malnutrition stats');
+      const data = await response.json();
+      
+      // Calculate malnutrition status for each record (same logic as AdminRecords.js)
+      const malnutritionCounts = { severe: 0, moderate: 0, normal: 0 };
+      
+      data.records.forEach(record => {
+        let status = 'normal';
+        
+        if (record.malnutritionSigns && 
+            record.malnutritionSigns !== 'None' && 
+            record.malnutritionSigns !== '' && 
+            record.malnutritionSigns !== 'none' &&
+            record.malnutritionSigns !== 'N/A' &&
+            record.malnutritionSigns !== 'n/a') {
+          
+          const signs = record.malnutritionSigns
+            .split(/[,;|\n()]/)
+            .map(sign => sign.trim())
+            .filter(sign => sign && 
+                   sign !== 'None' && 
+                   sign !== 'none' && 
+                   sign !== 'N/A' && 
+                   sign !== 'n/a' && 
+                   sign !== 'nil' &&
+                   sign.length > 2);
+          
+          const signCount = signs.length;
+          
+          if (signCount === 1) {
+            status = 'normal';
+          } else if (signCount === 2 || signCount === 3) {
+            status = 'moderate';
+          } else if (signCount > 3) {
+            status = 'severe';
+          }
+        }
+        
+        malnutritionCounts[status]++;
+      });
+      
+      return malnutritionCounts;
+      
+    } catch (error) {
+      console.error('Error calculating malnutrition stats:', error);
+      return { severe: 0, moderate: 0, normal: 0 };
+    }
+  }
+
+  async function fetchPeriodComparison() {
+    try {
+      const t = sessionStorage.getItem('admin_token');
+      if (!t) return;
+      
+      // Calculate date ranges for current period (last 30 days) and previous period (31-60 days ago)
+      const now = new Date();
+      const currentPeriodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+      const previousPeriodStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000); // 60 days ago
+      const previousPeriodEnd = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+      
+      // Fetch all records to analyze by date
+      const response = await fetch(api('/api/admin/children?limit=1000'), {
+        headers: { 'Authorization': `Bearer ${t}` }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch records for period comparison');
+      const data = await response.json();
+      
+      // Filter records by upload date for current and previous periods
+      const currentPeriodRecords = data.records.filter(record => {
+        if (!record.uploadedAt) return false;
+        const uploadDate = new Date(record.uploadedAt);
+        return uploadDate >= currentPeriodStart && uploadDate <= now;
+      });
+      
+      const previousPeriodRecords = data.records.filter(record => {
+        if (!record.uploadedAt) return false;
+        const uploadDate = new Date(record.uploadedAt);
+        return uploadDate >= previousPeriodStart && uploadDate <= previousPeriodEnd;
+      });
+      
+      const currentCount = currentPeriodRecords.length;
+      const previousCount = previousPeriodRecords.length;
+      const delta = previousCount > 0 ? (((currentCount - previousCount) / previousCount) * 100).toFixed(1) : 0;
+      
+      setPeriodStats({
+        current: currentCount,
+        previous: previousCount,
+        delta: parseFloat(delta)
+      });
+      
+      console.log('[AdminPage] Period comparison:', { currentCount, previousCount, delta });
+    } catch (error) {
+      console.error('Error fetching period comparison:', error);
+      setPeriodStats({ current: 0, previous: 0, delta: 0 });
+    }
+  }
 
   function logout(){
     sessionStorage.removeItem('admin_token');
@@ -184,12 +336,12 @@ export default function AdminPage() {
   const totalRecords = stats?.totalChildRecords ?? 0;
   const recentUploads = stats?.recentUploads || [];
   // Placeholder / derived values (no API changes):
-  const activeFieldAgents = 56; // static demo value matching design
+  const activeFieldAgents = agentCount ?? 56; // dynamic agent count from identity backend
   const malnutritionCases = 123; // legacy placeholder
   const pendingUploads = Math.max(0, recentUploads.filter(u => !u.uploadedAt).length) || 12; // fallback demo value
 
-  // New richer placeholder data for redesigned dashboard
-  const severityStats = { severe: 84, moderate: 210, mild: 560, normal: 900 };
+  // New richer data using real malnutrition statistics from MongoDB
+  const severityStats = realMalnutritionStats;
   const severityTotal = Object.values(severityStats).reduce((a,b)=>a+b,0) || 1;
   const severityPct = Object.fromEntries(
     Object.entries(severityStats).map(([k,v])=>[k, ((v / severityTotal) * 100).toFixed(0)])
@@ -199,9 +351,9 @@ export default function AdminPage() {
   const totalRecordsDelta = prevTotalRecords ? (((totalRecords - prevTotalRecords)/prevTotalRecords)*100).toFixed(1) : '0.0';
   const prevActiveAgents = activeFieldAgents; // no change
   const activeAgentsDelta = 0; // neutral
-  const newRecords = 1230; // placeholder
-  const prevNewRecords = 1256; // placeholder for -2.1%
-  const newRecordsDelta = (((newRecords - prevNewRecords)/prevNewRecords)*100).toFixed(1); // negative
+  const newRecords = periodStats.current;
+  const prevNewRecords = periodStats.previous;
+  const newRecordsDelta = periodStats.delta;
   const regionBreakdown = [
     { region:'Northern Region', cases:2714, severe:112 },
     { region:'Eastern Region',  cases:1980, severe:74  },
@@ -377,7 +529,7 @@ export default function AdminPage() {
                     </CardContent>
                   </Card>
                 </Grid>
-                {/* Malnutrition Distribution (show Severe/Moderate/Mild only) */}
+                {/* Malnutrition Distribution (show Severe/Moderate/Normal only) */}
                 <Grid item xs={12} sm={6} md={3}>
                   <Card elevation={0} sx={{ border:'1px solid #e2e8f0', borderRadius:2, background:'#fff' }}>
                     <CardContent sx={{ p:2.25 }}>
@@ -392,14 +544,13 @@ export default function AdminPage() {
                           <Typography variant="caption" sx={{ color:'#64748b' }}>Moderate</Typography>
                         </Box>
                         <Box sx={{ textAlign:'center', flex:1 }}>
-                          <Typography sx={{ fontSize:14, fontWeight:600, color:'#d97706' }}>{severityPct.mild}%</Typography>
-                          <Typography variant="caption" sx={{ color:'#64748b' }}>Mild</Typography>
+                          <Typography sx={{ fontSize:14, fontWeight:600, color:'#16a34a' }}>{severityPct.normal}%</Typography>
+                          <Typography variant="caption" sx={{ color:'#64748b' }}>Normal</Typography>
                         </Box>
                       </Box>
                       <Box sx={{ mt:0.5, display:'flex', height:6, borderRadius:3, overflow:'hidden' }}>
                         <Box sx={{ width:`${severityPct.severe}%`, bgcolor:'#dc2626' }} />
                         <Box sx={{ width:`${severityPct.moderate}%`, bgcolor:'#f59e0b' }} />
-                        <Box sx={{ width:`${severityPct.mild}%`, bgcolor:'#d97706' }} />
                         <Box sx={{ flex:1, bgcolor:'#16a34a' }} />
                       </Box>
                     </CardContent>
@@ -410,9 +561,9 @@ export default function AdminPage() {
                   <Card elevation={0} sx={{ border:'1px solid #e2e8f0', borderRadius:2, background:'#fff' }}>
                     <CardContent sx={{ p:2.25 }}>
                       <Typography sx={{ fontSize:13, fontWeight:600, color:'#475569', mb:0.5 }}>New vs. Last Period</Typography>
-                      <Typography variant="h5" fontWeight={700}>{nf.format(newRecords)}</Typography>
-                      <Typography variant="caption" sx={{ mt:0.5, display:'flex', alignItems:'center', gap:.5, color: parseFloat(newRecordsDelta) >= 0 ? 'success.main':'error.main' }}>
-                        {parseFloat(newRecordsDelta) >= 0 ? '↑' : '↓'} {Math.abs(newRecordsDelta)}% new records
+                      <Typography variant="h5" fontWeight={700}>{nf.format(newRecords || 0)}</Typography>
+                      <Typography variant="caption" sx={{ mt:0.5, display:'flex', alignItems:'center', gap:.5, color: parseFloat(newRecordsDelta || 0) >= 0 ? 'success.main':'error.main' }}>
+                        {periodStats.previous === 0 ? 'No previous data' : `${parseFloat(newRecordsDelta || 0) >= 0 ? '↑' : '↓'} ${Math.abs(newRecordsDelta || 0)}% new records`}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -445,7 +596,7 @@ export default function AdminPage() {
                     <CardContent sx={{ p:2.2 }}>
                       <Typography variant="subtitle2" fontWeight={600} mb={1}>Severity Breakdown</Typography>
                       <Box sx={{ height:200, display:'flex', alignItems:'flex-end', gap:2, px:1 }}>
-                        {[{ label:'Normal', value:severityStats.normal, color:'#16a34a' },{ label:'Mild', value:severityStats.mild, color:'#0ea5e9' },{ label:'Moderate', value:severityStats.moderate, color:'#f59e0b' },{ label:'Severe', value:severityStats.severe, color:'#dc2626' }].map(s=> {
+                        {[{ label:'Normal', value:severityStats.normal, color:'#16a34a' },{ label:'Moderate', value:severityStats.moderate, color:'#f59e0b' },{ label:'Severe', value:severityStats.severe, color:'#dc2626' }].map(s=> {
                           const h = (s.value / Math.max(...Object.values(severityStats))) * 160 + 20;
                           return (
                             <Box key={s.label} sx={{ flex:1, textAlign:'center' }}>
@@ -460,9 +611,9 @@ export default function AdminPage() {
                 </Grid>
               </Grid>
 
-              {/* Geographic Breakdown & Map Placeholder */}
+              {/* Geographic Breakdown */}
               <Grid container spacing={2}>
-                <Grid item xs={12} md={7}>
+                <Grid item xs={12}>
                   <Card elevation={0} sx={{ border:'1px solid #e2e8f0', borderRadius:2 }}>
                     <CardContent sx={{ p:2.2 }}>
                       <Typography variant="subtitle2" fontWeight={600} mb={1}>Geographic Breakdown</Typography>
@@ -484,18 +635,6 @@ export default function AdminPage() {
                           ))}
                         </TableBody>
                       </Table>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={5}>
-                  <Card elevation={0} sx={{ border:'1px solid #e2e8f0', borderRadius:2, height:'100%' }}>
-                    <CardContent sx={{ p:2.2 }}>
-                      <Typography variant="subtitle2" fontWeight={600} mb={1}>Region Map</Typography>
-                      <MapWidget height={260} markers={[
-                        { position:{ lat:28.6139, lng:77.2090 }, label:'Delhi' },
-                        { position:{ lat:19.0760, lng:72.8777 }, label:'Mumbai' },
-                        { position:{ lat:13.0827, lng:80.2707 }, label:'Chennai' }
-                      ]} />
                     </CardContent>
                   </Card>
                 </Grid>

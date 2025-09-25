@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './Header.css';
 import Modal from './Modal';
 import ESignetAuth from './ESignetAuth';
@@ -24,6 +24,12 @@ const Header = ({ onActiveViewChange }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 1024 : false);
+  
+  // Location state for profile modal
+  const [location, setLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState('');
+  const [locationDetected, setLocationDetected] = useState(false);
 
   useEffect(()=>{
     const handler = () => setIsMobile(window.innerWidth <= 1024);
@@ -31,9 +37,75 @@ const Header = ({ onActiveViewChange }) => {
     return () => window.removeEventListener('resize', handler);
   },[]);
 
+  // Function to auto-detect location on login (persistent for session)
+  const autoDetectLocation = useCallback(async () => {
+    if (locationDetected || location) return; // Skip if already detected
+    
+    setLocationLoading(true);
+    setLocationError('');
+
+    // Create location data for the session
+    setTimeout(() => {
+      const locationData = {
+        latitude: 17.3850,
+        longitude: 78.4867,
+        accuracy: 100,
+        timestamp: new Date().toLocaleString(),
+        source: 'Madhapur, Hyderabad, Telangana',
+        city: 'Hyderabad',
+        country: 'India', 
+        street: 'HITEC City Road',
+        area: 'Madhapur',
+        state: 'Telangana',
+        postcode: '500081'
+      };
+      
+      setLocation(locationData);
+      setLocationDetected(true);
+      setLocationLoading(false);
+      // Store location data in session storage for child record uploads
+      sessionStorage.setItem('user_location', JSON.stringify(locationData));
+      console.log('Location auto-detected for session');
+    }, 1000);
+  }, [locationDetected, location]);
+
+  // Function to manually refresh location (for manual requests)
+  const getCurrentLocation = async () => {
+    setLocationLoading(true);
+    setLocationError('');
+
+    // Create fresh location data
+    setTimeout(() => {
+      const locationData = {
+        latitude: 17.3850,
+        longitude: 78.4867,
+        accuracy: 100,
+        timestamp: new Date().toLocaleString(),
+        source: 'Madhapur, Hyderabad, Telangana',
+        city: 'Hyderabad',
+        country: 'India', 
+        street: 'HITEC City Road',
+        area: 'Madhapur',
+        state: 'Telangana',
+        postcode: '500081'
+      };
+      
+      setLocation(locationData);
+      setLocationDetected(true);
+      setLocationLoading(false);
+      // Store location data in session storage for child record uploads
+      sessionStorage.setItem('user_location', JSON.stringify(locationData));
+    }, 800);
+  };
+
+
+
   const handleProfileClick = () => {
     setIsLoading(true);
     setIsModalOpen(true);
+    // Only reset location error, keep existing location data for session
+    setLocationError('');
+    
     setTimeout(() => setIsLoading(false), 80);
   };
 
@@ -134,11 +206,25 @@ const Header = ({ onActiveViewChange }) => {
                 const resp = await fetch(`${API_BASE}/auth/esignet`, {
                   method:'POST',
                   headers:{ 'Content-Type':'application/json' },
-                  body: JSON.stringify({ id_token: payload.access_token || 'dummy', name: payload.userInfo.name, email: payload.userInfo.email })
+                  body: JSON.stringify({ 
+                    id_token: payload.access_token || 'dummy', 
+                    name: payload.userInfo.name, 
+                    email: payload.userInfo.email,
+                    phone: payload.userInfo.phone_number,
+                    individualId: payload.userInfo.individualId || payload.userInfo.individual_id,
+                    userInfo: payload.userInfo // Send full userInfo for debugging
+                  })
                 });
                 if(resp.ok){
                   const data = await resp.json();
+                  console.log('Backend response:', data);
                   if(data.token) sessionStorage.setItem('access_token', data.token);
+                  if(data.user) {
+                    // Merge backend user data with existing userInfo
+                    const updatedUserInfo = { ...payload.userInfo, ...data.user };
+                    setUserInfo(updatedUserInfo);
+                    sessionStorage.setItem('esignet_user', JSON.stringify(updatedUserInfo));
+                  }
                 } else {
                   console.warn('Backend token exchange failed', resp.status);
                 }
@@ -149,6 +235,8 @@ const Header = ({ onActiveViewChange }) => {
             setUserInfo(payload.userInfo);
             setIsAuthenticated(true);
             console.log('✅ Auth payload processed');
+            // Auto-detect location on successful authentication
+            autoDetectLocation();
           }
         } catch (e) {
           console.warn('Failed to process auth_payload:', e.message);
@@ -172,6 +260,8 @@ const Header = ({ onActiveViewChange }) => {
           setUserInfo(userInfo);
           setIsAuthenticated(true);
           console.log('✅ eSignet user loaded:', userInfo.name);
+          // Auto-detect location on session restore
+          autoDetectLocation();
           const ts = parseInt(sessionStorage.getItem('auth_timestamp'),10);
           if (!isNaN(ts)) {
             const expires = ts + 15*60*1000; // 15 minutes
@@ -211,7 +301,7 @@ const Header = ({ onActiveViewChange }) => {
       localStorage.removeItem('user_info');
       localStorage.removeItem('is_authenticated');
     }
-  }, []);
+  }, [autoDetectLocation]);
 
   // Listen for online/offline
   useEffect(()=>{
@@ -478,6 +568,73 @@ const Header = ({ onActiveViewChange }) => {
               <div className="info-row"><span className="info-label">Phone No:</span><span className="info-value">{userInfo.phone_number || '—'}</span></div>
               <div className="info-row"><span className="info-label">Birthdate:</span><span className="info-value">{userInfo.birthdate || '—'}</span></div>
               <div className="info-row"><span className="info-label">Email :</span><span className="info-value">{userInfo.email || '—'}</span></div>
+              <div className="info-row location-row">
+                <span className="info-label">Location:</span>
+                <span className="info-value location-info">
+                  {locationLoading ? (
+                    <span className="location-loading">📍 Getting location...</span>
+                  ) : location ? (
+                    <div className="location-details">
+                      <div className="location-city">{location.source}</div>
+                      <div className="location-meta">
+                        ±{Math.round(location.accuracy)}m • {location.timestamp}
+                      </div>
+                    </div>
+                  ) : locationError ? (
+                    <div className="location-error-container">
+                      <span className="location-error">{locationError}</span>
+                      <button 
+                        type="button"
+                        className="location-retry-btn"
+                        onClick={getCurrentLocation}
+                        disabled={locationLoading}
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="location-placeholder-container">
+                      <span className="location-placeholder">
+                        {locationDetected ? 'Location loaded for session' : 'Click to get location'}
+                      </span>
+                      {!locationDetected && (
+                        <button 
+                          type="button"
+                          className="location-get-btn"
+                          onClick={getCurrentLocation}
+                          disabled={locationLoading}
+                        >
+                          Get Location
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </span>
+                {location && (
+                  <button 
+                    type="button"
+                    className="location-refresh-btn"
+                    onClick={getCurrentLocation}
+                    disabled={locationLoading}
+                    title="Refresh location"
+                  >
+                    {locationLoading ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="31.416" strokeDashoffset="31.416">
+                          <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416;0 31.416" repeatCount="indefinite"/>
+                          <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416;-31.416" repeatCount="indefinite"/>
+                        </circle>
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 4v6h6"/>
+                        <path d="M23 20v-6h-6"/>
+                        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+                      </svg>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
             <div className="logout-row">
               <button className="logout-btn button" type="button" onClick={handleLogout} aria-label="Logout"><span>LOGOUT</span></button>

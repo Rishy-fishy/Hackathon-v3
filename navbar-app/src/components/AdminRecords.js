@@ -1,59 +1,181 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Card, CardContent, TextField, InputAdornment, Typography,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Paper, Chip, Stack, Menu, MenuItem, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button,
-  FormControl, InputLabel, Select, Snackbar, Grid, Divider, IconButton
+  Grid, Avatar, CircularProgress
 } from '@mui/material';
-import { Search as SearchIcon, ArrowDropDown as ArrowDropDownIcon, Close as CloseIcon, DeleteOutline as DeleteOutlineIcon, PhotoCamera as PhotoCameraIcon } from '@mui/icons-material';
+import { Search as SearchIcon, ArrowDropDown as ArrowDropDownIcon, Person as PersonIcon } from '@mui/icons-material';
 
 // Clean implementation: header filter menus for Age, Gender, Location, Malnutrition Status
-export default function AdminRecords({ recentUploads = [], loading }) {
+export default function AdminRecords() {
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({ age: null, gender: '', location: '', status: '' });
   const [menus, setMenus] = useState({ age: null, gender: null, location: null, status: null });
-  const [records, setRecords] = useState([]); // editable working copy
-  const [editOpen, setEditOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [records, setRecords] = useState([]); // working copy of records
+  const [allRecords, setAllRecords] = useState([]); // all records from MongoDB
+  const [recordsLoading, setRecordsLoading] = useState(true);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [toDelete, setToDelete] = useState(null);
-  const [recentlyDeleted, setRecentlyDeleted] = useState(null); // { record, index }
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+
   const [deleting, setDeleting] = useState(false);
 
-  // API base URL
+  // API base URL - Updated to use your GCloud VM backend
   const API_BASE = (
     (typeof window !== 'undefined' && window.__API_BASE) ||
     process.env.REACT_APP_API_BASE ||
-    'http://34.58.198.143:8080'
+    'http://34.27.252.72:8080' // Your GCloud VM backend
   ).replace(/\/$/, '');
 
-  // Build dataset (fallback demo data when empty)
-  const dataset = useMemo(() => {
-    if (recentUploads.length) {
-      return recentUploads.map((u, idx) => ({
-        id: u.healthId || `ID${idx+1}`,
-        name: u.name || 'Unknown',
-        age: u.age || (2 + (idx % 5)),
-        gender: u.gender || (idx % 2 ? 'Male' : 'Female'),
-        location: u.location || `Rural Village ${String.fromCharCode(65 + (idx % 6))}`,
-        rep: u.representative || `Rep00${(idx%9)+1}`,
-        status: u.malnutritionStatus || (['Severe','Moderate','Mild','Normal'][idx % 4]),
-        uploadedAt: u.uploadedAt ? new Date(u.uploadedAt) : null
+  // Fetch all records from MongoDB
+  const fetchAllRecords = useCallback(async () => {
+    setRecordsLoading(true);
+    try {
+      const token = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token');
+      if (!token) {
+        console.warn('No admin token found for fetching records');
+        setRecordsLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/api/admin/children?limit=1000`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch records: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('[AdminRecords] Fetched records:', data.total, 'records');
+      
+      // Transform the records to match the expected format
+      const transformedRecords = data.records.map((record, idx) => {
+        // Extract location info - handle both string and object formats
+        let locationDisplay = `Location ${idx+1}`; // fallback
+        if (record.uploaderLocation) {
+          if (typeof record.uploaderLocation === 'string') {
+            locationDisplay = record.uploaderLocation;
+          } else if (typeof record.uploaderLocation === 'object') {
+            // Extract city and state from location object
+            const { city, state, country } = record.uploaderLocation;
+            const parts = [city, state].filter(Boolean);
+            locationDisplay = parts.length > 0 ? parts.join(', ') : (country || 'Unknown Location');
+          }
+        } else if (record.location) {
+          locationDisplay = record.location;
+        } else if (record.address) {
+          locationDisplay = record.address;
+        }
+
+        // Determine malnutrition status based on malnutrition signs directly
+        let malnutritionStatus = 'Normal'; // default for all cases including N/A
+        
+        if (record.malnutritionSigns && 
+            record.malnutritionSigns !== 'None' && 
+            record.malnutritionSigns !== '' && 
+            record.malnutritionSigns !== 'none' &&
+            record.malnutritionSigns !== 'N/A' &&
+            record.malnutritionSigns !== 'n/a') {
+          
+          // Count the number of malnutrition signs by splitting and filtering
+          const signs = record.malnutritionSigns
+            .split(/[,;|\n()]/) // Added parentheses to split on
+            .map(sign => sign.trim())
+            .filter(sign => sign && 
+                   sign !== 'None' && 
+                   sign !== 'none' && 
+                   sign !== 'N/A' && 
+                   sign !== 'n/a' && 
+                   sign !== 'nil' &&
+                   sign.length > 2); // Filter out very short fragments
+          
+          const signCount = signs.length;
+          
+          if (signCount === 1) {
+            malnutritionStatus = 'Normal';
+          } else if (signCount === 2 || signCount === 3) {
+            malnutritionStatus = 'Moderate';
+          } else if (signCount > 3) {
+            malnutritionStatus = 'Severe';
+          }
+        }
+
+        // Handle age display logic
+        let ageDisplay = 'Unknown';
+        let ageValue = record.ageMonths || record.age || null;
+        
+        if (ageValue !== null && ageValue >= 0) {  // Changed from > 0 to >= 0 to handle 0 months
+          // If age is in months and greater than 18 years (216 months), cap it at 18 years
+          if (ageValue > 216) {
+            ageDisplay = '18 years';
+            ageValue = 216; // for filtering purposes
+          }
+          // If age is less than 12 months, show in months
+          else if (ageValue < 12) {
+            ageDisplay = ageValue === 0 ? 'Newborn' : `${ageValue} months`;
+          }
+          // Otherwise show in years
+          else {
+            const years = Math.floor(ageValue / 12);
+            ageDisplay = years === 1 ? '1 year' : `${years} years`;
+          }
+        }
+
+        return {
+          // Only include the fields we need, without spreading the original record
+          id: record.healthId || record._id || `ID${idx+1}`,
+          name: record.name || 'Unknown',
+          age: ageValue, // Keep numeric value for filtering
+          ageDisplay: ageDisplay, // Human readable display
+          gender: record.gender || (idx % 2 ? 'Male' : 'Female'),
+          location: locationDisplay,
+          rep: record.uploaderName || record.representative || record.rep || `Rep${String(idx+1).padStart(3, '0')}`,
+          status: malnutritionStatus, // Our calculated status - no override possible
+          uploadedAt: record.uploadedAt ? new Date(record.uploadedAt) : new Date(),
+          // Include other useful fields but not the original status
+          healthId: record.healthId,
+          weightKg: record.weightKg,
+          heightCm: record.heightCm,
+          malnutritionSigns: record.malnutritionSigns,
+          guardianName: record.guardianName,
+          guardianPhone: record.guardianPhone,
+          facePhoto: record.facePhoto, // Add face photo field
+          createdAt: record.createdAt
+        };
+      });
+      
+      setAllRecords(transformedRecords);
+      
+    } catch (error) {
+      console.error('[AdminRecords] Failed to fetch records:', error);
+      window.dispatchEvent(new CustomEvent('toast', { 
+        detail: { type: 'error', message: 'Failed to load records from database' } 
       }));
+    } finally {
+      setRecordsLoading(false);
     }
-    return Array.from({ length: 12 }).map((_, idx) => ({
-      id: ['12345','67890','11223','33445','55667','77889','99001','22334','44556','66778','88990','99011'][idx],
-      name: ['Sophia Clark','Ethan Carter','Olivia Davis','Liam Evans','Ava Foster','Noah Green','Isabella Hayes','Jackson Ingram','Mia Jenkins','Lucas King','Harper Lewis','Mason Moore'][idx],
-      age: [3,2,4,5,3,4,2,4,1,3,5,2][idx],
-      gender: ['Female','Male','Female','Male','Female','Male','Female','Male','Female','Male','Female','Male'][idx],
-      location: ['Rural Village A','Urban Center B','Rural Village C','Urban Center D','Rural Village E','Urban Center F','Rural Village G','Urban Center H','Rural Village I','Urban Center J','Rural Village K','Urban Center L'][idx],
-      rep: ['Rep001','Rep002','Rep003','Rep004','Rep005','Rep006','Rep007','Rep008','Rep009','Rep010','Rep011','Rep012'][idx],
-      status: ['Severe','Moderate','Mild','Normal','Severe','Moderate','Mild','Normal','Severe','Moderate','Mild','Normal'][idx],
-      uploadedAt: new Date()
-    }));
-  }, [recentUploads]);
+  }, [API_BASE]);
+
+  // Fetch records on component mount
+  useEffect(() => {
+    fetchAllRecords();
+  }, [fetchAllRecords]);
+
+  // Build dataset (only use real MongoDB data, no fallbacks)
+  const dataset = useMemo(() => {
+    // Only use MongoDB records - no fallbacks to avoid showing temporary demo data
+    console.log('[AdminRecords] Using MongoDB records:', allRecords.length);
+    return allRecords;
+  }, [allRecords]);
 
   // sync working copy when dataset changes
   useEffect(() => { setRecords(dataset); }, [dataset]);
@@ -86,160 +208,115 @@ export default function AdminRecords({ recentUploads = [], loading }) {
   const chooseFilter = (key, value) => { setFilters(f => ({ ...f, [key]: value })); closeMenu(key); };
   const clearFilter = (key) => setFilters(f=>({ ...f, [key]: key==='age'? null : '' }));
 
-  const beginEdit = (row) => {
-    setEditing({
-      ...row,
-      dateOfBirth: row.dateOfBirth || '',
-      aadhaarId: row.aadhaarId || '',
-      weightKg: row.weightKg || '',
-      heightCm: row.heightCm || '',
-      guardianName: row.guardianName || row.rep || '',
-      phoneNumber: row.phoneNumber || '',
-      relation: row.relation || '',
-      photoData: row.photoData || ''
-    });
-    setEditOpen(true);
+  // Simple component for displaying label-value pairs
+  const InfoRow = ({ label, value }) => (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary', minWidth: 120 }}>
+        {label}:
+      </Typography>
+      <Typography variant="body2" sx={{ textAlign: 'right', wordBreak: 'break-word', maxWidth: '60%' }}>
+        {value === 'N/A' || value === null || value === undefined || value === '' ? (
+          <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>N/A</span>
+        ) : (
+          value
+        )}
+      </Typography>
+    </Box>
+  );
+
+  // Function to open record detail dialog
+  const openRecordDetail = (record) => {
+    setSelectedRecord(record);
+    setDetailOpen(true);
   };
-  const closeEdit = () => { setEditOpen(false); setEditing(null); };
-  const saveEdit = async () => {
-    if (!editing) return;
-    
-    setSaving(true);
-    try {
-      // Get admin token
-      const token = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token');
-      if (!token) {
-        window.dispatchEvent(new CustomEvent('toast', { 
-          detail: { type: 'error', message: 'Authentication required. Please log in again.' } 
-        }));
-        return;
-      }
 
-      // Prepare update data
-      const updateData = {
-        name: editing.name,
-        gender: editing.gender,
-        dateOfBirth: editing.dateOfBirth,
-        weightKg: editing.weightKg ? parseFloat(editing.weightKg) : null,
-        heightCm: editing.heightCm ? parseFloat(editing.heightCm) : null,
-        status: editing.status,
-        guardianName: editing.guardianName,
-        phoneNumber: editing.phoneNumber,
-        relation: editing.relation,
-        aadhaarId: editing.aadhaarId,
-        location: editing.location,
-        rep: editing.rep,
-        photoData: editing.photoData
-      };
+  // Function to close record detail dialog
+  const closeRecordDetail = () => {
+    setDetailOpen(false);
+    setSelectedRecord(null);
+  };
 
-      const response = await fetch(`${API_BASE}/api/admin/child/${editing.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(updateData)
-      });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Update failed: ${response.status}`);
-      }
+  const beginDelete = (row) => { 
+    setToDelete(row); 
+    setDeleteOpen(true); 
+    setPassword('');
+    setPasswordError('');
+  };
 
-      const result = await response.json();
-      
-      // Update local state with the response from server
-      setRecords(rs => rs.map(r => r.id === editing.id ? {
-        ...r, 
-        ...result.record,
-        id: result.record.healthId // ensure consistency
-      } : r));
-      
-      window.dispatchEvent(new CustomEvent('toast', { 
-        detail: { type: 'success', message: 'Record updated successfully in MongoDB!' } 
-      }));
-      
-      closeEdit();
-    } catch (error) {
-      console.error('Save error:', error);
-      window.dispatchEvent(new CustomEvent('toast', { 
-        detail: { type: 'error', message: error.message || 'Failed to update record' } 
-      }));
-    } finally {
-      setSaving(false);
+  const closeDelete = () => { 
+    setDeleteOpen(false); 
+    setPasswordOpen(false);
+    setToDelete(null); 
+    setPassword('');
+    setPasswordError('');
+  };
+
+  const proceedToPasswordVerification = () => {
+    setDeleteOpen(false);
+    setPasswordOpen(true);
+  };
+
+  const verifyPasswordAndDelete = async () => {
+    if (!password) {
+      setPasswordError('Password is required');
+      return;
     }
-  };
-  const beginDelete = (row) => { setToDelete(row); setDeleteOpen(true); };
-  const closeDelete = () => { setDeleteOpen(false); setToDelete(null); };
-  const confirmDelete = async () => {
-    if (!toDelete) return;
-    
+
+    // Simple password verification (you can enhance this)
+    if (password !== 'Admin@123') {
+      setPasswordError('Incorrect password. Please try again.');
+      return;
+    }
+
     setDeleting(true);
+    setPasswordError('');
+    
     try {
       // Get admin token
       const token = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token');
       if (!token) {
-        window.dispatchEvent(new CustomEvent('toast', { 
-          detail: { type: 'error', message: 'Authentication required. Please log in again.' } 
-        }));
+        setPasswordError('Authentication required. Please log in again.');
         return;
       }
 
-      const response = await fetch(`${API_BASE}/api/admin/child/${toDelete.id}`, {
+      // Proceed with deletion
+      const deleteResponse = await fetch(`${API_BASE}/api/admin/child/${toDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Delete failed: ${response.status}`);
+      if (!deleteResponse.ok) {
+        const error = await deleteResponse.json();
+        throw new Error(error.message || `Delete failed: ${deleteResponse.status}`);
       }
 
-      // Remove from local state
-      setRecords(rs => {
-        const index = rs.findIndex(r => r.id === toDelete.id);
-        const updated = rs.filter(r => r.id !== toDelete.id);
-        setRecentlyDeleted({ record: toDelete, index });
-        setSnackbarOpen(true);
-        return updated;
-      });
+      // Refetch all records from MongoDB to ensure consistency
+      await fetchAllRecords();
 
+      // Show success message
       window.dispatchEvent(new CustomEvent('toast', { 
         detail: { type: 'success', message: 'Record deleted successfully from MongoDB!' } 
       }));
+
+      // Close password modal
+      setPasswordOpen(false);
+      setPassword('');
       
     } catch (error) {
       console.error('Delete error:', error);
-      window.dispatchEvent(new CustomEvent('toast', { 
-        detail: { type: 'error', message: error.message || 'Failed to delete record' } 
-      }));
+      setPasswordError(error.message || 'Failed to delete record');
     } finally {
       setDeleting(false);
     }
-    
-    closeDelete();
-    if (editOpen) closeEdit();
   };
-  const undoDelete = () => {
-    if (recentlyDeleted) {
-      // Note: This only restores the record in the UI - it's permanently deleted from MongoDB
-      setRecords(rs => {
-        const { record, index } = recentlyDeleted;
-        const copy = [...rs];
-        const insertAt = Math.min(Math.max(index, 0), copy.length);
-        copy.splice(insertAt, 0, record);
-        return copy;
-      });
-      setRecentlyDeleted(null);
-      window.dispatchEvent(new CustomEvent('toast', { 
-        detail: { type: 'warning', message: 'Record restored in UI only - it was permanently deleted from MongoDB' } 
-      }));
-    }
-    setSnackbarOpen(false);
+
+  const confirmDelete = async () => {
+    // This is now just for the initial confirmation
+    proceedToPasswordVerification();
   };
-  const closeSnackbar = () => setSnackbarOpen(false);
 
   return (
     <Card elevation={0} sx={{ border:'1px solid #e2e8f0', borderRadius:2, background:'#fff' }}>
@@ -343,25 +420,35 @@ export default function AdminRecords({ recentUploads = [], loading }) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.length ? rows.map(r => (
-                <TableRow key={r.id} hover>
+              {recordsLoading ? (
+                <TableRow>
+                  <TableCell colSpan={8} align='center' sx={{ py:6 }}>
+                    <Typography variant='body2' color='text.secondary'>
+                      Loading...
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : rows.length > 0 ? rows.map(r => (
+                <TableRow key={r.id} hover sx={{ cursor: 'pointer' }} onClick={() => openRecordDetail(r)}>
                   <TableCell sx={{ color:'#0f62fe', fontWeight:600 }}>{r.id}</TableCell>
                   <TableCell>{r.name}</TableCell>
-                  <TableCell>{r.age}</TableCell>
+                  <TableCell>{r.ageDisplay}</TableCell>
                   <TableCell>{r.gender}</TableCell>
                   <TableCell>{r.location}</TableCell>
                   <TableCell>{r.rep}</TableCell>
                   <TableCell>
                     <Chip size='small' label={r.status} color={statusColor(r.status)} variant='outlined' sx={{ fontWeight:600 }} />
                   </TableCell>
-                  <TableCell align='center'>
-                    <Typography variant='body2' sx={{ color:'#0f62fe', cursor:'pointer', fontWeight:500 }} onClick={()=>beginEdit(r)}>Edit</Typography>
+                  <TableCell align='center' onClick={(e) => e.stopPropagation()}>
+                    <Typography variant='body2' sx={{ color:'#dc2626', cursor:'pointer', fontWeight:500 }} onClick={()=>beginDelete(r)}>Delete</Typography>
                   </TableCell>
                 </TableRow>
               )) : (
                 <TableRow>
                   <TableCell colSpan={8} align='center' sx={{ py:6 }}>
-                    <Typography variant='body2' color='text.secondary'>{loading ? 'Loading records...' : 'No records found'}</Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      No records found
+                    </Typography>
                   </TableCell>
                 </TableRow>
               )}
@@ -369,167 +456,241 @@ export default function AdminRecords({ recentUploads = [], loading }) {
           </Table>
         </TableContainer>
 
-  <Dialog open={editOpen} onClose={closeEdit} maxWidth='md' fullWidth scroll='paper' PaperProps={{ sx:{ border:'2px solid #000', borderRadius:0, boxShadow:'none' } }}>
-          {editing && (
-            <Box sx={{ position:'relative' }}>
-              <DialogTitle sx={{ pb:0, typography:'h6', fontSize:18, fontWeight:600, textAlign:'center' }}>
-                <IconButton onClick={closeEdit} sx={{ position:'absolute', right:12, top:12 }} aria-label='Close dialog'>
-                  <CloseIcon />
-                </IconButton>
-                <Typography variant='subtitle1' align='center' sx={{ fontWeight:600, mt:1 }}>{editing.id}</Typography>
-              </DialogTitle>
-              <DialogContent dividers sx={{ pt:2 }}>
-                <Box sx={{ borderBottom:'1px solid #000', mx:12, mb:4 }} />
-                <Grid container spacing={4}>
-                  {/* Form fields left */}
-                  <Grid item xs={12} sm={8} md={9}>
-                    <Grid container spacing={3}>
-                      {/* Row 1 */}
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Name *' fullWidth size='small' value={editing.name} onChange={e=>setEditing(ed=>({...ed, name:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <FormControl size='small' fullWidth>
-                          <InputLabel>Gender</InputLabel>
-                          <Select label='Gender' value={editing.gender||''} onChange={e=>setEditing(ed=>({...ed, gender:e.target.value}))}>
-                            <MenuItem value='Male'>Male</MenuItem>
-                            <MenuItem value='Female'>Female</MenuItem>
-                            <MenuItem value='Other'>Other</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Date of Birth' type='date' fullWidth size='small' InputLabelProps={{ shrink:true }} value={editing.dateOfBirth} onChange={e=>setEditing(ed=>({...ed, dateOfBirth:e.target.value}))} />
-                      </Grid>
-                      {/* Row 2 */}
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Weight (kg)' type='number' fullWidth size='small' value={editing.weightKg} onChange={e=>setEditing(ed=>({...ed, weightKg:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Height (cm)' type='number' fullWidth size='small' value={editing.heightCm} onChange={e=>setEditing(ed=>({...ed, heightCm:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <FormControl size='small' fullWidth>
-                          <InputLabel>Status</InputLabel>
-                          <Select label='Status' value={editing.status} onChange={e=>setEditing(ed=>({...ed, status:e.target.value}))}>
-                            {['Severe','Moderate','Mild','Normal'].map(s=> <MenuItem key={s} value={s}>{s}</MenuItem>)}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      {/* Row 3 */}
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Guardian' fullWidth size='small' value={editing.guardianName} onChange={e=>setEditing(ed=>({...ed, guardianName:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Phone Number' fullWidth size='small' value={editing.phoneNumber} onChange={e=>setEditing(ed=>({...ed, phoneNumber:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Relation with Child' fullWidth size='small' value={editing.relation} onChange={e=>setEditing(ed=>({...ed, relation:e.target.value}))} />
-                      </Grid>
-                      {/* Row 4 */}
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Aadhaar ID (optional)' fullWidth size='small' value={editing.aadhaarId} onChange={e=>setEditing(ed=>({...ed, aadhaarId:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Location' fullWidth size='small' value={editing.location} onChange={e=>setEditing(ed=>({...ed, location:e.target.value}))} />
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <TextField label='Representative ID' fullWidth size='small' value={editing.rep} onChange={e=>setEditing(ed=>({...ed, rep:e.target.value}))} />
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                  {/* Photo upload right */}
-                  <Grid item xs={12} sm={4} md={3} sx={{ display:'flex', justifyContent:'center', alignSelf:'flex-start' }}>
-                    <Box sx={{ position:'relative', width:200, height:200, border:'2px solid #000', display:'flex', alignItems:'center', justifyContent:'center', bgcolor:'#fafafa' }}>
-                      {editing.photoData ? (
-                        <>
-                          <img src={editing.photoData} alt='Child' style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                          <IconButton size='small' onClick={()=>setEditing(ed=>({...ed, photoData:''}))} sx={{ position:'absolute', top:4, right:4, bgcolor:'rgba(255,255,255,0.9)' }} aria-label='Remove photo'>
-                            <CloseIcon fontSize='small' />
-                          </IconButton>
-                        </>
-                      ) : (
-                        <IconButton component='label' sx={{ flexDirection:'column', color:'#000', '&:hover':{ color:'#222' } }}>
-                          <PhotoCameraIcon />
-                          <Typography variant='caption' sx={{ fontSize:14 }}>Upload</Typography>
-                          <input hidden type='file' accept='image/*' onChange={e=>{
-                            const file = e.target.files?.[0];
-                            if(file){
-                              const reader = new FileReader();
-                              reader.onload = ev => setEditing(ed=>({...ed, photoData: ev.target?.result || ''}));
-                              reader.readAsDataURL(file);
-                            }
-                          }} />
-                        </IconButton>
-                      )}
-                    </Box>
-                  </Grid>
-                </Grid>
-              </DialogContent>
-              <DialogActions sx={{ px:3, py:2, position:'sticky', bottom:0, bgcolor:'#fff', borderTop:'2px solid #000', display:'flex', justifyContent:'space-between' }}>
-                <Button 
-                  onClick={()=>beginDelete(editing)} 
-                  startIcon={<DeleteOutlineIcon />} 
-                  color='error' 
-                  variant='outlined' 
-                  size='small' 
-                  sx={{ textTransform:'none' }}
-                  disabled={saving || deleting}
-                >
-                  {deleting ? 'Deleting...' : 'Delete'}
-                </Button>
-                <Box sx={{ display:'flex', gap:2 }}>
-                  <Button 
-                    onClick={closeEdit} 
-                    variant='outlined' 
-                    color='inherit' 
-                    sx={{ textTransform:'none', minWidth:110 }}
-                    disabled={saving || deleting}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={saveEdit} 
-                    variant='outlined' 
-                    sx={{ textTransform:'none', borderColor:'#000', color:'#000', minWidth:120, '&:hover':{ bgcolor:'#000', color:'#fff', borderColor:'#000' } }}
-                    disabled={saving || deleting}
-                  >
-                    {saving ? 'Saving...' : 'Save to MongoDB'}
-                  </Button>
-                </Box>
-              </DialogActions>
-            </Box>
-          )}
-        </Dialog>
+
 
         <Dialog open={deleteOpen} onClose={closeDelete} maxWidth='xs' fullWidth>
-          <DialogTitle>Delete Record</DialogTitle>
+          <DialogTitle>Delete Record - Confirmation</DialogTitle>
           <DialogContent dividers>
-            <Typography variant='body2' sx={{ mb:1 }}>You are about to permanently delete this record.</Typography>
-            <Box sx={{ p:1, bgcolor:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:1 }}>
+            <Typography variant='body2' sx={{ mb:2 }}>You are about to permanently delete this record.</Typography>
+            <Box sx={{ p:2, bgcolor:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:1 }}>
               <Typography variant='caption' display='block'><strong>ID:</strong> {toDelete?.id}</Typography>
               <Typography variant='caption' display='block'><strong>Name:</strong> {toDelete?.name}</Typography>
               <Typography variant='caption' display='block'><strong>Location:</strong> {toDelete?.location}</Typography>
               <Typography variant='caption' display='block'><strong>Status:</strong> {toDelete?.status}</Typography>
             </Box>
-            <Typography variant='caption' color='error.main' display='block' sx={{ mt:1 }}>This action cannot be undone (unless you click UNDO immediately after).</Typography>
+            <Typography variant='body2' color='warning.main' display='block' sx={{ mt:2 }}>
+              This action cannot be undone. You will need to enter your password to confirm.
+            </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={closeDelete} color='inherit' disabled={deleting}>Cancel</Button>
-            <Button onClick={confirmDelete} color='error' variant='contained' disabled={deleting}>
-              {deleting ? 'Deleting from MongoDB...' : 'Delete from MongoDB'}
+            <Button onClick={closeDelete} color='inherit'>Cancel</Button>
+            <Button onClick={confirmDelete} color='error' variant='contained'>
+              Proceed to Password Verification
             </Button>
           </DialogActions>
         </Dialog>
 
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={5000}
-          onClose={closeSnackbar}
-          message={recentlyDeleted ? `Record ${recentlyDeleted.record.id} deleted` : 'Record deleted'}
-          action={<Button size='small' onClick={undoDelete} sx={{ color:'#fff' }}>UNDO</Button>}
-          ContentProps={{ sx:{ bgcolor:'#334155' } }}
-        />
+        {/* Password Verification Dialog */}
+        <Dialog open={passwordOpen} onClose={closeDelete} maxWidth='xs' fullWidth>
+          <DialogTitle>Delete Record - Enter Password</DialogTitle>
+          <DialogContent dividers>
+            <Typography variant='body2' sx={{ mb:2 }}>
+              Enter your admin password to confirm deletion of <strong>{toDelete?.name}</strong>:
+            </Typography>
+            <TextField
+              fullWidth
+              type="password"
+              label="Admin Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !deleting) {
+                  verifyPasswordAndDelete();
+                }
+              }}
+              error={!!passwordError}
+              helperText={passwordError}
+              disabled={deleting}
+              autoFocus
+              sx={{ mt: 1 }}
+            />
+            <Typography variant='caption' color='error.main' display='block' sx={{ mt:1 }}>
+              This will permanently delete the record from MongoDB.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDelete} color='inherit' disabled={deleting}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={verifyPasswordAndDelete} 
+              color='error' 
+              variant='contained' 
+              disabled={!password || deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete Record'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Record Detail Dialog */}
+        <Dialog open={detailOpen} onClose={closeRecordDetail} fullWidth maxWidth="lg">
+          <DialogTitle sx={{ pb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <PersonIcon color="primary" />
+              <Typography variant="h6">Child Health Record Details</Typography>
+            </Box>
+          </DialogTitle>
+          <DialogContent dividers>
+            {selectedRecord && (
+              <Box sx={{ py: 1 }}>
+                {/* Header with name, ID and photo */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 2, 
+                  mb: 3,
+                  p: 2,
+                  bgcolor: 'primary.50',
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'primary.200'
+                }}>
+                  {selectedRecord.facePhoto ? (
+                    <Box sx={{ 
+                      width: 64, 
+                      height: 64, 
+                      borderRadius: '50%', 
+                      overflow: 'hidden',
+                      border: '3px solid',
+                      borderColor: 'primary.main',
+                      flexShrink: 0
+                    }}>
+                      <img 
+                        src={selectedRecord.facePhoto} 
+                        alt={selectedRecord.name}
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover' 
+                        }}
+                        onError={(e) => {
+                          // Fallback to avatar with initials if image fails to load
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <Avatar sx={{ 
+                        bgcolor: 'primary.main', 
+                        width: 58, 
+                        height: 58, 
+                        display: 'none',
+                        fontSize: '1.5rem'
+                      }}>
+                        {selectedRecord.name.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </Box>
+                  ) : (
+                    <Avatar sx={{ bgcolor: 'primary.main', width: 64, height: 64, fontSize: '1.5rem' }}>
+                      {selectedRecord.name.charAt(0).toUpperCase()}
+                    </Avatar>
+                  )}
+                  <Box>
+                    <Typography variant="h6" fontWeight={600}>
+                      {selectedRecord.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Health ID: {selectedRecord.id}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Grid container spacing={3}>
+                  {/* Personal Information */}
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined" sx={{ height: '100%' }}>
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                          Personal Information
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <InfoRow label="Full Name" value={selectedRecord.name} />
+                          <InfoRow label="Age" value={selectedRecord.ageDisplay} />
+                          <InfoRow label="Gender" value={selectedRecord.gender} />
+                          <InfoRow label="Health ID" value={selectedRecord.healthId || selectedRecord.id} />
+                          <InfoRow label="Weight (kg)" value={selectedRecord.weightKg} />
+                          <InfoRow label="Height (cm)" value={selectedRecord.heightCm} /> 
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Guardian Information */}
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined" sx={{ height: '100%' }}>
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                          Guardian Information
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <InfoRow label="Guardian Name" value={selectedRecord.guardianName} />
+                          <InfoRow label="Guardian Phone" value={selectedRecord.guardianPhone} />
+                          <InfoRow label="Location" value={selectedRecord.location} />
+                          <InfoRow label="Representative" value={selectedRecord.rep} />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Health Information */}
+                  <Grid item xs={12}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                          Health Assessment
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <InfoRow 
+                            label="Malnutrition Status" 
+                            value={
+                              <Chip 
+                                size='small' 
+                                label={selectedRecord.status} 
+                                color={statusColor(selectedRecord.status)} 
+                                variant='outlined' 
+                                sx={{ fontWeight: 600 }} 
+                              />
+                            } 
+                          />
+                          <InfoRow label="Malnutrition Signs" value={selectedRecord.malnutritionSigns} />
+                          {selectedRecord.createdAt && (
+                            <InfoRow 
+                              label="Record Created" 
+                              value={new Date(selectedRecord.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })} 
+                            />
+                          )}
+                          {selectedRecord.uploadedAt && (
+                            <InfoRow 
+                              label="Record Uploaded" 
+                              value={new Date(selectedRecord.uploadedAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })} 
+                            />
+                          )}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button onClick={closeRecordDetail} variant="contained">
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
       </CardContent>
     </Card>
   );
