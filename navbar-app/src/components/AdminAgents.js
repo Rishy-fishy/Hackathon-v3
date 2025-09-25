@@ -171,7 +171,7 @@ export default function AdminAgents({ token }) {
   }, [agents, search]);
 
   function statusChip(){
-    return <Chip size="small" label="Imported" sx={{ fontWeight:600, bgcolor:'rgba(99,102,241,.15)', color:'#4f46e5' }} />;
+    return <Chip size="small" label="Verified" sx={{ fontWeight:600, bgcolor:'rgba(7, 78, 7, 0.94)', color:'#00ff00d5' }} />;
   }
 
   async function openAgentDetail(id){
