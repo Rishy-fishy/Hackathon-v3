@@ -253,7 +253,7 @@ export default function AdminAgents({ token }) {
                 </TableRow>
               ))}
               {!loading && !filtered.length && (
-                <TableRow><TableCell colSpan={6} align="center" sx={{ py:6, color:'text.secondary' }}>No identities found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} align="center" sx={{ py:6, color:'text.secondary' }}>Loading...</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

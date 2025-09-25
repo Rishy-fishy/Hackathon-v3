@@ -338,7 +338,6 @@ export default function AdminPage() {
   // Placeholder / derived values (no API changes):
   const activeFieldAgents = agentCount ?? 56; // dynamic agent count from identity backend
   const malnutritionCases = 123; // legacy placeholder
-  const pendingUploads = Math.max(0, recentUploads.filter(u => !u.uploadedAt).length) || 12; // fallback demo value
 
   // New richer data using real malnutrition statistics from MongoDB
   const severityStats = realMalnutritionStats;
@@ -523,9 +522,9 @@ export default function AdminPage() {
                 <Grid item xs={12} sm={6} md={3}>
                   <Card elevation={0} sx={{ border:'1px solid #e2e8f0', borderRadius:2, background:'#fff' }}>
                     <CardContent sx={{ p:2.25 }}>
-                      <Typography sx={{ fontSize:13, fontWeight:600, color:'#475569', mb:0.5 }}>Active Field Agents</Typography>
+                      <Typography sx={{ fontSize:13, fontWeight:600, color:'#475569', mb:0.5 }}>Field Agents</Typography>
                       <Typography variant="h5" fontWeight={700}>{activeFieldAgents}</Typography>
-                      <Typography variant="caption" sx={{ mt:0.5, color:'text.secondary' }}>– 0 vs last period</Typography>
+                      <Typography variant="caption" sx={{ mt:0.5, color:'text.secondary' }}>vs last period</Typography>
                     </CardContent>
                   </Card>
                 </Grid>
