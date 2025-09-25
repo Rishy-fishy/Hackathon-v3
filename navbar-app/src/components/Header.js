@@ -407,7 +407,8 @@ const Header = ({ onActiveViewChange }) => {
             onClick={()=>{
               const nextAdd = activeNav === 'add' ? null : 'add';
               setActiveNav(nextAdd);
-              setShowChildForm(nextAdd === 'add');
+              // navigate to dedicated Add page; do not open legacy popup
+              setShowChildForm(false);
               setShowRecords(false);
               onActiveViewChange && onActiveViewChange(nextAdd ? 'add' : 'home');
             }}
@@ -448,7 +449,8 @@ const Header = ({ onActiveViewChange }) => {
               onClick={()=>{ 
                 const nextAdd = activeNav === 'add' ? null : 'add';
                 setActiveNav(nextAdd);
-                setShowChildForm(nextAdd === 'add');
+                // navigate to dedicated Add page; do not open legacy popup
+                setShowChildForm(false);
                 setShowRecords(false); 
                 onActiveViewChange && onActiveViewChange(nextAdd ? 'add' : 'home');
                 setMobileMenuOpen(false); 
@@ -482,11 +484,7 @@ const Header = ({ onActiveViewChange }) => {
         </div>
       )}
 
-  {showChildForm && (
-        <div className="panel" role="region" aria-label="Add Child Form">
-  <ChildForm onClose={()=> { setShowChildForm(false); setActiveNav(null); onActiveViewChange && onActiveViewChange('home'); }} onSaved={()=> { setShowChildForm(false); setActiveNav(null); onActiveViewChange && onActiveViewChange('home'); }} />
-        </div>
-      )}
+  {/* Legacy Add Child popup disabled: now a dedicated page via App.js */}
 
   {/* Profile / Auth Modal */}
   <Modal

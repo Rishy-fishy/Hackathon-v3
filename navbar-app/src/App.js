@@ -11,6 +11,7 @@ import useConnectivity from './offline/useConnectivity';
 import { startAutoSync } from './offline/sync';
 import AdminPage from './components/AdminPage';
 import { themeManager } from './utils/themeManager';
+import ChildForm from './offline/ChildForm';
 
 function App() {
   const [activeView, setActiveView] = useState('home'); // 'home' | 'add' | 'view' | 'settings'
@@ -59,6 +60,11 @@ function App() {
       {activeView === 'view' && (
         <main className="main-content" aria-label="View Data">
           <ViewData />
+          </main>
+      )}
+      {activeView === 'add' && (
+        <main className="main-content" aria-label="Add Child">
+          <ChildForm onSaved={() => setActiveView('home')} onClose={() => setActiveView('home')} />
         </main>
       )}
       {activeView === 'settings' && (
