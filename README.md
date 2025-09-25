@@ -217,7 +217,11 @@ docker-compose logs -f
 
 For issues and questions:
 - **GitHub Issues**: [Create an issue](https://github.com/Rishy-fishy/Hackathon-v3/issues)
-- **Documentation**: Check this README and inline code comments
+- **Documentation**: 
+  - **Quick Start**: This README file
+  - **Comprehensive Documentation**: [Software-Documentation.md](docs/Software-Documentation.md) - Complete arc42-based documentation
+  - **Architecture Details**: [ARCHITECTURE.md](ARCHITECTURE.md) - Technical architecture deep-dive
+  - **Process Flows**: [FLOWCHARTS.md](FLOWCHARTS.md) - Mermaid diagrams of system flows
 
 ## 📄 License
 
