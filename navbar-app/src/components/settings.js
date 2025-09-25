@@ -6,26 +6,42 @@ import { themeManager } from '../utils/themeManager';
 import './settings.css';
 
 const Settings = ({ onClose }) => {
-  const [settings, setSettings] = useState({
-    theme: 'light',
-    language: 'english',
-    formSubmissions: true,
-    syncUpdates: true,
-    exportPDF: true
-  });
+  // Initialize settings with saved values to prevent theme flicker
+  const getInitialSettings = () => {
+    try {
+      const savedSettings = localStorage.getItem('appSettings');
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        return {
+          theme: 'light',
+          language: 'english',
+          formSubmissions: true,
+          syncUpdates: true,
+          exportPDF: true,
+          ...parsed // Override defaults with saved values
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to load settings:', e);
+    }
+    return {
+      theme: 'light',
+      language: 'english',
+      formSubmissions: true,
+      syncUpdates: true,
+      exportPDF: true
+    };
+  };
+
+  const [settings, setSettings] = useState(getInitialSettings());
 
   // Load settings from localStorage on component mount
   useEffect(() => {
-    const savedSettings = localStorage.getItem('appSettings');
-    if (savedSettings) {
-      const parsed = JSON.parse(savedSettings);
-      console.log('Loaded settings:', parsed);
-      setSettings(prev => ({ ...prev, ...parsed }));
-    }
-    
-    // Debug DarkReader availability
-  console.log('Settings component mounted');
-  }, []);
+    // Settings are already loaded in useState initializer
+    // Just ensure theme is applied on mount
+    console.log('Settings component mounted with theme:', settings.theme);
+    themeManager.setTheme(settings.theme);
+  }, []); // Empty dependency array - run only once on mount
 
   // Apply theme changes using Dark Reader via theme manager
   useEffect(() => {

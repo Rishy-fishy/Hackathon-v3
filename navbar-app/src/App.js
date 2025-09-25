@@ -3,6 +3,7 @@ import './App.css';
 import  './glass.css';
 import Header from './components/Header';
 import Homepage from './components/Homepage';
+import ViewData from './components/ViewData';
 import Settings from './components/settings';
 import AuthCallback from './components/AuthCallback';
 import AuthSuccess from './components/AuthSuccess';
@@ -10,6 +11,7 @@ import useConnectivity from './offline/useConnectivity';
 import { startAutoSync } from './offline/sync';
 import AdminPage from './components/AdminPage';
 import { themeManager } from './utils/themeManager';
+import ChildForm from './offline/ChildForm';
 
 function App() {
   const [activeView, setActiveView] = useState('home'); // 'home' | 'add' | 'view' | 'settings'
@@ -53,6 +55,16 @@ function App() {
       {activeView === 'home' && (
         <main className="main-content" aria-label="Main content">
           <Homepage />
+        </main>
+      )}
+      {activeView === 'view' && (
+        <main className="main-content" aria-label="View Data">
+          <ViewData />
+          </main>
+      )}
+      {activeView === 'add' && (
+        <main className="main-content" aria-label="Add Child">
+          <ChildForm onSaved={() => setActiveView('home')} onClose={() => setActiveView('home')} />
         </main>
       )}
       {activeView === 'settings' && (
