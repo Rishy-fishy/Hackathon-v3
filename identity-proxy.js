@@ -5,7 +5,7 @@ const fetch = require('node-fetch');
 
 const app = express();
 const PORT = 8080;
-const REMOTE_BACKEND = 'http://34.27.252.72:8080';
+const REMOTE_BACKEND = 'http://35.194.34.36:8080';
 
 app.use(cors());
 app.use(express.json());

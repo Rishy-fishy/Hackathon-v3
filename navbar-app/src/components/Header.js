@@ -407,7 +407,8 @@ const Header = ({ onActiveViewChange }) => {
             onClick={()=>{
               const nextAdd = activeNav === 'add' ? null : 'add';
               setActiveNav(nextAdd);
-              setShowChildForm(nextAdd === 'add');
+              // navigate to dedicated Add page; do not open legacy popup
+              setShowChildForm(false);
               setShowRecords(false);
               onActiveViewChange && onActiveViewChange(nextAdd ? 'add' : 'home');
             }}
@@ -415,9 +416,11 @@ const Header = ({ onActiveViewChange }) => {
           <button
             className={`nav-btn ${activeNav==='view'?'active':''}`}
             onClick={()=>{
-              setShowRecords(s=>{ const next=!s; setActiveNav(next?'view':null); onActiveViewChange && onActiveViewChange(next?'view':'home'); return next; });
-              if(!showRecords) listChildRecords().then(setRecords);
+              const nextView = activeNav === 'view' ? null : 'view';
+              setActiveNav(nextView);
+              setShowRecords(false);
               setShowChildForm(false);
+              onActiveViewChange && onActiveViewChange(nextView ? 'view' : 'home');
             }}
           >View Data</button>
           <button
@@ -446,7 +449,8 @@ const Header = ({ onActiveViewChange }) => {
               onClick={()=>{ 
                 const nextAdd = activeNav === 'add' ? null : 'add';
                 setActiveNav(nextAdd);
-                setShowChildForm(nextAdd === 'add');
+                // navigate to dedicated Add page; do not open legacy popup
+                setShowChildForm(false);
                 setShowRecords(false); 
                 onActiveViewChange && onActiveViewChange(nextAdd ? 'add' : 'home');
                 setMobileMenuOpen(false); 
@@ -454,7 +458,14 @@ const Header = ({ onActiveViewChange }) => {
             >Add Child</button>
             <button
               className={`drawer-link ${activeNav==='view'?'active':''}`}
-              onClick={()=>{ setShowRecords(s=>{ const next=!s; setActiveNav(next?'view':null); onActiveViewChange && onActiveViewChange(next?'view':'home'); return next; }); if(!showRecords) listChildRecords().then(setRecords); setShowChildForm(false); setMobileMenuOpen(false); }}
+              onClick={()=>{ 
+                const nextView = activeNav === 'view' ? null : 'view';
+                setActiveNav(nextView);
+                setShowRecords(false);
+                setShowChildForm(false);
+                onActiveViewChange && onActiveViewChange(nextView ? 'view' : 'home'); 
+                setMobileMenuOpen(false); 
+              }}
             >View Data</button>
             <button
               className={`drawer-link ${activeNav==='settings'?'active':''}`}
@@ -473,68 +484,7 @@ const Header = ({ onActiveViewChange }) => {
         </div>
       )}
 
-  {showChildForm && (
-        <div className="panel" role="region" aria-label="Add Child Form">
-  <ChildForm onClose={()=> { setShowChildForm(false); setActiveNav(null); onActiveViewChange && onActiveViewChange('home'); }} onSaved={()=> { setShowChildForm(false); setActiveNav(null); onActiveViewChange && onActiveViewChange('home'); }} />
-        </div>
-      )}
-
-      {showRecords && !showChildForm && (
-        <div className="panel records" role="region" aria-label="Child Records List">
-          <div className="records-header-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'1rem'}}>
-            <h2 style={{margin:0}}>Records Overview</h2>
-            <button
-              type="button"
-              className="upload-btn"
-              disabled={!isAuthenticated}
-              onClick={async ()=>{
-                if (!isAuthenticated) return;
-                try {
-                  const { syncPendingRecords } = await import('../offline/sync');
-                  const userStr = sessionStorage.getItem('esignet_user') || localStorage.getItem('user_info');
-                  let uploaderName = 'manual_upload';
-                  let uploaderEmail = null;
-                  if (userStr) {
-                    try { const u = JSON.parse(userStr); uploaderName = u.name || uploaderName; uploaderEmail = u.email || null; } catch {}
-                  }
-                  const res = await syncPendingRecords({ uploaderName, uploaderEmail, allowNoToken: false });
-                  if (res && !res.error) {
-                    const updated = await listChildRecords();
-                    setRecords(updated);
-                  }
-                } catch (e) { console.warn('Upload failed', e); }
-              }}
-              title={isAuthenticated? 'Upload pending/failed records to server':'Login required to upload'}
-            >Upload</button>
-          </div>
-          {records.length === 0 && <div className="empty">No records saved yet.</div>}
-          {records.map(r => (
-            <button
-              key={r.healthId}
-              type="button"
-              className={`record-row selectable ${selectedRecord?.healthId===r.healthId?'active':''}`}
-              onClick={()=>{ 
-                setSelectedRecord(r); 
-                setEditMode(false); 
-                setShowDetailModal(true);
-              }}
-              role="listitem"
-              aria-pressed={undefined}
-            >
-                <div className="id">{r.healthId}</div>
-                <div className="name">{r.name}</div>
-                <div className="age">{
-                  r.dateOfBirth 
-                    ? formatAgeFromDOB(r.dateOfBirth)
-                    : formatAgeDisplay(r.ageMonths)
-                }</div>
-                <div className="wh">{r.weightKg ?? '—'}kg / {r.heightCm ?? '—'}cm</div>
-                <div className="status">{r.status}</div>
-              </button>
-            ))}
-          <div className="overview-note">Click on any record to view detailed information in a popup.</div>
-        </div>
-      )}
+  {/* Legacy Add Child popup disabled: now a dedicated page via App.js */}
 
   {/* Profile / Auth Modal */}
   <Modal

@@ -8,7 +8,7 @@ import { Search as SearchIcon, Refresh as RefreshIcon, Person as PersonIcon } fr
 
 export default function AdminAgents({ token }) {
   // Always use production identity backend for now (since no local backend is set up)
-  const IDENTITY_API_BASE = 'http://34.27.252.72:8080';
+  const IDENTITY_API_BASE = 'http://35.194.34.36:8080';
   const api = useCallback((path) => `${IDENTITY_API_BASE}${path}`, []);
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -253,7 +253,7 @@ export default function AdminAgents({ token }) {
                 </TableRow>
               ))}
               {!loading && !filtered.length && (
-                <TableRow><TableCell colSpan={6} align="center" sx={{ py:6, color:'text.secondary' }}>No identities found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} align="center" sx={{ py:6, color:'text.secondary' }}>Loading...</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

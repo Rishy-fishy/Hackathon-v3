@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { nanoid } from 'nanoid';
+import PhotoCapture from '../components/PhotoCapture';
 import { addChildRecord } from './db';
 import { generateHealthId, peekNextHealthId } from '../utils/healthId';
 
-const initial = { name:'', dob:'', gender:'Male', idRef:'', weight:'', height:'', guardian:'', phone:'', relation:'', malnutrition:'N/A', illnesses:'N/A', consent:false, photo:null };
+const initial = { name:'', dob:'', gender:'', idRef:'', weight:'', height:'', guardian:'', phone:'', relation:'', malnutrition:'N/A', illnesses:'N/A', consent:false, photo:null };
 
 export default function ChildForm({ onSaved, onClose }) {
   const [form, setForm] = useState(initial);
@@ -155,7 +156,7 @@ export default function ChildForm({ onSaved, onClose }) {
   // Field completion tracking functions
   const getStepCompletion = (stepNumber) => {
     if (stepNumber === 1) {
-      const fields = ['name', 'dob', 'gender'];
+      const fields = ['name', 'dob', 'gender', 'photo'];
       const validFields = [];
       
       // Check name field
@@ -171,6 +172,10 @@ export default function ChildForm({ onSaved, onClose }) {
       // Check gender field
       if (form.gender && form.gender.trim() && !errors.gender) {
         validFields.push('gender');
+      }
+      // Check photo field
+      if (form.photo && !errors.photo) {
+        validFields.push('photo');
       }
       
       return validFields.length / fields.length;
@@ -220,6 +225,18 @@ export default function ChildForm({ onSaved, onClose }) {
     if (stepNumber === step) return getStepCompletion(stepNumber) === 1;
     return false;
   };
+
+  // Memoize step 1 completion so unrelated state (e.g., healthId) doesn’t jitter the bar
+  const step1Completion = useMemo(() => {
+    // replicate getStepCompletion(1) logic but scoped to relevant deps
+    const fields = ['name', 'dob', 'gender', 'photo'];
+    let count = 0;
+    if (form.name && form.name.trim() && !errors.name) count++;
+    if (form.dob && form.dob.trim() && !errors.dob) count++;
+    if (form.gender && form.gender.trim() && !errors.gender) count++;
+    if (form.photo && !errors.photo) count++;
+    return count / fields.length;
+  }, [form.name, form.dob, form.gender, form.photo, errors.name, errors.dob, errors.gender, errors.photo]);
 
   // Date picker functions
   const handleDateChange = (e) => {
@@ -294,6 +311,8 @@ export default function ChildForm({ onSaved, onClose }) {
           }
         }
        if (!form.gender.trim()) newErrors.gender = 'Fill the required field';
+         // Photo is mandatory in step 1
+         if (!form.photo) newErrors.photo = 'Fill the required field';
        // Optional Aadhaar: if provided, must match XXXX-XXXX-XXXX
        if (form.idRef && !/^\d{4}-\d{4}-\d{4}$/.test(form.idRef)) {
          newErrors.idRef = 'Enter 12 digits (XXXX-XXXX-XXXX)';
@@ -395,7 +414,7 @@ export default function ChildForm({ onSaved, onClose }) {
                 <div 
                   className="step-line-fill" 
                   style={{
-                    width: step > 1 ? '100%' : `${getStepCompletion(1) * 100}%`
+                    width: step > 1 ? '100%' : `${step1Completion * 100}%`
                   }}
                 ></div>
                 <div className="step-line-bg"></div>
@@ -459,18 +478,12 @@ export default function ChildForm({ onSaved, onClose }) {
         {step === 1 && (
           <div className="grid step-grid step-1">
             <div className="photo-box photo-grid-item" aria-label="Face Photo">
-              {form.photo ? (
-                <>
-                  <img src={form.photo} alt="Child" />
-                  <button type="button" className="remove-photo" onClick={()=>setForm(f=>({...f, photo:null}))} aria-label="Remove photo">×</button>
-                </>
-              ) : (
-                <div className="add-photo-text" aria-hidden>
-                  <span className="plus">+</span>
-                  <span className="label">Add photo</span>
-                </div>
-              )}
-              <input type="file" accept="image/*" capture="user" name="photo" onChange={handleChange} title="Add or capture face photo" />
+              <PhotoCapture
+                photo={form.photo}
+                onPhotoCapture={(dataUrl)=> { setForm(f=>({...f, photo: dataUrl})); if (errors.photo) setErrors(prev=>({...prev, photo: ''})); }}
+                onPhotoClear={()=> setForm(f=>({...f, photo: null}))}
+              />
+              {errors.photo && <div className="error-message">{errors.photo}</div>}
             </div>
             <div className="identity-fields">
               <label htmlFor="cf-name">Child's Name
@@ -492,6 +505,7 @@ export default function ChildForm({ onSaved, onClose }) {
                 </label>
                 <label htmlFor="cf-gender">Gender
                   <select id="cf-gender" name="gender" value={form.gender} onChange={handleChange} required>
+                    <option value="" disabled>Select</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>

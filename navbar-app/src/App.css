@@ -341,61 +341,6 @@
 }
 
 /* Enhanced Responsive Photo Upload */
-.basic-photo { 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  gap: clamp(0.5rem, 2vw, 1rem); 
-}
-
-.photo-box { 
-  position: relative; 
-  width: clamp(140px, 28vw, 200px); 
-  height: clamp(175px, 35vw, 250px); 
-  border: 2px solid #222; 
-  border-radius: clamp(24px, 6vw, 38px); 
-  background: #fafafa; 
-  box-shadow: 2px 3px 0 #222; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  overflow: hidden; 
-  cursor: pointer; 
-  flex-shrink: 0;
-}
-
-.photo-box .add-photo-text { 
-  font-size: clamp(1.5rem, 4vw, 2.5rem); 
-  font-weight: 300; 
-  color: #222; 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  gap: clamp(0.15rem, 1vw, 0.25rem); 
-}
-
-.photo-box .add-photo-text span { 
-  font-size: clamp(0.8rem, 2vw, 1rem); 
-  font-weight: 500; 
-}
-
-.photo-box .remove-photo { 
-  position: absolute; 
-  top: clamp(4px, 1vw, 6px); 
-  right: clamp(4px, 1vw, 6px); 
-  background: #fff; 
-  border: 1px solid #222; 
-  width: clamp(24px, 5vw, 32px); 
-  height: clamp(24px, 5vw, 32px); 
-  border-radius: 12px; 
-  cursor: pointer; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  font-size: clamp(14px, 3vw, 18px); 
-  line-height: 1; 
-  box-shadow: 2px 2px 0 #222; 
-}
 
 /* Enhanced Form Input Responsiveness */
 .child-form input[type=text],
@@ -572,15 +517,7 @@
 .basic-fields .sketch-input { font-size:.75rem; font-weight:600; color:#333; display:flex; flex-direction:column; gap:.4rem; }
 .sketch-input input, .sketch-input select { background:#fff; border:2px solid #222; border-radius:18px; padding:.75rem 1rem; font-size:.9rem; font-family:inherit; box-shadow:2px 3px 0 #222; transition:.2s; }
 .sketch-input input:focus, .sketch-input select:focus { outline:none; box-shadow:3px 4px 0 #198754; border-color:#198754; }
-.basic-photo { display:flex; flex-direction:column; align-items:center; gap:.5rem; }
-.photo-box { position:relative; width:180px; height:220px; border:2px solid #222; border-radius:38px; background:#fafafa; box-shadow:2px 3px 0 #222; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; }
-.photo-box input { position:absolute; inset:0; opacity:0; cursor:pointer; }
-.photo-box img { width:100%; height:100%; object-fit:cover; }
-.photo-box .add-photo-text { font-size:2.5rem; font-weight:300; color:#222; display:flex; flex-direction:column; align-items:center; gap:.25rem; }
-.photo-box .add-photo-text span { font-size:1rem; font-weight:500; }
-.photo-box .remove-photo { position:absolute; top:6px; right:6px; background:#fff; border:1px solid #222; width:32px; height:32px; border-radius:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; line-height:1; box-shadow:2px 2px 0 #222; }
-.photo-box .remove-photo:hover { background:#fee; }
-.photo-caption { font-size:.8rem; font-weight:600; color:#555; }
+
 .nav-row { grid-column:1 / -1; display:flex; justify-content:flex-end; margin-top:2rem; }
 .next-btn { background:#111; color:#fff; border:2px solid #111; padding:.65rem 2.2rem; border-radius:20px; font-size:.9rem; cursor:pointer; box-shadow:2px 3px 0 #111; transition:.25s; }
 /* Global button transparency fix - ensure no button is ever transparent */
@@ -600,6 +537,40 @@ button:not([class*="transparent"]),
 
 .next-btn:disabled { opacity:1 !important; background:#e9ecef !important; color:#6c757d !important; border:2px solid #ced4da !important; cursor:not-allowed; }
 .next-btn:not(:disabled):hover { transform:translateY(-2px); box-shadow:4px 5px 0 #111; }
+.photo-action-btn { 
+  background:#fff; 
+  color:#000; 
+  border:2px solid #000; 
+  padding:0 .8rem; /* compact to keep width */
+  border-radius:12px; /* tighter corners */
+  font-size:.8rem; /* slightly smaller to avoid overflow */
+  font-weight:600; 
+  letter-spacing:.2px; 
+  line-height:1; 
+  cursor:pointer; 
+  box-shadow:1px 2px 0 #000; 
+  transition:.25s; 
+  display:inline-flex; /* keep icon and text side-by-side */
+  align-items:center; 
+  justify-content:center; /* center icon + text */
+  gap:.25rem; 
+  white-space:nowrap; 
+  text-align:center; 
+  height:32px; /* fixed height so icons don't change it */
+  overflow:visible; /* don't clip text baseline */
+}
+.photo-action-btn svg { width:12px; height:12px; display:block; }
+
+/* Ensure photo action buttons keep inline layout inside the child form */
+.child-form .photo-action-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: .25rem;
+  margin-top: 0; /* don't inherit big form button margin */
+  overflow: visible; /* avoid clipping the label baseline */
+}
+.photo-action-btn:hover { transform:translateY(-2px); box-shadow:2px 3px 0 #000; }
 .step-footer { display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem; }
 .back-btn { background:#fff; border:1px solid #adb5bd; padding:.55rem 1.2rem; border-radius:8px; cursor:pointer; font-size:.8rem; }
 .back-btn:hover { background:#f1f3f5; }
@@ -1937,6 +1908,14 @@ button:not([class*="transparent"]),
   margin-top: 0.25rem;
   padding: 0.25rem 0;
   animation: fadeIn 0.3s ease-in;
+}
+
+/* Constrain photo error width to photo box and center it */
+.child-form.wizard .step-1 .photo-grid-item .error-message {
+  width: 220px;         /* match photo width */
+  max-width: 100%;      /* shrink on smaller screens */
+  margin: 0.5rem auto 0;
+  text-align: center;
 }
 
 @keyframes fadeIn {

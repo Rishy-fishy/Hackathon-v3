@@ -28,7 +28,21 @@ export async function listChildRecords() {
 }
 
 export async function pendingRecords() {
-  return db.childRecords.where('status').anyOf(['pending','failed']).toArray();
+  // Find records that are pending, failed, or haven't been uploaded yet
+  const pendingOrFailed = await db.childRecords.where('status').anyOf(['pending','failed']).toArray();
+  
+  // Also find records without uploadedAt timestamp (never uploaded)
+  const neverUploaded = await db.childRecords.filter(record => 
+    !record.uploadedAt && record.status !== 'uploaded' && record.status !== 'pending' && record.status !== 'failed'
+  ).toArray();
+  
+  // Combine and deduplicate by healthId
+  const combined = [...pendingOrFailed, ...neverUploaded];
+  const unique = combined.filter((record, index, self) => 
+    index === self.findIndex(r => r.healthId === record.healthId)
+  );
+  
+  return unique;
 }
 
 export async function uploadedRecords() {

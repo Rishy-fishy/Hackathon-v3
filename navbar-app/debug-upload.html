@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Upload Issue</title>
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+</head>
+<body>
+    <h1>Debug Upload Issue</h1>
+    <button onclick="createTestRecord()">Create Test Pending Record</button>
+    <button onclick="checkRecords()">Check All Records</button>
+    <button onclick="checkPendingRecords()">Check Pending Records</button>
+    <button onclick="testUpload()">Test Upload</button>
+    <button onclick="clearAll()">Clear All Records</button>
+    <br><br>
+    <div id="output"></div>
+
+    <script>
+        // Initialize Dexie database (same as app)
+        const db = new Dexie('nutrition_app');
+        db.version(1).stores({
+            childRecords: '&healthId, status, createdAt'
+        });
+        db.version(2).stores({
+            childRecords: '&healthId, localId, status, createdAt, photoHash'
+        }).upgrade(tx => {
+            return tx.table('childRecords').toCollection().modify(r => {
+                if (!r.localId) r.localId = r.healthId + '-L';
+            });
+        });
+
+        function log(message) {
+            document.getElementById('output').innerHTML += '<div>' + message + '</div>';
+            console.log(message);
+        }
+
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+
+        async function createTestRecord() {
+            clearOutput();
+            try {
+                const testRecord = {
+                    healthId: 'TEST_DEBUG_' + Date.now(),
+                    name: 'Debug Test Child',
+                    gender: 'Male',
+                    ageMonths: 24,
+                    weightKg: 12.5,
+                    heightCm: 85,
+                    guardianName: 'Debug Parent',
+                    guardianPhone: '1234567890',
+                    malnutritionSigns: 'N/A',
+                    recentIllnesses: 'N/A',
+                    status: 'pending',
+                    createdAt: Date.now(),
+                    localId: 'TEST_DEBUG_' + Date.now() + '-L'
+                };
+                
+                await db.childRecords.add(testRecord);
+                log('✅ Created test record: ' + testRecord.healthId);
+            } catch (error) {
+                log('❌ Error creating test record: ' + error.message);
+            }
+        }
+
+        async function checkRecords() {
+            clearOutput();
+            try {
+                const records = await db.childRecords.orderBy('createdAt').reverse().toArray();
+                log('📊 Total records: ' + records.length);
+                records.forEach(record => {
+                    log(`- ${record.healthId}: ${record.status} (created: ${new Date(record.createdAt).toLocaleString()})`);
+                });
+            } catch (error) {
+                log('❌ Error checking records: ' + error.message);
+            }
+        }
+
+        async function checkPendingRecords() {
+            clearOutput();
+            try {
+                const pending = await db.childRecords.where('status').anyOf(['pending','failed']).toArray();
+                log('📋 Pending records: ' + pending.length);
+                pending.forEach(record => {
+                    log(`- ${record.healthId}: ${record.status}`);
+                });
+            } catch (error) {
+                log('❌ Error checking pending records: ' + error.message);
+            }
+        }
+
+        async function testUpload() {
+            clearOutput();
+            try {
+                // Check authentication
+                const esignetAuth = sessionStorage.getItem('esignet_authenticated');
+                const esignetUser = sessionStorage.getItem('esignet_user');
+                const accessToken = sessionStorage.getItem('access_token') || 
+                    sessionStorage.getItem('raw_esignet_access_token') ||
+                    localStorage.getItem('access_token');
+                
+                log('🔐 Authentication status:');
+                log('- eSignet authenticated: ' + esignetAuth);
+                log('- eSignet user exists: ' + !!esignetUser);
+                log('- Access token exists: ' + !!accessToken);
+                
+                if (esignetUser) {
+                    try {
+                        const user = JSON.parse(esignetUser);
+                        log('- User name: ' + (user.name || 'N/A'));
+                        log('- User email: ' + (user.email || 'N/A'));
+                    } catch (e) {
+                        log('- User parse error: ' + e.message);
+                    }
+                }
+
+                // Check pending records
+                const pending = await db.childRecords.where('status').anyOf(['pending','failed']).toArray();
+                log('📊 Pending records to upload: ' + pending.length);
+                
+                if (pending.length === 0) {
+                    log('⚠️ No pending records found. Create a test record first.');
+                    return;
+                }
+
+                // Try to call the upload API directly
+                const apiBase = window.__API_BASE || 'http://35.194.34.36:8080';
+                log('🌐 API Base URL: ' + apiBase);
+                
+                const headers = { 'Content-Type': 'application/json' };
+                if (accessToken) {
+                    headers['Authorization'] = 'Bearer ' + accessToken;
+                }
+
+                const requestBody = {
+                    records: pending,
+                    uploaderName: 'Debug Test',
+                    uploaderEmail: 'debug@test.com'
+                };
+
+                log('📡 Sending request to: ' + apiBase + '/api/child/batch');
+                log('📋 Request body record count: ' + pending.length);
+
+                const response = await fetch(apiBase + '/api/child/batch', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(requestBody)
+                });
+
+                log('📬 Response status: ' + response.status + ' ' + response.statusText);
+
+                if (response.ok) {
+                    const result = await response.json();
+                    log('✅ Upload successful!');
+                    log('📄 Response: ' + JSON.stringify(result, null, 2));
+                    
+                    // Update record statuses
+                    for (const r of result.results) {
+                        if (r.status === 'uploaded') {
+                            await db.childRecords.update(r.healthId, { 
+                                status: 'uploaded', 
+                                uploadedAt: new Date().toISOString() 
+                            });
+                            log('✅ Updated ' + r.healthId + ' to uploaded status');
+                        }
+                    }
+                } else {
+                    const errorText = await response.text();
+                    log('❌ Upload failed: ' + errorText);
+                }
+                
+            } catch (error) {
+                log('❌ Error during upload test: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        async function clearAll() {
+            clearOutput();
+            try {
+                await db.childRecords.clear();
+                log('🗑️ All records cleared');
+            } catch (error) {
+                log('❌ Error clearing records: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
