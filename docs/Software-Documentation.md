@@ -52,6 +52,7 @@ Links and References
 - Project README for quick start and commands
 - Architecture documentation (ARCHITECTURE.md)
 - Flowcharts (FLOWCHARTS.md) — Mermaid diagrams of major flows
+- API Documentation (docs/API.md) — Complete REST API reference
 - eSignet integration guide under navbar-app/docs/eSignet-Integration-Guide.md
 
 4 Chapter 1. Relevant Background Information and Pre-Requisites
@@ -229,11 +230,28 @@ Callback Server APIs (selected)
 GET  /health                 # Liveness
 GET  /diag                   # Diagnostics
 GET  /client-meta            # Client configuration
-POST /api/child/batch        # Bulk upload records
-GET  /api/child              # List/search records
-GET  /api/child/:id/pdf      # Generate PDF report
 GET  /callback               # OAuth callback handler
 POST /exchange-token         # Code-to-token exchange
+```
+
+Backend API Endpoints (selected)
+```http path=null start=null
+# Child Records
+POST /api/child/batch             # Bulk upload records (Bearer token)
+GET  /api/child                   # List/search records
+GET  /api/child/:healthId/pdf     # Generate PDF report
+
+# Admin
+POST   /api/admin/login           # Admin authentication
+GET    /api/admin/stats           # Dashboard stats
+GET    /api/admin/children        # Records list (paged)
+PUT    /api/admin/child/:healthId # Update record
+DELETE /api/admin/child/:healthId # Delete record
+POST   /api/admin/verify-password # Password verification
+
+# Identities (PostgreSQL)
+GET  /api/admin/identities        # List identities
+GET  /api/admin/identities/:id    # Identity detail (sanitized)
 ```
 
 Data Models (MongoDB)

@@ -117,11 +117,12 @@ This project is a comprehensive Child Health Monitoring System with eSignet-base
 ## 🚀 API Endpoints
 
 ### Child Health Records
-- `GET /api/admin/children` - Fetch all child records
-- `POST /api/admin/child` - Create new child record  
-- `PUT /api/admin/child/:id` - Update child record
-- `DELETE /api/admin/child/:id` - Delete child record
-- `POST /api/admin/verify-password` - Password verification
+- `GET /api/admin/children` - Fetch child records (paged, searchable)
+- `POST /api/child/batch` - Bulk upload records (Bearer token)
+- `GET /api/child/:healthId/pdf` - Generate PDF report
+- `PUT /api/admin/child/:healthId` - Update child record
+- `DELETE /api/admin/child/:healthId` - Delete child record
+- `POST /api/admin/verify-password` - Password verification for sensitive operations
 
 ### Admin Authentication
 - `POST /api/admin/login` - Admin login
@@ -534,26 +535,23 @@ jobs:
 - **Database**: Mongoose schemas
 - **Testing**: Jest + React Testing Library
 
-<<<<<<< HEAD
-For issues and questions:
+## 📚 Documentation & Support
+
 - **GitHub Issues**: [Create an issue](https://github.com/Rishy-fishy/Hackathon-v3/issues)
-- **Documentation**: 
+- **Documentation**:
   - **Quick Start**: This README file
-  - **Comprehensive Documentation**: [Software-Documentation.md](docs/Software-Documentation.md) - Complete arc42-based documentation
-  - **Architecture Details**: [ARCHITECTURE.md](ARCHITECTURE.md) - Technical architecture deep-dive
-  - **Process Flows**: [FLOWCHARTS.md](FLOWCHARTS.md) - Mermaid diagrams of system flows
-=======
+  - **Comprehensive Documentation**: [Software-Documentation.md](docs/Software-Documentation.md) — arc42-based documentation
+  - **API Documentation**: [API.md](docs/API.md) — Complete REST API reference
+  - **Architecture Details**: [ARCHITECTURE.md](ARCHITECTURE.md) — Technical deep-dive
+  - **Process Flows**: [FLOWCHARTS.md](FLOWCHARTS.md) — Mermaid diagrams of system flows
+
 ### Issue Reporting
 - **Bug Reports**: Use GitHub issue templates
 - **Feature Requests**: Provide detailed requirements
 - **Security Issues**: Private disclosure process
-- **Documentation**: Improve README and comments
 
-## 📞 Support & Contact
-
-### Technical Support
+### Support & Contact
 - **GitHub Issues**: [Report bugs and feature requests](https://github.com/Rishy-fishy/Hackathon-v3/issues)
-- **Documentation**: Comprehensive inline comments
 - **Code Review**: Active maintainer support
 
 ### Project Maintainers
@@ -562,9 +560,24 @@ For issues and questions:
 
 ### Quick Reference Links
 - **Live Demo**: Contact maintainers for access
-- **API Documentation**: Available in code comments
-- **Architecture Docs**: See `/docs` folder (when available)
->>>>>>> 6fe87066d73bd095403519a0bf3006961c01646e
+- **API Documentation**: [docs/API.md](docs/API.md)
+- **Architecture Docs**: [docs/Software-Documentation.md](docs/Software-Documentation.md), [ARCHITECTURE.md](ARCHITECTURE.md)
+
+## 🛡️ Admin Feature Matrix
+
+| Feature | Description | Endpoint(s) | Auth | Notes |
+|---|---|---|---|---|
+| Admin Login | Obtain admin token | POST /api/admin/login | None | Returns token (JWT or in-memory) |
+| View Stats | Dashboard totals and recent uploads | GET /api/admin/stats | Admin token | — |
+| List Records | Paged, searchable records list | GET /api/admin/children?page&limit&search | Admin token | Supports basic search and pagination |
+| View Child PDF | Generate child booklet PDF | GET /api/child/:healthId/pdf | Public or Admin token (deployment-dependent) | Streams PDF |
+| Update Record | Modify fields on a record | PUT /api/admin/child/:healthId | Admin token | Consider POST /api/admin/verify-password before update |
+| Delete Record | Remove a record | DELETE /api/admin/child/:healthId | Admin token | Consider POST /api/admin/verify-password before delete |
+| Verify Password | Second-factor confirmation | POST /api/admin/verify-password | Admin token | Confirms Admin@123 in current setup |
+| List Identities | View mock identity agents | GET /api/admin/identities?limit&offset | Admin token | Requires PostgreSQL (mock identity system) |
+| Identity Detail | Full sanitized identity | GET /api/admin/identities/:id | Admin token | Sensitive fields removed |
+
+See full details and examples in docs/API.md.
 
 ## 📄 License
 

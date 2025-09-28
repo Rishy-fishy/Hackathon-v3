@@ -21,7 +21,7 @@ The ChildHealthBooklet is a progressive web application (PWA) designed for field
 │                                                                 │
 │  ┌─────────────────┐    ┌──────────────────────────────────────┐ │
 │  │ Local Development│    │      Google Cloud Platform          │ │
-│  │                 │    │   (34.58.198.143)                   │ │
+│  │                 │    │                                      │ │
 │  │  ┌─────────────┐│    │                                      │ │
 │  │  │ React App   ││    │  ┌─────────────────────────────────┐ │ │
 │  │  │ :3001       ││◄───┼──┤ Callback Server (Node.js)      │ │ │
@@ -58,7 +58,8 @@ The ChildHealthBooklet is a progressive web application (PWA) designed for field
 - **Build Tool**: React Scripts with custom optimizations
 
 ### Backend Services
-- **Callback Server**: Node.js + Express (port 5000)
+- **Primary Backend API**: Node.js + Express (port 8080 or Cloud Run). Handles data APIs including `POST /api/child/batch`, `GET /api/child`, `GET /api/child/:id/pdf`, and admin endpoints under `/api/admin/*`. Persists to MongoDB.
+- **Callback Server**: Node.js + Express (port 5000). Handles OAuth 2.0 authorization code exchange (eSignet) and redirects back to the SPA; may expose limited dev/utility endpoints.
 - **Authentication**: eSignet OAuth 2.0 (MOSIP ecosystem)
 - **Database**: 
   - MongoDB for production data storage
@@ -231,17 +232,28 @@ The application implements a **background sync mechanism** with the following ch
 ### Batch Upload Process
 
 ```javascript
-// Batch Upload Endpoint: POST /api/child/batch
+// Batch Upload Endpoint (Backend API):
+// POST /api/child/batch
+// Headers: Authorization: Bearer <access_token>
 {
   records: [
     {
-      healthId: "CH-2025-001234",
+      healthId: "CHXXXX...", // 12-char offline-safe ID (see healthId.js)
       name: "Child Name",
-      // ... other fields
+      // ... other fields from IndexedDB schema
     }
   ],
   uploaderName: "Field Worker Name",
-  uploaderEmail: "worker@example.com"
+  uploaderEmail: "worker@example.com",
+  uploaderLocation: {
+    source: "browser-geolocation|manual",
+    city: "...",
+    state: "...",
+    country: "...",
+    coordinates: [lng, lat],
+    accuracy: 15,
+    timestamp: "2025-09-28T05:40:00Z"
+  }
 }
 
 // Response Format
@@ -253,8 +265,8 @@ The application implements a **background sync mechanism** with the following ch
     skipped: 1
   },
   results: [
-    { healthId: "CH-2025-001234", status: "uploaded" },
-    { healthId: "CH-2025-001235", status: "failed", reason: "duplicate" }
+    { healthId: "CHXXXX...", status: "uploaded" },
+    { healthId: "CHYYYY...", status: "failed", reason: "duplicate" }
   ]
 }
 ```
@@ -273,22 +285,28 @@ The application implements a **background sync mechanism** with the following ch
 
 ### API Endpoints
 
-```
-Authentication Endpoints:
-├── GET  /callback              - OAuth callback handler
-├── POST /exchange-token        - Token exchange service
-└── GET  /authorize-url         - Authorization URL builder
+Note: The React app primarily syncs to the Backend API. The Callback Server is responsible for OAuth and SPA redirects.
 
-Data Management Endpoints:
-├── POST /api/child/batch       - Bulk record upload
+```
+Backend API Endpoints (Primary sync target):
+├── POST /api/child/batch       - Bulk record upload [Authorization: Bearer <token>]
 ├── GET  /api/child             - List/search records
 ├── GET  /api/child/:id/pdf     - Generate PDF report
-└── GET  /delegate/fetchUserInfo - Legacy user info fetch
+├── POST /api/admin/login       - Admin authentication (JWT or session)
+├── GET  /api/admin/stats       - Admin dashboard statistics
+├── GET  /api/admin/children    - Admin list of child records
+├── PUT  /api/admin/child/:id   - Update child record
+├── DELETE /api/admin/child/:id - Delete child record
+├── POST /api/admin/verify-password - Verify password for sensitive ops
+├── GET  /api/admin/identities      - List identities (mock identity system)
+└── GET  /api/admin/identities/:id  - Identity detail (sanitized)
 
-Utility Endpoints:
-├── GET  /health                - Health check
-├── GET  /diag                  - Diagnostic information
-└── GET  /client-meta           - Client configuration
+Callback Server (OAuth) Endpoints:
+├── GET  /callback              - OAuth callback handler (redirects to SPA)
+├── POST /exchange-token        - Token exchange via JWT client assertion
+├── GET  /authorize-url         - Authorization URL builder (debug)
+├── GET  /client-meta           - Public client metadata (safe subset)
+└── GET  /health, /diag         - Health/diagnostics
 ```
 
 ### Database Schema (MongoDB)
@@ -602,7 +620,7 @@ GET http://34.58.198.143:5000/client-meta (callback server)
 
 ---
 
-**Last Updated**: September 21, 2025  
+**Last Updated**: September 28, 2025  
 **Version**: 3.0.0  
 **Status**: ✅ Production Ready
 

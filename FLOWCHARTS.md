@@ -12,11 +12,12 @@ graph TB
         ReactApp["🖥️ React App<br/>localhost:3001"]
     end
     
-    subgraph "Google Cloud Platform (34.58.198.143)"
+    subgraph "Google Cloud Platform"
         direction TB
         CallbackServer["🔄 Callback Server<br/>Node.js :5000"]
         eSignetUI["🎨 eSignet UI<br/>React :3000"]
         eSignetBackend["⚙️ eSignet Backend<br/>Spring Boot :8088"]
+        BackendAPI["🟢 Backend API<br/>Node.js :8080 / Cloud Run"]
         
         subgraph "Supporting Services"
             PostgreSQL["🗄️ PostgreSQL<br/>:5432"]
@@ -35,7 +36,8 @@ graph TB
     ReactApp <-->|Local Storage| IndexedDB
     
     CallbackServer <-->|Token Exchange| eSignetBackend
-    CallbackServer <-->|Data Sync| MongoDB
+    ReactApp -->|Sync (POST /api/child/batch)| BackendAPI
+    BackendAPI <-->|Persist| MongoDB
     eSignetBackend <--> PostgreSQL
     eSignetBackend <--> Redis
     eSignetBackend <--> MockIdentity
@@ -43,6 +45,7 @@ graph TB
     style ReactApp fill:#e1f5fe
     style CallbackServer fill:#f3e5f5
     style eSignetBackend fill:#e8f5e8
+    style BackendAPI fill:#e8f5e8
     style MongoDB fill:#fff3e0
 ```
 
@@ -107,7 +110,7 @@ flowchart TD
         ConsentCheck -->|Yes| SaveRecord
     end
     
-    SaveRecord[💾 Save to IndexedDB] --> GenerateID[🔢 Generate Health ID<br/>CH-2025-XXXXXX]
+    SaveRecord[💾 Save to IndexedDB] --> GenerateID[🔢 Generate Health ID<br/>(offline-safe 12-char)]
     GenerateID --> SetStatus[📊 Set Status: "pending"]
     SetStatus --> ShowSuccess[✅ Show success message]
     
@@ -116,7 +119,7 @@ flowchart TD
     subgraph "Background Sync Process"
         BackgroundSync{📡 Online & Authenticated?}
         BackgroundSync -->|No| WaitForConnection[⏳ Wait for connectivity]
-        BackgroundSync -->|Yes| UploadToCloud[☁️ Upload to MongoDB]
+        BackgroundSync -->|Yes| UploadToCloud[🚀 POST to Backend API<br/>/api/child/batch]
         
         WaitForConnection --> BackgroundSync
         UploadToCloud --> UpdateStatus[📊 Update Status: "uploaded"]
@@ -150,7 +153,7 @@ flowchart TD
     HasRecords -->|Yes| UpdateStatus1[📊 Mark as "uploading"]
     UpdateStatus1 --> PreparePayload[📦 Prepare batch payload<br/>• Records array<br/>• Uploader info]
     
-    PreparePayload --> SendToAPI[🚀 POST /api/child/batch]
+    PreparePayload --> SendToAPI[🚀 POST Backend API<br/>/api/child/batch (Bearer token)]
     
     SendToAPI --> APIResponse{📡 Response OK?}
     
@@ -449,6 +452,51 @@ flowchart TD
     style ReadyToUse fill:#e1f5fe
 ```
 
+## 🛡️ 11. Admin Dashboard & Records Management Flow
+
+```mermaid
+flowchart TD
+    Start[👤 Admin opens /admin] --> Login[🔐 Enter credentials]
+    Login --> PostLogin[🚀 POST /api/admin/login]
+    PostLogin -->|200 OK| StoreToken[🗝️ Save token (Bearer)]
+    PostLogin -->|401| LoginError[❌ Invalid credentials]
+    LoginError --> Login
+
+    StoreToken --> Dashboard[📊 Admin Dashboard]
+    Dashboard --> GetStats[📈 GET /api/admin/stats]
+    GetStats --> ShowStats[📊 Show totals + recent uploads]
+
+    Dashboard --> ViewRecords[📋 Records]
+    ViewRecords --> ListChildren[📥 GET /api/admin/children?page&limit&search]
+    ListChildren --> ChildrenTable[🗂️ Render table]
+
+    ChildrenTable --> ViewPDF[🧾 GET /api/child/:healthId/pdf]
+    ChildrenTable --> EditRecord[✏️ Edit child]
+    ChildrenTable --> DeleteRecord[🗑️ Delete child]
+
+    EditRecord --> VerifyPwdPrompt[🧪 Verify password?]
+    VerifyPwdPrompt -->|Yes| VerifyPwd[🧪 POST /api/admin/verify-password]
+    VerifyPwdPrompt -->|No| SkipVerify[↩️]
+    VerifyPwd -->|200 OK| PutUpdate[🔄 PUT /api/admin/child/:healthId]
+    VerifyPwd -->|401| VerifyFail[❌ Wrong password]
+    VerifyFail --> VerifyPwdPrompt
+    SkipVerify --> PutUpdate
+    PutUpdate --> RefreshList[🔁 Refresh list]
+
+    DeleteRecord --> VerifyPwdDel[🧪 POST /api/admin/verify-password]
+    VerifyPwdDel -->|200 OK| DoDelete[🗑️ DELETE /api/admin/child/:healthId]
+    VerifyPwdDel -->|401| DelFail[❌ Wrong password]
+    DoDelete --> RefreshList
+
+    Dashboard --> Agents[👥 Admin Agents]
+    Agents --> ListIdentities[📇 GET /api/admin/identities?limit&offset]
+    ListIdentities --> IdentityDetail[🔍 GET /api/admin/identities/:id]
+
+    style StoreToken fill:#e8f5e8
+    style ShowStats fill:#e3f2fd
+    style ChildrenTable fill:#fff3e0
+```
+
 ---
 
 ## 📚 How to Use These Flowcharts
@@ -457,6 +505,7 @@ flowchart TD
 - Use **Architecture Flow (#1)** to understand system components
 - Follow **Authentication Flow (#2)** for OAuth implementation
 - Reference **Component Architecture (#5)** for code structure
+- Use **Admin Flow (#11)** to understand admin login, records management, identities, and PDF actions
 
 ### For Project Managers:
 - Review **User Journey (#7)** for feature planning
@@ -492,6 +541,6 @@ mmdc -i FLOWCHARTS.md -o flowcharts.html
 
 ---
 
-**Last Updated**: September 21, 2025  
+**Last Updated**: September 28, 2025  
 **Version**: 1.0.0  
 **Compatible with**: ChildHealthBooklet v3.0.0
