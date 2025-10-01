@@ -1,5 +1,5 @@
 // Sync logic: upload pending/failed records to backend when online & authenticated
-import { pendingRecords, updateChildRecord, recordCounts, purgeOldUploaded } from './db';
+import { pendingRecords, updateChildRecord, recordCounts, purgeOldUploaded, removeSpecificRecords } from './db';
 
 // Cloud Run backend base URL resolution (first non-empty wins):
 // 1. window.__API_BASE (runtime-config.js)
@@ -119,16 +119,26 @@ export async function syncPendingRecords({ accessToken, uploaderName, uploaderEm
     
     lastSyncInfo = { time: Date.now(), result: json.summary };
     
-    // Update statuses
+    // Update statuses and remove uploaded records immediately
     console.log('🔄 Updating record statuses...');
+    const uploadedRecordIds = [];
+    
     for (const r of json.results) {
       if (r.status === 'uploaded') {
         await updateChildRecord(r.healthId, { status: 'uploaded', uploadedAt: new Date().toISOString() });
+        uploadedRecordIds.push(r.healthId);
         console.log(`✅ Marked ${r.healthId} as uploaded`);
       } else if (r.status === 'failed') {
         await updateChildRecord(r.healthId, { status: 'failed' });
         console.log(`❌ Marked ${r.healthId} as failed`);
       }
+    }
+    
+    // Remove uploaded records immediately
+    if (uploadedRecordIds.length > 0) {
+      console.log(`🗑️ Removing ${uploadedRecordIds.length} successfully uploaded records from local storage...`);
+      const removedCount = await removeSpecificRecords(uploadedRecordIds);
+      console.log(`✅ Removed ${removedCount} uploaded records from View Data`);
     }
     
     if (retentionDays) await purgeOldUploaded(retentionDays);

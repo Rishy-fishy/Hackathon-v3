@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import  './glass.css';
 import Header from './components/Header';
@@ -9,7 +9,6 @@ import Settings from './components/settings';
 import AuthCallback from './components/AuthCallback';
 import AuthSuccess from './components/AuthSuccess';
 import useConnectivity from './offline/useConnectivity';
-import { startAutoSync } from './offline/sync';
 import AdminPage from './components/AdminPage';
 import ChildForm from './offline/ChildForm';
 
@@ -24,8 +23,8 @@ function App() {
   const isAuthSuccessRoute = pathname === '/auth-success';
   const isAdminRoute = pathname === '/admin';
 
-  // Start background sync once
-  useEffect(()=>{ startAutoSync(); },[]);
+  // Background sync disabled - data only syncs when Upload button is clicked manually
+  // useEffect(()=>{ startAutoSync(); },[]);
 
   if (isCallbackRoute) {
     return <AuthCallback />;

@@ -67,3 +67,29 @@ export async function purgeOldUploaded(retentionDays = 7) {
   }
   return old.length;
 }
+
+// Remove all successfully uploaded records from local storage
+export async function removeUploadedRecords() {
+  console.log('🗑️ Removing all uploaded records from local storage...');
+  const uploaded = await db.childRecords.where('status').equals('uploaded').toArray();
+  console.log(`📊 Found ${uploaded.length} uploaded records to remove`);
+  
+  if (uploaded.length > 0) {
+    await db.childRecords.bulkDelete(uploaded.map(r => r.healthId));
+    console.log(`✅ Removed ${uploaded.length} uploaded records from local storage`);
+  }
+  
+  return uploaded.length;
+}
+
+// Remove specific records by their healthId array
+export async function removeSpecificRecords(healthIds) {
+  console.log(`🗑️ Removing ${healthIds.length} specific records from local storage...`);
+  
+  if (healthIds.length > 0) {
+    await db.childRecords.bulkDelete(healthIds);
+    console.log(`✅ Removed ${healthIds.length} specific records from local storage`);
+  }
+  
+  return healthIds.length;
+}
