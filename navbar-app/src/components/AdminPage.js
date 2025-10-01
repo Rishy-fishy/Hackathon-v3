@@ -169,38 +169,45 @@ export default function AdminPage() {
 
   async function fetchAgentCount(){
     try {
-      // First login to identity backend to get token
-      const IDENTITY_API_BASE = 'http://35.194.34.36:8080';
-      const loginResp = await fetch(`${IDENTITY_API_BASE}/api/admin/login`, {
+      console.log('[AdminPage] Starting to fetch agent count...');
+      
+      // Use the same API base as other admin functions
+      const loginResp = await fetch(api('/api/admin/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: 'Admin', password: 'Admin@123' })
       });
       
       if (!loginResp.ok) {
-        console.warn('[AdminPage] Identity backend login failed');
+        console.error('[AdminPage] Identity backend login failed with status:', loginResp.status);
+        setAgentCount(0);
         return;
       }
       
       const loginData = await loginResp.json();
       const identityToken = loginData.token;
+      console.log('[AdminPage] Successfully logged in for agent count');
       
       // Fetch agent count from identity backend
-      const agentsResp = await fetch(`${IDENTITY_API_BASE}/api/admin/identities?limit=1000`, {
+      const agentsResp = await fetch(api('/api/admin/identities?limit=1000'), {
         headers: { Authorization: `Bearer ${identityToken}` }
       });
       
       if (!agentsResp.ok) {
-        console.warn('[AdminPage] Failed to fetch agents from identity backend');
+        console.error('[AdminPage] Failed to fetch agents with status:', agentsResp.status);
+        setAgentCount(0);
         return;
       }
       
       const agentsData = await agentsResp.json();
       const count = agentsData.items?.length || 0;
       setAgentCount(count);
-      console.log('[AdminPage] Fetched agent count:', count);
+      console.log('[AdminPage] Successfully fetched agent count:', count);
+      console.log('[AdminPage] Agents data:', agentsData);
     } catch (e) {
       console.error('[AdminPage] Error fetching agent count:', e.message);
+      console.error('[AdminPage] Full error:', e);
+      setAgentCount(0);
     }
   }
 
@@ -339,8 +346,7 @@ export default function AdminPage() {
   const totalRecords = stats?.totalChildRecords ?? 0;
   const recentUploads = stats?.recentUploads || [];
   // Placeholder / derived values (no API changes):
-  const activeFieldAgents = agentCount ?? 56; // dynamic agent count from identity backend
-  const malnutritionCases = 123; // legacy placeholder
+  const activeFieldAgents = agentCount > 0 ? agentCount : 56; // dynamic agent count from identity backend
 
   // New richer data using real malnutrition statistics from MongoDB
   const severityStats = realMalnutritionStats;

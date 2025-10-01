@@ -4,6 +4,7 @@ import  './glass.css';
 import Header from './components/Header';
 import Homepage from './components/Homepage';
 import ViewData from './components/ViewData';
+import Records from './components/Records';
 import Settings from './components/settings';
 import AuthCallback from './components/AuthCallback';
 import AuthSuccess from './components/AuthSuccess';
@@ -14,7 +15,7 @@ import { themeManager } from './utils/themeManager';
 import ChildForm from './offline/ChildForm';
 
 function App() {
-  const [activeView, setActiveView] = useState('home'); // 'home' | 'add' | 'view' | 'settings'
+  const [activeView, setActiveView] = useState('home'); // 'home' | 'add' | 'view' | 'records' | 'settings'
   // Connectivity hook retained for potential future UI; currently unused.
   // eslint-disable-next-line no-unused-vars
   const online = useConnectivity();
@@ -61,6 +62,11 @@ function App() {
         <main className="main-content" aria-label="View Data">
           <ViewData />
           </main>
+      )}
+      {activeView === 'records' && (
+        <main className="main-content" aria-label="My Records">
+          <Records />
+        </main>
       )}
       {activeView === 'add' && (
         <main className="main-content" aria-label="Add Child">

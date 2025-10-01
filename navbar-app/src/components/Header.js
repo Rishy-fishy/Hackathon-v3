@@ -424,6 +424,16 @@ const Header = ({ onActiveViewChange }) => {
             }}
           >View Data</button>
           <button
+            className={`nav-btn ${activeNav==='records'?'active':''}`}
+            onClick={()=>{ 
+              const nextRecords = activeNav === 'records' ? null : 'records';
+              setActiveNav(nextRecords); 
+              setShowRecords(false); 
+              setShowChildForm(false);
+              onActiveViewChange && onActiveViewChange(nextRecords ? 'records' : 'home'); 
+            }}
+          >Records</button>
+          <button
             className={`nav-btn ${activeNav==='settings'?'active':''}`}
             onClick={()=>{ 
               const nextSettings = activeNav === 'settings' ? null : 'settings';
@@ -467,6 +477,17 @@ const Header = ({ onActiveViewChange }) => {
                 setMobileMenuOpen(false); 
               }}
             >View Data</button>
+            <button
+              className={`drawer-link ${activeNav==='records'?'active':''}`}
+              onClick={()=>{ 
+                const nextRecords = activeNav === 'records' ? null : 'records';
+                setActiveNav(nextRecords); 
+                setShowRecords(false); 
+                setShowChildForm(false);
+                onActiveViewChange && onActiveViewChange(nextRecords ? 'records' : 'home'); 
+                setMobileMenuOpen(false); 
+              }}
+            >Records</button>
             <button
               className={`drawer-link ${activeNav==='settings'?'active':''}`}
               onClick={()=>{ 
