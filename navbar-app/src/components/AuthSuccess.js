@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { IoHappyOutline, IoCloseCircleOutline, IoCheckmarkCircleOutline, IoReloadOutline } from 'react-icons/io5';
 import './AuthCallback.css';
 
 const AuthSuccess = () => {
@@ -35,11 +36,11 @@ const AuthSuccess = () => {
   return (
     <div className="auth-callback-container">
       <div className="auth-callback-content">
-        <h1>🎉 Authentication Successful!</h1>
+        <h1><IoHappyOutline /> Authentication Successful!</h1>
         
         {authData?.error ? (
           <div className="error-section">
-            <h2>❌ Authentication Error</h2>
+            <h2><IoCloseCircleOutline /> Authentication Error</h2>
             <p className="error-message">Error: {authData.error}</p>
             <button onClick={handleReturnToApp} className="return-button error">
               Return to App
@@ -47,7 +48,7 @@ const AuthSuccess = () => {
           </div>
         ) : authData?.code ? (
           <div className="success-section">
-            <h2>✅ Authorization Code Received</h2>
+            <h2><IoCheckmarkCircleOutline /> Authorization Code Received</h2>
             <div className="auth-details">
               <div className="detail-item">
                 <span className="label">Authorization Code:</span>
@@ -70,7 +71,7 @@ const AuthSuccess = () => {
           </div>
         ) : (
           <div className="loading-section">
-            <h2>🔄 Processing Authentication...</h2>
+            <h2><IoReloadOutline /> Processing Authentication...</h2>
             <p>Please wait while we process your authentication response.</p>
           </div>
         )}
@@ -78,10 +79,10 @@ const AuthSuccess = () => {
         <div className="info-section">
           <h3>What happened?</h3>
           <ol>
-            <li>✅ You authenticated with eSignet</li>
-            <li>✅ eSignet redirected you back to our callback URL</li>
-            <li>✅ Authorization code was successfully received</li>
-            <li>🔄 Ready to exchange code for access token</li>
+            <li><IoCheckmarkCircleOutline /> You authenticated with eSignet</li>
+            <li><IoCheckmarkCircleOutline /> eSignet redirected you back to our callback URL</li>
+            <li><IoCheckmarkCircleOutline /> Authorization code was successfully received</li>
+            <li><IoReloadOutline /> Ready to exchange code for access token</li>
           </ol>
         </div>
       </div>

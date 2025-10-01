@@ -1155,6 +1155,11 @@ html[data-darkreader-mode="filter"] .switch-btn .knob,
   50% { opacity: 0.5; }
 }
 
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Dark mode styles for location feature */
 html[data-darkreader-mode="dynamic"] .location-details .coordinates,
 html[data-darkreader-mode="filter"] .location-details .coordinates,

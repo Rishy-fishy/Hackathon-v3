@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { IoReloadOutline, IoDocumentTextOutline, IoSearchOutline } from 'react-icons/io5';
 import './ViewData.css'; // Reuse ViewData styles
 import Modal from './Modal';
 import { listChildRecords } from '../offline/db';
 
 const Records = () => {
+  const { t } = useTranslation();
   const [records, setRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -190,9 +193,9 @@ const Records = () => {
       <div className="view-data-container">
         <div className="records">
           <div className="records-header-row">
-            <h2>My Records</h2>
+            <h2>{t('records.my_records')}</h2>
           </div>
-          <div className="empty">Loading your records...</div>
+          <div className="empty"><IoReloadOutline style={{ animation: 'spin 1s linear infinite', marginRight: '0.5rem' }} />{t('common.loading')}</div>
         </div>
       </div>
     );
@@ -203,7 +206,7 @@ const Records = () => {
       <div className="view-data-container">
         <div className="records">
           <div className="records-header-row">
-            <h2>My Records</h2>
+            <h2>{t('records.my_records')}</h2>
           </div>
           <div className="empty">
             <p>Please log in to view your personal records.</p>
@@ -218,7 +221,7 @@ const Records = () => {
     <div className="view-data-container">
       <div className="records">
         <div className="records-header-row">
-          <h2>My Records ({filteredRecords.length})</h2>
+          <h2>{t('records.my_records')} ({filteredRecords.length})</h2>
           {userInfo && (
             <div className="user-info">
               <span>Logged in as: {userInfo.name || 'User'}</span>
@@ -242,18 +245,18 @@ const Records = () => {
         </div>
         
         {filteredRecords.length === 0 && searchTerm && (
-          <div className="empty">No records match your search criteria.</div>
+          <div className="empty"><IoSearchOutline style={{ marginRight: '0.5rem', fontSize: '1.2em' }} />{t('viewdata.no_match')}</div>
         )}
         
         {filteredRecords.length === 0 && !searchTerm && (
-          <div className="empty">You haven't created any records yet. Use "Add Child" to create your first record.</div>
+          <div className="empty"><IoDocumentTextOutline style={{ marginRight: '0.5rem', fontSize: '1.2em' }} />{t('records.no_records_yet')}</div>
         )}
         
         {filteredRecords.length > 0 && (
           <>
             <div className="records-table-header">
               <div className="records-table-header-row">
-                <div className="header-id">Health ID</div>
+                <div className="header-id">{t('fields.health_id')}</div>
                 <div className="header-name">Name</div>
                 <div className="header-age">Age</div>
                 <div className="header-gender">Gender</div>

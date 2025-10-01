@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import  './glass.css';
 import Header from './components/Header';
@@ -11,6 +11,7 @@ import AuthSuccess from './components/AuthSuccess';
 import useConnectivity from './offline/useConnectivity';
 import AdminPage from './components/AdminPage';
 import ChildForm from './offline/ChildForm';
+import i18n from './i18n';
 
 function App() {
   const [activeView, setActiveView] = useState('home'); // 'home' | 'add' | 'view' | 'records' | 'settings'
@@ -23,6 +24,28 @@ function App() {
   const isAuthSuccessRoute = pathname === '/auth-success';
   const isAdminRoute = pathname === '/admin';
 
+  // Initialize language from saved settings
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem('appSettings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        if (settings.language) {
+          const languageMap = {
+            'english': 'en',
+            'hindi': 'hi',
+            'spanish': 'es'
+          };
+          const i18nLanguage = languageMap[settings.language] || 'en';
+          i18n.changeLanguage(i18nLanguage);
+          console.log('App initialized with language:', i18nLanguage);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load language setting:', e);
+    }
+  }, []);
+  
   // Background sync disabled - data only syncs when Upload button is clicked manually
   // useEffect(()=>{ startAutoSync(); },[]);
 

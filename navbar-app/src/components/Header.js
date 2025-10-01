@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { IoLocationOutline, IoCloudUploadOutline, IoReloadOutline } from 'react-icons/io5';
 import './Header.css';
 import Modal from './Modal';
 import ESignetAuth from './ESignetAuth';
@@ -8,6 +10,7 @@ import { listChildRecords, updateChildRecord } from '../offline/db';
 import jsPDF from 'jspdf';
 
 const Header = ({ onActiveViewChange }) => {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -394,7 +397,7 @@ const Header = ({ onActiveViewChange }) => {
             style={{ cursor: 'pointer' }}
             title="Go to homepage"
           >
-            ChildHealthBooklet
+            {t('app.title')}
           </h1>
           {isAuthenticated && (
             <div className="session-inline" title="Session time remaining">{formatRemaining()}</div>
@@ -412,7 +415,7 @@ const Header = ({ onActiveViewChange }) => {
               setShowRecords(false);
               onActiveViewChange && onActiveViewChange(nextAdd ? 'add' : 'home');
             }}
-          >Add Child</button>
+          >{t('common.add_child')}</button>
           <button
             className={`nav-btn ${activeNav==='view'?'active':''}`}
             onClick={()=>{
@@ -422,7 +425,7 @@ const Header = ({ onActiveViewChange }) => {
               setShowChildForm(false);
               onActiveViewChange && onActiveViewChange(nextView ? 'view' : 'home');
             }}
-          >View Data</button>
+          >{t('common.view_data')}</button>
           <button
             className={`nav-btn ${activeNav==='records'?'active':''}`}
             onClick={()=>{ 
@@ -432,7 +435,7 @@ const Header = ({ onActiveViewChange }) => {
               setShowChildForm(false);
               onActiveViewChange && onActiveViewChange(nextRecords ? 'records' : 'home'); 
             }}
-          >Records</button>
+          >{t('common.records')}</button>
           <button
             className={`nav-btn ${activeNav==='settings'?'active':''}`}
             onClick={()=>{ 
@@ -442,9 +445,9 @@ const Header = ({ onActiveViewChange }) => {
               setShowChildForm(false);
               onActiveViewChange && onActiveViewChange(nextSettings ? 'settings' : 'home'); 
             }}
-          >Settings</button>
+          >{t('common.settings')}</button>
           {/* Admin button removed per request */}
-          <button className="profile-btn" onClick={handleProfileClick} aria-label="Profile & Authentication">Profile</button>
+          <button className="profile-btn" onClick={handleProfileClick} aria-label="Profile & Authentication">{t('common.profile')}</button>
         </nav>
   )}
       </div>
@@ -465,7 +468,7 @@ const Header = ({ onActiveViewChange }) => {
                 onActiveViewChange && onActiveViewChange(nextAdd ? 'add' : 'home');
                 setMobileMenuOpen(false); 
               }}
-            >Add Child</button>
+            >{t('common.add_child')}</button>
             <button
               className={`drawer-link ${activeNav==='view'?'active':''}`}
               onClick={()=>{ 
@@ -476,7 +479,7 @@ const Header = ({ onActiveViewChange }) => {
                 onActiveViewChange && onActiveViewChange(nextView ? 'view' : 'home'); 
                 setMobileMenuOpen(false); 
               }}
-            >View Data</button>
+            >{t('common.view_data')}</button>
             <button
               className={`drawer-link ${activeNav==='records'?'active':''}`}
               onClick={()=>{ 
@@ -487,7 +490,7 @@ const Header = ({ onActiveViewChange }) => {
                 onActiveViewChange && onActiveViewChange(nextRecords ? 'records' : 'home'); 
                 setMobileMenuOpen(false); 
               }}
-            >Records</button>
+            >{t('common.records')}</button>
             <button
               className={`drawer-link ${activeNav==='settings'?'active':''}`}
               onClick={()=>{ 
@@ -498,9 +501,9 @@ const Header = ({ onActiveViewChange }) => {
                 onActiveViewChange && onActiveViewChange(nextSettings ? 'settings' : 'home'); 
                 setMobileMenuOpen(false); 
               }}
-            >Settings</button>
+            >{t('common.settings')}</button>
             {/* Admin drawer link removed per request */}
-            <button className="drawer-link" onClick={()=>{ handleProfileClick(); setMobileMenuOpen(false); }}>Profile</button>
+            <button className="drawer-link" onClick={()=>{ handleProfileClick(); setMobileMenuOpen(false); }}>{t('common.profile')}</button>
           </div>
         </div>
       )}
@@ -516,7 +519,7 @@ const Header = ({ onActiveViewChange }) => {
         {isLoading ? (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
             <div className="loading-spinner" style={{ margin: '0 auto 1rem' }}></div>
-            <p>Loading...</p>
+            <p><IoReloadOutline style={{ animation: 'spin 1s linear infinite', marginRight: '0.5rem' }} />{t('common.loading')}</p>
           </div>
         ) : isAuthenticated && userInfo ? (
           <div className="user-profile sketch-layout">
@@ -543,7 +546,7 @@ const Header = ({ onActiveViewChange }) => {
                 <span className="info-label">Location:</span>
                 <span className="info-value location-info">
                   {locationLoading ? (
-                    <span className="location-loading">📍 Getting location...</span>
+                    <span className="location-loading"><IoLocationOutline /> Getting location...</span>
                   ) : location ? (
                     <div className="location-details">
                       <div className="location-city">{location.source}</div>
