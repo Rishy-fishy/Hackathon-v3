@@ -58,7 +58,7 @@ const resources = {
         health_id: 'Health ID',
         status: 'Status',
         uploaded: 'UPLOADED',
-        no_records_yet: 'You haven\'t created any records yet. Use "Add Child" to create your first record.'
+        no_records_yet: 'No records available'
       },
       settings: {
         title: 'Settings',
@@ -176,7 +176,7 @@ const resources = {
         health_id: 'स्वास्थ्य आईडी',
         status: 'स्थिति',
         uploaded: 'अपलोड हो गया',
-        no_records_yet: 'आपने अभी तक कोई रिकॉर्ड नहीं बनाया है। अपना पहला रिकॉर्ड बनाने के लिए "बच्चा जोड़ें" का उपयोग करें।'
+        no_records_yet: 'कोई रिकॉर्ड उपलब्ध नहीं'
       },
       settings: {
         title: 'सेटिंग्स',
@@ -294,7 +294,7 @@ const resources = {
         health_id: 'ID de Salud',
         status: 'Estado',
         uploaded: 'SUBIDO',
-        no_records_yet: 'Aún no has creado ningún registro. Usa "Agregar Niño" para crear tu primer registro.'
+        no_records_yet: 'No hay registros disponibles'
       },
       settings: {
         title: 'Configuraciones',
