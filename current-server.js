@@ -332,6 +332,81 @@ app.get('/api/admin/children', async (req,res)=>{
   }
 });
 
+// Get user-specific child records (for authenticated users)
+app.get('/api/user/records', async (req,res)=>{
+  try {
+    // Get user identification from query params (sent by frontend)
+    const { userEmail, userName, userPhone, individualId } = req.query;
+    
+    if (!userEmail && !userName && !userPhone && !individualId) {
+      return res.status(400).json({ 
+        error: 'missing_user_identification', 
+        message: 'At least one user identifier (email, name, phone, or individualId) is required' 
+      });
+    }
+    
+    await initMongo(); 
+    if(!mongoDb) return res.json({ records:[], total:0, warning:'mongo_disabled' });
+    
+    const col = mongoDb.collection('child_records');
+    
+    // Build query to match records uploaded by this user
+    const query = { $or: [] };
+    
+    if (userEmail) {
+      query.$or.push(
+        { uploaderEmail: userEmail },
+        { uploadedBy: userEmail }
+      );
+    }
+    
+    if (userName) {
+      query.$or.push(
+        { uploaderName: userName },
+        { representative: userName },
+        { uploadedBy: userName }
+      );
+    }
+    
+    if (userPhone) {
+      query.$or.push(
+        { uploaderPhone: userPhone },
+        { uploadedBy: userPhone }
+      );
+    }
+    
+    if (individualId) {
+      query.$or.push(
+        { uploaderIndividualId: individualId },
+        { uploadedBy: individualId }
+      );
+    }
+    
+    // If no conditions were added, return empty results
+    if (query.$or.length === 0) {
+      return res.json({ records: [], total: 0, message: 'No user identification provided' });
+    }
+    
+    console.log(`[user/records] Querying records for user: ${userEmail || userName || userPhone || individualId}`);
+    
+    const limit = Math.min(parseInt(req.query.limit)||1000, 1000);
+    const offset = parseInt(req.query.offset)||0;
+    
+    const records = await col.find(query, { 
+      projection:{ _id:0 } 
+    }).sort({ uploadedAt:-1 }).skip(offset).limit(limit).toArray();
+    
+    const total = await col.countDocuments(query);
+    
+    console.log(`[user/records] Found ${records.length} records (total: ${total}) for user`);
+    
+    res.json({ records, total, limit, offset });
+  } catch(e){ 
+    console.error('[user/records] Error:', e.message);
+    res.status(500).json({ error:'fetch_failed', message:e.message }); 
+  }
+});
+
 // Update child record
 app.put('/api/admin/child/:id', async (req,res)=>{
   try {

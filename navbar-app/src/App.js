@@ -11,7 +11,6 @@ import AuthSuccess from './components/AuthSuccess';
 import useConnectivity from './offline/useConnectivity';
 import { startAutoSync } from './offline/sync';
 import AdminPage from './components/AdminPage';
-import { themeManager } from './utils/themeManager';
 import ChildForm from './offline/ChildForm';
 
 function App() {

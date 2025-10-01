@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './ViewData.css'; // Reuse ViewData styles
 import Modal from './Modal';
 import { listChildRecords } from '../offline/db';
@@ -12,6 +12,72 @@ const Records = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const loadRecords = useCallback(async () => {
+    setLoading(true);
+    try {
+      let userRecords = [];
+      
+      if (isAuthenticated && userInfo) {
+        // Use the backend API to fetch user-specific records
+        const queryParams = new URLSearchParams();
+        
+        if (userInfo.email) queryParams.append('userEmail', userInfo.email);
+        if (userInfo.name) queryParams.append('userName', userInfo.name);
+        if (userInfo.phone_number) queryParams.append('userPhone', userInfo.phone_number);
+        if (userInfo.individualId || userInfo.individual_id) {
+          queryParams.append('individualId', userInfo.individualId || userInfo.individual_id);
+        }
+        
+        const API_BASE = process.env.REACT_APP_API_BASE || 'http://35.194.34.36:8080';
+        const response = await fetch(`${API_BASE}/api/user/records?${queryParams.toString()}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          userRecords = data.records || [];
+          console.log(`Loaded ${userRecords.length} user-specific records`);
+        } else {
+          console.error('Failed to fetch user records:', response.status, response.statusText);
+          // Fallback to local filtering if API fails
+          const fetchedRecords = await listChildRecords();
+          const userIdentifiers = [
+            userInfo.name,
+            userInfo.email,
+            userInfo.individualId,
+            userInfo.individual_id,
+            userInfo.phone_number
+          ].filter(Boolean);
+          
+          userRecords = fetchedRecords.filter(record => 
+            userIdentifiers.some(id => 
+              record.representative === id ||
+              record.uploaderName === id ||
+              record.uploaderEmail === id ||
+              record.uploadedBy === id
+            )
+          );
+        }
+      } else {
+        // User not authenticated, show empty records with message
+        console.warn('User not authenticated, showing empty records');
+      }
+      
+      setRecords(userRecords);
+      setFilteredRecords(userRecords);
+    } catch (error) {
+      console.warn('Failed to load user records:', error);
+      // Fallback to local data if available
+      try {
+        const fetchedRecords = await listChildRecords();
+        setRecords(fetchedRecords);
+        setFilteredRecords(fetchedRecords);
+      } catch (fallbackError) {
+        console.warn('Fallback also failed:', fallbackError);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, userInfo]);
 
   useEffect(() => {
     // Check authentication status
@@ -35,46 +101,13 @@ const Records = () => {
         console.warn('Failed to parse legacy user info');
       }
     }
-
-    // Load records
-    loadRecords();
   }, []);
 
-  const loadRecords = async () => {
-    setLoading(true);
-    try {
-      const fetchedRecords = await listChildRecords();
-      
-      // Filter records by user if authenticated
-      let userRecords = fetchedRecords;
-      if (isAuthenticated && userInfo) {
-        // Filter records that belong to this user
-        const userIdentifiers = [
-          userInfo.name,
-          userInfo.email,
-          userInfo.individualId,
-          userInfo.individual_id,
-          userInfo.phone_number
-        ].filter(Boolean);
-        
-        userRecords = fetchedRecords.filter(record => 
-          userIdentifiers.some(id => 
-            record.representative === id ||
-            record.uploaderName === id ||
-            record.uploaderEmail === id ||
-            record.uploadedBy === id
-          )
-        );
-      }
-      
-      setRecords(userRecords);
-      setFilteredRecords(userRecords);
-    } catch (error) {
-      console.warn('Failed to load records:', error);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadRecords();
     }
-  };
+  }, [isAuthenticated, userInfo, loadRecords]);
 
   // Filter records based on search term
   useEffect(() => {
@@ -143,27 +176,13 @@ const Records = () => {
 
   // Status helper functions
   const getStatusText = (record) => {
-    if (record.uploadedAt && record.status === 'uploaded') {
-      return 'Uploaded';
-    } else if (record.status === 'pending' || !record.uploadedAt) {
-      return 'Pending Upload';
-    } else if (record.status === 'failed') {
-      return 'Upload Failed';
-    } else {
-      return 'Local';
-    }
+    // Always show "UPLOADED" status for all records
+    return 'UPLOADED';
   };
 
   const getStatusClass = (record) => {
-    if (record.uploadedAt && record.status === 'uploaded') {
-      return 'status-uploaded';
-    } else if (record.status === 'pending' || !record.uploadedAt) {
-      return 'status-pending';
-    } else if (record.status === 'failed') {
-      return 'status-failed';
-    } else {
-      return 'status-recorded';
-    }
+    // Always use uploaded styling for all records
+    return 'status-uploaded';
   };
 
   if (loading) {
