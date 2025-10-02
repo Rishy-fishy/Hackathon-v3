@@ -1,5 +1,4 @@
 import React from 'react';
-import { IoWarningOutline } from 'react-icons/io5';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -34,7 +33,7 @@ class ErrorBoundary extends React.Component {
           margin: '10px 0'
         }}>
           <h3 style={{ color: '#d63031', margin: '0 0 10px 0' }}>
-            <IoWarningOutline style={{ marginRight: '0.5rem' }} />Something went wrong
+            ⚠️ Something went wrong
           </h3>
           <p style={{ margin: '0 0 10px 0', color: '#2d3436' }}>
             The authentication component encountered an error. Please try refreshing the page.

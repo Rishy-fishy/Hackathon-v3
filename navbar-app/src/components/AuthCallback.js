@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { IoLockClosedOutline, IoCheckmarkCircleOutline, IoCloseCircleOutline } from 'react-icons/io5';
 import './AuthCallback.css';
 
 const AuthCallback = () => {
@@ -149,14 +148,14 @@ const AuthCallback = () => {
         {status === 'processing' && (
           <div className="processing">
             <div className="spinner"></div>
-            <h2><IoLockClosedOutline /> Processing Authentication...</h2>
+            <h2>🔐 Processing Authentication...</h2>
             <p>Please wait while we verify your credentials...</p>
           </div>
         )}
 
         {status === 'success' && userInfo && (
           <div className="success">
-            <div className="success-icon"><IoCheckmarkCircleOutline /></div>
+            <div className="success-icon">✅</div>
             <h2>Welcome, {userInfo.name}!</h2>
             <div className="user-details">
               <p><strong>Email:</strong> {userInfo.email}</p>
@@ -172,7 +171,7 @@ const AuthCallback = () => {
 
         {status === 'error' && (
           <div className="error">
-            <div className="error-icon"><IoCloseCircleOutline /></div>
+            <div className="error-icon">❌</div>
             <h2>Authentication Failed</h2>
             <p className="error-message">{error}</p>
             <div className="redirect-message">

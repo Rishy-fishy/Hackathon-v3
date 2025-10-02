@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../offline/db';
 import jsPDF from 'jspdf';
-import { IoSettingsOutline, IoNotificationsOutline, IoInformationCircleOutline, IoMoonOutline, IoSunnyOutline, IoDocumentTextOutline, IoHelpCircleOutline, IoMailOutline } from 'react-icons/io5';
+import { IoSettingsOutline, IoNotificationsOutline, IoInformationCircleOutline, IoMoonOutline, IoSunnyOutline } from 'react-icons/io5';
 import { themeManager } from '../utils/themeManager';
-import i18n from '../i18n';
 import './settings.css';
 
 const Settings = ({ onClose }) => {
@@ -59,26 +58,6 @@ const Settings = ({ onClose }) => {
     // Apply theme immediately if it's a theme change
     if (key === 'theme') {
       try { themeManager.setTheme(value); } catch(e){ console.error('Theme apply error', e); }
-    }
-    
-    // Apply language change immediately
-    if (key === 'language') {
-      try {
-        const languageMap = {
-          'english': 'en',
-          'hindi': 'hi', 
-          'spanish': 'es'
-        };
-        const i18nLanguage = languageMap[value] || 'en';
-        console.log(`Changing i18n language from ${i18n.language} to: ${i18nLanguage}`);
-        i18n.changeLanguage(i18nLanguage).then(() => {
-          console.log('Language changed successfully to:', i18n.language);
-          // Force page refresh to ensure all components re-render with new language
-          window.location.reload();
-        });
-      } catch(e) { 
-        console.error('Language change error:', e); 
-      }
     }
   };
 
@@ -372,7 +351,7 @@ const Settings = ({ onClose }) => {
               </div>
               <div className="setting-controls">
                 <button className="action-btn export-btn" onClick={handleExportPDF}>
-                  <IoDocumentTextOutline style={{ marginRight: '0.5rem' }} />Export PDF
+                  📄 Export PDF
                 </button>
               </div>
             </div>
@@ -410,7 +389,7 @@ const Settings = ({ onClose }) => {
               </div>
               <div className="setting-controls">
                 <button className="action-btn help-btn" onClick={() => alert('Opening help documentation...')}>
-                  <IoHelpCircleOutline style={{ marginRight: '0.5rem' }} />Help
+                  📄 Help
                 </button>
               </div>
             </div>
@@ -422,7 +401,7 @@ const Settings = ({ onClose }) => {
               </div>
               <div className="setting-controls">
                 <button className="action-btn contact-btn" onClick={() => alert('Opening contact form...')}>
-                  <IoMailOutline style={{ marginRight: '0.5rem' }} />Contact
+                  ✉️ Contact
                 </button>
               </div>
             </div>
