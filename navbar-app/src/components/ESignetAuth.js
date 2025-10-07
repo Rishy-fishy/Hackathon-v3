@@ -14,8 +14,8 @@ const ESignetAuth = () => {
   // We standardize on the CLOUD callback http://34.58.198.143:5000/callback (node callback-server.js) then it
   // forwards the browser back to the React app at /?authenticated=true after storing tokens.
   // Build OIDC config dynamically using backend metadata for client_id
-  // Hardcoded client ID from cloud registration
-  const clientId = 'GB19lXsMS9kvtY0pRGlsEXNVY1-46IlmfE5IW9z2JrI';
+  // Updated client ID from successful registration
+  const clientId = '08d8YsjGpeo6kOfoVZYJsMpHGZy1vVOai1Njz8AzZk8';
   const authorizeUri = 'http://34.58.198.143:3000/authorize';
   const oidcConfig = useMemo(() => ({
     authorizeUri,

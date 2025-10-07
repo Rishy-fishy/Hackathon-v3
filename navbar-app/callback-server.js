@@ -22,8 +22,8 @@ const AUTHORIZE_URI = process.env.AUTHORIZE_URI || 'http://34.58.198.143:3000/au
 
 // ---- MongoDB Setup (simple singleton connection) ----
 // Environment variables or fallbacks
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://harshbontala188:8I52Oqeh3sWYTDJ7@cluster0.5lsiap2.mongodb.net/childBooklet?retryWrites=true&w=majority&appName=Cluster0';
-const MONGO_DB = process.env.MONGO_DB || 'childBooklet';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
+const MONGO_DB = process.env.MONGO_DB || 'nutrition_app';
 const NO_MONGO = (process.env.NO_MONGO || '').toLowerCase() === '1' || (process.env.NO_MONGO || '').toLowerCase() === 'true';
 let mongoClient; // will hold connected client
 let mongoDb; // db instance
@@ -106,7 +106,7 @@ function generateClientAssertion(clientId, audience) {
   const payload = {
     iss: clientId || clientConfig.clientId,
     sub: clientId || clientConfig.clientId,
-    aud: audience || `${clientConfig.baseURL}/v1/esignet/oauth/v2/token`,
+    aud: audience || 'http://localhost:8088/v1/esignet/oauth/v2/token', // eSignet expects localhost in JWT audience
     jti: jti,
     exp: now + 300, // 5 minutes from now
     iat: now
@@ -467,101 +467,6 @@ app.post('/exchange-token', async (req, res) => {
   }
 });
 
-// Enhanced userInfo endpoint to extract individual ID from mock identity system
-app.post('/auth/esignet', async (req, res) => {
-  try {
-    const { userInfo } = req.body;
-    console.log('🔄 Enhancing userInfo with individual ID...');
-    console.log('📋 Received userInfo:', userInfo);
-    
-    let enhancedUser = { ...userInfo };
-    
-    // Try to extract individual ID from various sources
-    if (userInfo.sub) {
-      try {
-        // First, try to decode the sub field if it contains the individual ID
-        // The sub might be base64 encoded or contain the individualId directly
-        
-        // Check if sub is a direct individual ID (10-digit number)
-        if (/^\d{10}$/.test(userInfo.sub)) {
-          enhancedUser.individualId = userInfo.sub;
-          console.log('✅ Individual ID found in sub field:', userInfo.sub);
-        } else {
-          // Try to extract from mock identity system using sub as identifier
-          console.log('🔍 Attempting to fetch from mock identity system...');
-          
-          // Try common individual IDs from our database
-          const knownIds = ['7003476853', '9392351645', '8777782136', '9069197741', '1234567890'];
-          
-          for (const id of knownIds) {
-            try {
-              const mockResponse = await fetch(`http://localhost:8082/v1/mock-identity-system/identity/${id}`);
-              if (mockResponse.ok) {
-                const mockData = await mockResponse.json();
-                
-                // Check if this identity matches the user (by email or phone)
-                if (mockData.response) {
-                  const identity = mockData.response;
-                  const userEmail = userInfo.email?.toLowerCase();
-                  const userPhone = userInfo.phone_number;
-                  
-                  if ((userEmail && identity.email?.toLowerCase() === userEmail) || 
-                      (userPhone && identity.phone === userPhone)) {
-                    enhancedUser.individualId = identity.individualId;
-                    enhancedUser.fullName = identity.fullName;
-                    console.log('✅ Found matching individual ID:', identity.individualId);
-                    break;
-                  }
-                }
-              }
-            } catch (err) {
-              console.warn('⚠️ Error checking individual ID', id, ':', err.message);
-            }
-          }
-          
-          // If still no individual ID found, try to extract from sub field patterns
-          if (!enhancedUser.individualId) {
-            // Try base64 decode
-            try {
-              const decoded = Buffer.from(userInfo.sub, 'base64').toString('utf-8');
-              const idMatch = decoded.match(/\d{10}/);
-              if (idMatch) {
-                enhancedUser.individualId = idMatch[0];
-                console.log('✅ Individual ID extracted from base64 sub:', idMatch[0]);
-              }
-            } catch (e) {
-              console.log('ℹ️ Sub field is not base64 encoded');
-            }
-          }
-        }
-      } catch (error) {
-        console.warn('⚠️ Error processing sub field:', error.message);
-      }
-    }
-    
-    // If still no individual ID, use a fallback
-    if (!enhancedUser.individualId) {
-      console.log('⚠️ No individual ID found, using sub as fallback');
-      enhancedUser.individualId = userInfo.sub;
-    }
-    
-    console.log('✅ Enhanced user data:', enhancedUser);
-    
-    res.json({
-      success: true,
-      user: enhancedUser,
-      token: req.body.id_token // Return the token if provided
-    });
-    
-  } catch (error) {
-    console.error('❌ Error enhancing userInfo:', error);
-    res.status(500).json({ 
-      error: 'Failed to enhance user info', 
-      details: error.message 
-    });
-  }
-});
-
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', port: port, mongo: !!mongoDb });
@@ -639,7 +544,7 @@ function extractUploaderInfo(req) {
 // Adds uploader attribution (name, sub) and writes to MongoDB.
 app.post('/api/child/batch', async (req, res) => {
   try {
-    const { records, uploaderName, uploaderLocation } = req.body;
+    const { records, uploaderName } = req.body;
     if (!Array.isArray(records) || !records.length) {
       return res.status(400).json({ error: 'No records provided' });
     }
@@ -672,8 +577,6 @@ app.post('/api/child/batch', async (req, res) => {
         weightKg: r.weightKg ?? null,
         heightCm: r.heightCm ?? null,
         guardianName: r.guardianName || null,
-        guardianPhone: r.guardianPhone || null,
-        guardianRelation: r.guardianRelation || null,
         malnutritionSigns: r.malnutritionSigns || null,
         recentIllnesses: r.recentIllnesses || null,
         parentalConsent: !!r.parentalConsent,
@@ -682,23 +585,9 @@ app.post('/api/child/batch', async (req, res) => {
         createdAt: r.createdAt || now,
         uploadedAt: now,
         uploaderName: uploaderName || (uploader.claims && (uploader.claims.name || uploader.claims.preferred_username)) || null,
-        uploaderEmail: (uploader.claims && uploader.claims.email) || null,
-        uploaderSub: (uploader.claims && uploader.claims.sub) || null,
-        // Add location data from authenticated user
-        uploaderLocation: uploaderLocation ? {
-          source: uploaderLocation.source || null,
-          city: uploaderLocation.city || null,
-          state: uploaderLocation.state || null,
-          country: uploaderLocation.country || null,
-          coordinates: uploaderLocation.coordinates || null,
-          accuracy: uploaderLocation.accuracy || null,
-          timestamp: uploaderLocation.timestamp || new Date().toISOString(),
-          area: uploaderLocation.area || null,
-          street: uploaderLocation.street || null,
-          postcode: uploaderLocation.postcode || null
-        } : null,
+  uploaderSub: (uploader.claims && uploader.claims.sub) || null,
         source: 'offline_sync',
-        version: r.version || 2
+        version: r.version || 1
       });
     }
 
