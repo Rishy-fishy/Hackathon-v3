@@ -99,69 +99,276 @@ This project implements an eSignet-based authentication system with a React fron
 - npm or yarn package manager
 - Git for version control
 
-### Installation Steps
-1. **Clone Repository**:
-   ```bash
-   git clone https://github.com/Rishy-fishy/Hackathon-v3.git
-   cd Hackathon-v3/navbar-app
-   ```
+> **📌 Important Note:** 
+> The **Backend API** and **Callback Server** are already deployed and running on Google Cloud Platform.
+> For local development, you only need to run the **React Frontend**.
+> 
+> - Backend API: `https://navbar-backend-clean-87485236346.us-central1.run.app`
+> - Callback Server: `http://34.58.198.143:5000`
+> - eSignet Services: `http://34.58.198.143:8088` and `http://34.58.198.143:3000`
 
-2. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
+### Quick Start (Frontend Only)
 
-3. **Environment Configuration**:
-   Create `.env` file with:
-   ```env
-   GENERATE_SOURCEMAP=false
-   ESLINT_NO_DEV_ERRORS=true
-   SKIP_PREFLIGHT_CHECK=true
-   FAST_REFRESH=true
-   ```
+#### 1. Clone Repository
+```bash
+git clone https://github.com/Rishy-fishy/Hackathon-v3.git
+cd Hackathon-v3
+```
 
-4. **Start Development Server**:
-   ```bash
-   npm run start:fast
-   ```
+#### 2. Install Frontend Dependencies
+```bash
+cd navbar-app
+npm install
+```
+
+#### 3. Start React Frontend
+```bash
+npm start
+# App opens at http://localhost:3001
+```
+
+That's it! Your frontend will connect to the cloud-hosted backend services automatically.
+
+---
+
+### Full Stack Development (Optional - If Running Backend Locally)
+
+> **⚠️ Only needed if you want to run the entire stack locally for development/testing**
+
+#### 1. Clone Repository
+```bash
+git clone https://github.com/Rishy-fishy/Hackathon-v3.git
+cd Hackathon-v3
+```
+
+#### 2. Install All Dependencies
+```bash
+# Frontend
+cd navbar-app
+npm install
+
+# Backend
+cd backend
+npm install
+```
+
+#### 4. Configure Environment Variables
+
+**Frontend (.env in navbar-app/):**
+```env
+GENERATE_SOURCEMAP=false
+ESLINT_NO_DEV_ERRORS=true
+SKIP_PREFLIGHT_CHECK=true
+FAST_REFRESH=true
+# Backend API is already running on Google Cloud - no need to change this
+REACT_APP_API_BASE=https://navbar-backend-clean-87485236346.us-central1.run.app
+```
+
+**Backend (.env in navbar-app/backend/) - ONLY IF RUNNING LOCALLY:**
+```env
+MONGO_URI=mongodb+srv://harshbontala188:8I52Oqeh3sWYTDJ7@cluster0.5lsiap2.mongodb.net/childBooklet?retryWrites=true&w=majority&appName=Cluster0
+MONGO_DB=childBooklet
+PORT=8080
+ADMIN_JWT_SECRET=your-secret-key-here
+ADMIN_USERNAME=Admin
+ADMIN_PASSWORD_HASH=$2b$10$qLkUZJhrTncH0VMlJhmvGOji9VfmYZZkY0wRLo8GYENzHp229R8iy
+```
+
+**Callback Server - ONLY IF RUNNING LOCALLY:**
+```bash
+export MONGO_URI="mongodb+srv://harshbontala188:8I52Oqeh3sWYTDJ7@cluster0.5lsiap2.mongodb.net/childBooklet?retryWrites=true&w=majority&appName=Cluster0"
+export MONGO_DB="nutrition_app"
+export PORT=5000
+```
+
+#### 5. Start Services
+
+**For Normal Development (Recommended):**
+```bash
+# Only start the React Frontend
+cd navbar-app
+npm start
+# App opens at http://localhost:3001
+# It will automatically connect to cloud-hosted backend
+```
+
+**For Full Local Stack (Advanced):**
+
+Terminal 1 - Backend API:
+```bash
+cd navbar-app/backend
+npm start
+# Server runs on http://localhost:8080
+# Update REACT_APP_API_BASE to http://localhost:8080 in .env
+```
+
+Terminal 2 - Callback Server:
+```bash
+cd navbar-app
+node callback-server.js
+# Server runs on http://localhost:5000
+```
+
+Terminal 3 - React Frontend:
+```bash
+cd navbar-app
+npm start
+# App opens at http://localhost:3001
+```
+
+### Production Build
+
+```bash
+# Build the React app
+cd navbar-app
+npm run build
+
+# Serve the production build
+npx serve -s build -p 3001
+
+# Start backend in production mode
+cd backend
+npm start
+
+# Start callback server in background
+nohup node callback-server.js > server.out 2>&1 &
+```
 
 ## 📝 Available Scripts
 
-- `npm start` - Start development server (port 3001)
+### Frontend (navbar-app/)
+- `npm start` - Start development server (port 3001) - **This is all you need for local development!**
 - `npm run start:fast` - Start with performance optimizations
 - `npm run build` - Build production bundle
 - `npm test` - Run test suite
+- `npm run eject` - Eject from Create React App (irreversible)
+
+### Backend (navbar-app/backend/) - **Already Running on Google Cloud**
+> ℹ️ The backend is deployed at: `https://navbar-backend-clean-87485236346.us-central1.run.app`
+> 
+> Local execution only needed for backend development:
+- `npm start` - Start production server (port 8080)
+- `npm run dev` - Start with auto-reload using nodemon
+- `npm test` - Run tests (if configured)
+
+### Callback Server (navbar-app/) - **Already Running on Google Cloud**
+> ℹ️ The callback server is deployed at: `http://34.58.198.143:5000`
+> 
+> Local execution only needed for OAuth flow testing:
+- `node callback-server.js` - Start callback server (port 5000)
+- MongoDB connection required for full functionality
 
 ## 🔧 Cloud Server Management
 
 ### SSH Access
 ```bash
+# Using gcloud CLI
 gcloud compute ssh hackathon-v3-vm --zone=us-central1-a
+
+# Or specify project
+gcloud compute ssh hackathon-v3-vm --project=hackathon-v3-docker --zone=us-central1-a
 ```
 
-### Service Management
+### Callback Server Management
+
+**Check Status:**
 ```bash
-# Check callback server status
 ps aux | grep callback-server
-
-# Restart callback server
-pkill -f callback-server.js
-cd ~/Hackathon-v3/navbar-app
-NO_MONGO=1 nohup node callback-server.js > server.out 2>&1 &
-
-# Check Docker services
-docker ps
-docker-compose logs -f
+# or
+ps aux | grep "node callback"
 ```
 
-### Log Monitoring
+**Start Callback Server:**
 ```bash
-# Callback server logs
-tail -f ~/Hackathon-v3/navbar-app/server.out
+# Navigate to app directory
+cd /home/Harsh/Hackathon-v3/navbar-app
 
-# Docker compose logs
+# Start in foreground (for testing)
+node callback-server.js
+
+# Start in background (production)
+nohup node callback-server.js > server.out 2>&1 &
+
+# Start with MongoDB connection
+export MONGO_URI=$(cat /home/Harsh/Hackathon-v3/mongo-uri.txt)
+export MONGO_DB=nutrition_app
+nohup node callback-server.js > server.out 2>&1 &
+```
+
+**Restart Callback Server:**
+```bash
+# Kill existing process
+pkill -f callback-server.js
+# or
+sudo pkill -f "node callback-server"
+
+# Wait a moment
+sleep 2
+
+# Start again
+cd /home/Harsh/Hackathon-v3/navbar-app
+nohup node callback-server.js > server.out 2>&1 &
+```
+
+**View Logs:**
+```bash
+# Real-time logs
+tail -f /home/Harsh/Hackathon-v3/navbar-app/server.out
+
+# Last 50 lines
+tail -50 /home/Harsh/Hackathon-v3/navbar-app/server.out
+
+# View with sudo if permission denied
+sudo tail -f /home/Harsh/Hackathon-v3/navbar-app/server.out
+```
+
+### Docker Services Management
+
+**Check Docker Status:**
+```bash
+# List running containers
+docker ps
+
+# List all containers (including stopped)
+docker ps -a
+
+# Check specific container logs
+docker logs docker-compose-esignet-1
+docker logs docker-compose-esignet-ui-1
+```
+
+**Start/Stop Services:**
+```bash
+# Navigate to docker-compose directory
 cd ~/Hackathon-v3/navbar-app/docker-compose
+
+# Start all services
+docker-compose up -d
+
+# Stop all services
+docker-compose down
+
+# Restart specific service
+docker-compose restart esignet
+
+# View logs
 docker-compose logs -f
+
+# View logs for specific service
+docker-compose logs -f esignet
+```
+
+**Service Health Checks:**
+```bash
+# eSignet backend health
+curl http://localhost:8088/actuator/health
+
+# eSignet UI
+curl http://localhost:3000
+
+# Callback server
+curl http://localhost:5000/health
+curl http://localhost:5000/client-meta
 ```
 
 ## 🔍 Troubleshooting

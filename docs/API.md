@@ -3,7 +3,136 @@
 Version: 1.0.0
 Last Updated: 2025-09-28
 
-Overview
+## Quick Start Guide
+
+### Prerequisites
+- Node.js v18.x or higher
+- MongoDB Atlas account (or local MongoDB instance)
+- npm or yarn package manager
+
+### Installation & Setup
+
+#### 1. Backend API Setup
+```bash
+# Navigate to backend directory
+cd navbar-app/backend
+
+# Install dependencies
+npm install
+
+# Set environment variables (create .env file)
+# Add the following to .env:
+# MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/childBooklet
+# PORT=8080
+# ADMIN_JWT_SECRET=your-secret-key
+
+# Start the server
+npm start
+
+# For development (with auto-reload)
+npm run dev
+```
+
+#### 2. Callback Server Setup
+```bash
+# Navigate to navbar-app directory
+cd navbar-app
+
+# Install dependencies
+npm install
+
+# The callback server runs on port 5000 by default
+# Start the callback server
+node callback-server.js
+
+# Or run in background (Linux/Mac)
+nohup node callback-server.js > server.out 2>&1 &
+
+# Or run in background (Windows PowerShell)
+Start-Process node -ArgumentList "callback-server.js" -WindowStyle Hidden
+```
+
+#### 3. React Frontend Setup
+```bash
+# Navigate to navbar-app directory (if not already there)
+cd navbar-app
+
+# Install dependencies (if not done already)
+npm install
+
+# Start the development server
+npm start
+
+# Build for production
+npm run build
+```
+
+### Environment Variables
+
+#### Backend API (.env)
+```env
+MONGO_URI=mongodb+srv://your-connection-string
+MONGO_DB=childBooklet
+PORT=8080
+ADMIN_JWT_SECRET=your-secret-key
+ADMIN_USERNAME=Admin
+ADMIN_PASSWORD_HASH=your-bcrypt-hash
+
+# PostgreSQL (optional, for identity system)
+PG_HOST=localhost
+PG_PORT=5455
+PG_USER=postgres
+PG_PASSWORD=postgres
+PG_DB_IDENTITY=mosip_mockidentitysystem
+```
+
+#### Callback Server
+```env
+PORT=5000
+MONGO_URI=mongodb+srv://your-connection-string
+MONGO_DB=nutrition_app
+NO_MONGO=false
+SPA_BASE_URL=http://localhost:3001
+CALLBACK_BASE_URL=http://your-server:5000
+```
+
+### Starting All Services
+
+#### Development Mode
+```bash
+# Terminal 1: Start Backend API
+cd navbar-app/backend
+npm run dev
+
+# Terminal 2: Start Callback Server
+cd navbar-app
+node callback-server.js
+
+# Terminal 3: Start React Frontend
+cd navbar-app
+npm start
+```
+
+#### Production Mode
+```bash
+# Backend API
+cd navbar-app/backend
+npm start
+
+# Callback Server (background)
+cd navbar-app
+nohup node callback-server.js > server.out 2>&1 &
+
+# Frontend (build and serve)
+cd navbar-app
+npm run build
+# Serve the build folder with a static server (e.g., nginx, serve)
+npx serve -s build -p 3001
+```
+
+---
+
+## Overview
 - This document specifies the HTTP APIs for the ChildHealthBooklet system.
 - The system comprises:
   - Backend API (primary data and admin endpoints)
