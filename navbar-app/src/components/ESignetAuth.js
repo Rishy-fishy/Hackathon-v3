@@ -27,7 +27,15 @@ const ESignetAuth = () => {
     // MUST match the registered redirect in the Authorization Server
     redirect_uri: 'http://34.58.198.143:5000/callback',
     scope: 'openid profile',
-    ui_locales: 'en'
+    ui_locales: 'en',
+    // REQUIRED: nonce parameter for security (prevents replay attacks)
+    nonce: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+    // REQUIRED: acr_values for authentication context
+    acr_values: 'mosip:idp:acr:generated-code',
+    // REQUIRED: response_type for authorization code flow
+    response_type: 'code',
+    // REQUIRED: state parameter for CSRF protection
+    state: Math.random().toString(36).substring(2, 15)
   }), [authorizeUri, clientId]);
 
   const buttonConfig = useMemo(() => ({

@@ -179,6 +179,40 @@ app.get('/api/child/search', async (req,res)=>{
   } catch (e){ res.status(500).json({ error:'search_failed', message:e.message }); }
 });
 
+// PDF generation endpoint for child health records
+app.get('/api/child/:healthId/pdf', async (req,res)=>{
+  try {
+    if(!MONGO_URI) return res.status(503).json({ error:'mongo_disabled' });
+    const { healthId } = req.params;
+    const database = await getDb();
+    const col = database.collection('child_records');
+    const record = await col.findOne({ healthId });
+    if(!record) return res.status(404).json({ error:'not_found', message:`No record found for ${healthId}` });
+    
+    // Generate simple HTML-based PDF response (can be enhanced with a proper PDF library later)
+    // For now, return JSON that the frontend can use to generate PDF client-side
+    res.json({ 
+      success: true, 
+      record: {
+        healthId: record.healthId,
+        name: record.name || '',
+        guardianName: record.guardianName || record.fatherName || '',
+        dateOfBirth: record.dateOfBirth || '',
+        ageMonths: record.ageMonths || '',
+        guardianPhone: record.guardianPhone || record.mobile || '',
+        idReference: record.idReference || record.aadhaar || '',
+        gender: record.gender || '',
+        weightKg: record.weightKg || record.weight || '',
+        heightCm: record.heightCm || record.height || '',
+        malnutritionSigns: record.malnutritionSigns || '',
+        recentIllnesses: record.recentIllnesses || '',
+        uploaderName: record.uploaderName || '',
+        uploadedAt: record.uploadedAt || ''
+      }
+    });
+  } catch (e){ res.status(500).json({ error:'pdf_failed', message:e.message }); }
+});
+
 app.get('/health', (req,res)=> res.json({ status:'ok', time: Date.now() }));
 
 // Debug route to inspect received headers (remove in production)

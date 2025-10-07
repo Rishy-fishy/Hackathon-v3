@@ -103,10 +103,11 @@ function generateClientAssertion(clientId, audience) {
   const now = Math.floor(Date.now() / 1000);
   const jti = crypto.randomBytes(16).toString('hex');
   
+  // eSignet backend REQUIRES localhost in the aud claim, not the actual IP
   const payload = {
     iss: clientId || clientConfig.clientId,
     sub: clientId || clientConfig.clientId,
-    aud: audience || 'http://localhost:8088/v1/esignet/oauth/v2/token', // eSignet expects localhost in JWT audience
+    aud: 'http://localhost:8088/v1/esignet/oauth/v2/token', // Must be localhost, not IP
     jti: jti,
     exp: now + 300, // 5 minutes from now
     iat: now

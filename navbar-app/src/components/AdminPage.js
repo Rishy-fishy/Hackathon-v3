@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './AdminPage.css';
+import jsPDF from 'jspdf';
 // Core MUI components
 import {
   Box,
@@ -396,11 +397,77 @@ export default function AdminPage() {
   const trendPolyline = trendPoints.map((p,i)=>`${(i/(trendPoints.length-1))*100},${100 - p}`).join(' ');
   const trendAreaPath = `M0,100 L${trendPolyline.replace(/ /g,' L')} L100,100 Z`;
 
-  const handleDownload = (e) => {
+  const handleDownload = async (e) => {
     e.preventDefault();
     if(!downloadHealthId.trim()) return;
-    // Placeholder implementation – real implementation would request a PDF endpoint.
-    alert(`Download for Health ID: ${downloadHealthId} (placeholder)`);
+    
+    try {
+      // Fetch record data from MongoDB via backend API
+      const response = await fetch(`${API_BASE}/api/child/${encodeURIComponent(downloadHealthId.trim())}/pdf`);
+      
+      if (response.status === 404) {
+        alert(`No record found for Health ID: ${downloadHealthId}`);
+        return;
+      }
+      
+      if (!response.ok) {
+        alert('Failed to fetch record. Please try again.');
+        return;
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success || !data.record) {
+        alert('Invalid response from server');
+        return;
+      }
+      
+      // Generate PDF client-side using jsPDF
+      const doc = new jsPDF();
+      const record = data.record;
+      
+      // Title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Child Health Record', 105, 20, { align: 'center' });
+      
+      // Content
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      let y = 40;
+      const lineHeight = 10;
+      
+      const fields = [
+        ['Health ID:', record.healthId],
+        ['Name:', record.name],
+        ["Father's Name:", record.guardianName],
+        ['Date of Birth:', record.dateOfBirth || (record.ageMonths ? `${record.ageMonths} months old` : '—')],
+        ['Mobile:', record.guardianPhone],
+        ['Aadhaar No.:', record.idReference],
+        ['Gender:', record.gender],
+        ['Weight (kg):', record.weightKg],
+        ['Height (cm):', record.heightCm],
+        ['Malnutrition Signs:', Array.isArray(record.malnutritionSigns) ? record.malnutritionSigns.join(', ') : record.malnutritionSigns],
+        ['Recent Illnesses:', record.recentIllnesses],
+        ['Uploaded By:', record.uploaderName],
+        ['Uploaded At:', record.uploadedAt ? new Date(record.uploadedAt).toLocaleString() : '']
+      ];
+      
+      fields.forEach(([label, value]) => {
+        if (value) {
+          doc.text(`${label} ${value}`, 20, y);
+          y += lineHeight;
+        }
+      });
+      
+      // Save PDF
+      doc.save(`${record.healthId}_health_record.pdf`);
+      setDownloadHealthId(''); // Clear input
+      
+    } catch (error) {
+      console.error('Download error:', error);
+      alert(`Error downloading PDF: ${error.message}`);
+    }
   };
 
   const drawerWidth = 220;

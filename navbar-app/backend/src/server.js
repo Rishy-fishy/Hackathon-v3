@@ -290,6 +290,74 @@ app.post('/api/child/batch', async (req,res) => {
   }
 });
 
+// --------------- Child Record Search Endpoint ---------------
+// Search by Health ID or Name (used by admin dashboard export)
+app.get('/api/child/search', async (req,res)=>{
+  try {
+    await initMongo();
+    if(!MONGO_URI || !mongoDb) return res.status(503).json({ error:'mongo_disabled' });
+    const raw = (req.query.q||'').toString().trim();
+    if(!raw) return res.status(400).json({ error:'missing_query' });
+    const col = mongoDb.collection('child_records');
+    
+    // Try exact healthId match first
+    let record = await col.findOne({ healthId: raw });
+    
+    if(!record){
+      // Try case-insensitive name prefix match
+      const escaped = raw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      record = await col.findOne({ name: { $regex: `^${escaped}`, $options:'i' } });
+    }
+    
+    if(record){
+      delete record._id; // remove internal MongoDB id
+      return res.json({ found:true, record });
+    }
+    return res.json({ found:false });
+  } catch (e){ 
+    console.error('[backend] search error', e);
+    res.status(500).json({ error:'search_failed', message:e.message }); 
+  }
+});
+
+// --------------- PDF Data Endpoint ---------------
+// Returns record data for PDF generation (admin dashboard)
+app.get('/api/child/:healthId/pdf', async (req,res)=>{
+  try {
+    await initMongo();
+    if(!MONGO_URI || !mongoDb) return res.status(503).json({ error:'mongo_disabled' });
+    const { healthId } = req.params;
+    const col = mongoDb.collection('child_records');
+    const record = await col.findOne({ healthId });
+    
+    if(!record) return res.status(404).json({ error:'not_found', message:`No record found for ${healthId}` });
+    
+    // Return record data for client-side PDF generation
+    res.json({ 
+      success: true, 
+      record: {
+        healthId: record.healthId,
+        name: record.name || '',
+        guardianName: record.guardianName || record.fatherName || '',
+        dateOfBirth: record.dateOfBirth || '',
+        ageMonths: record.ageMonths || '',
+        guardianPhone: record.guardianPhone || record.mobile || '',
+        idReference: record.idReference || record.aadhaar || '',
+        gender: record.gender || '',
+        weightKg: record.weightKg || record.weight || '',
+        heightCm: record.heightCm || record.height || '',
+        malnutritionSigns: record.malnutritionSigns || '',
+        recentIllnesses: record.recentIllnesses || '',
+        uploaderName: record.uploaderName || '',
+        uploadedAt: record.uploadedAt || ''
+      }
+    });
+  } catch (e){ 
+    console.error('[backend] PDF data error', e);
+    res.status(500).json({ error:'pdf_failed', message:e.message }); 
+  }
+});
+
 // ---------------- Admin Auth & Stats ----------------
 // Stateless (JWT) mode if ADMIN_JWT_SECRET set; else fallback to in-memory sessions (suitable only for single instance dev).
 const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET; // Provide via GCP Secret / env var.
